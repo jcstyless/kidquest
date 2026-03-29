@@ -518,8 +518,6 @@ const NAV = {
   panel:(a,C)=><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="9" height="10" rx="2" fill={a?C.sky:C.textLt} opacity={a?0.6:0.25}/><rect x="13" y="2" width="9" height="5" rx="2" fill={a?C.sky:C.textLt} opacity={a?0.3:0.15}/><rect x="13" y="9" width="9" height="13" rx="2" fill={a?C.sky:C.textLt} opacity={a?0.6:0.25}/><rect x="2" y="14" width="9" height="8" rx="2" fill={a?C.sky:C.textLt} opacity={a?0.3:0.15}/></svg>,
   assign:(a,C)=><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="2" width="14" height="18" rx="2.5" fill={a?C.sky:C.textLt} fillOpacity={a?0.12:0.06} stroke={a?C.sky:C.textLt} strokeWidth="1.6"/><path d="M7 8H13M7 12H11" stroke={a?C.sky:C.textLt} strokeWidth="1.8" strokeLinecap="round"/><circle cx="19" cy="18" r="4.5" fill={a?C.sky:C.textLt}/><path d="M16.5 18H21.5M19 15.5V20.5" stroke="white" strokeWidth="2" strokeLinecap="round"/></svg>,
   ranking:(a,C)=><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2L13.5 7H19L14.5 10.5L16 16L12 13L8 16L9.5 10.5L5 7H10.5L12 2Z" fill={a?C.sky:C.textLt} fillOpacity={a?0.2:0.08} stroke={a?C.sky:C.textLt} strokeWidth="1.3"/><path d="M5 22V19M12 22V15M19 22V19" stroke={a?C.sky:C.textLt} strokeWidth="2.5" strokeLinecap="round"/><circle cx="5" cy="17" r="1.8" fill={a?C.sky:C.textLt} opacity="0.7"/><circle cx="12" cy="13" r="2" fill={a?C.sky:C.textLt}/><circle cx="19" cy="17" r="1.8" fill={a?C.sky:C.textLt} opacity="0.7"/></svg>,
-  store:(a,C)=><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 9L5 3H19L21 9V10C21 10.6 20.6 11 20 11H4C3.4 11 3 10.6 3 10V9Z" fill={a?C.gold:C.textLt} fillOpacity={a?0.3:0.1} stroke={a?C.gold:C.textLt} strokeWidth="1.6"/><rect x="3" y="11" width="18" height="10" rx="2" fill={a?C.gold:C.textLt} fillOpacity={a?0.15:0.06} stroke={a?C.gold:C.textLt} strokeWidth="1.6"/><path d="M9 11V21M15 11V21" stroke={a?C.gold:C.textLt} strokeWidth="1.2" opacity="0.5"/></svg>,
-  admin:(a,C)=><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2L14 8H20L15 12L17 18L12 15L7 18L9 12L4 8H10L12 2Z" fill={a?C.purple:C.textLt} fillOpacity={a?0.3:0.1} stroke={a?C.purple:C.textLt} strokeWidth="1.4"/><circle cx="12" cy="10" r="2" fill={a?C.purple:C.textLt}/></svg>,
   tchat:(a,C)=><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 4H20C20.6 4 21 4.4 21 5V16C21 16.6 20.6 17 20 17H7L3 21V5C3 4.4 3.4 4 4 4Z" fill={a?C.sky:C.textLt} fillOpacity={a?0.12:0.06} stroke={a?C.sky:C.textLt} strokeWidth="1.8" strokeLinejoin="round"/><circle cx="8" cy="10.5" r="1.3" fill={a?C.sky:C.textLt}/><circle cx="12" cy="10.5" r="1.3" fill={a?C.sky:C.textLt}/><circle cx="16" cy="10.5" r="1.3" fill={a?C.sky:C.textLt}/></svg>,
 };
 
@@ -840,7 +838,7 @@ const MIN_CLAN = 4;
 // ═══════════════════════════════════════════════════════════
 // ROOT
 // ═══════════════════════════════════════════════════════════
-export default function KidQuest({ userId=null, userEmail=null, initialProfile=null, onSignOut=null }) {
+export default function KidQuest() {
   // theming
   const [dark, setDark] = useState(false);
   const C = dark ? DARK : T;
@@ -852,43 +850,15 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
   const [tutStep,   setTutStep]   = useState(0);   // tutorial step
   const [tutDone,   setTutDone]   = useState(false);
 
-  // ── USER STATE — loads from Supabase profile if logged in ──
-  const defaultUser = {
-    name:"Novo Usuário", avatar:"a_cub", level:1, xp:0, coins:0, gems:30,
-    streak:0, trophies:0, streakShields:1, allowance:5000, allowanceSpent:0,
-    ageGroup:"tween", username:"",
-    savingsGoal:{name:"Mi primera meta",target:50000,saved:0,emoji:"🎯"},
+  // user state
+  // ── PERSISTENT STATE (auto-save to localStorage) ──
+  const [user, setUser] = useState(()=>loadState("user",{
+    name:"Mateo", avatar:"🦁", level:7, xp:3400, coins:850, gems:30,
+    streak:15, trophies:1240, streakShields:1, allowance:5000, allowanceSpent:1200,
+    ageGroup:"tween",
+    savingsGoal:{name:"Bicicleta",target:50000,saved:18000,emoji:"🚲"},
     savingsHistory:[],
-  };
-  const profileToUser = (p) => p ? {
-    name:       p.name        || defaultUser.name,
-    username:   p.username    || "",
-    avatar:     p.avatar_key  || "a_cub",
-    frame:      p.frame       || "none",
-    level:      p.level       || 1,
-    xp:         p.xp          || 0,
-    coins:      p.coins       || 0,
-    gems:       p.gems        || 30,
-    streak:     p.streak      || 0,
-    trophies:   p.trophies    || 0,
-    streakShields: p.streak_shields || 1,
-    allowance:  p.allowance   || 5000,
-    allowanceSpent: p.allowance_spent || 0,
-    ageGroup:   p.age_group   || "tween",
-    isAdmin:    ["master","admin","moderator"].includes(p.admin_role),
-    adminRole:  p.admin_role  || "none",
-    isMaster:   p.admin_role  === "master",
-    accountStatus: p.account_status || "active",
-    savingsGoal:{
-      name:   p.savings_goal_name   || "Mi primera meta",
-      target: p.savings_goal_target || 50000,
-      saved:  p.savings_goal_saved  || 0,
-      emoji:  p.savings_goal_emoji  || "🎯",
-    },
-    savingsHistory:[],
-  } : defaultUser;
-
-  const [user, setUser] = useState(()=> initialProfile ? profileToUser(initialProfile) : defaultUser);
+  }));
 
   // chest / loot system
   const [showChestShop,  setShowChestShop]  = useState(false);
@@ -963,24 +933,6 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
 
   // ── SAVINGS GOAL EDITOR ──
   const [showGoalEditor, setShowGoalEditor] = useState(false);
-
-  // ── REPORT SYSTEM ──
-  const [showReport,    setShowReport]    = useState(false);
-  const [reportType,    setReportType]    = useState("bullying");
-  const [reportDesc,    setReportDesc]    = useState("");
-  const [reportUser,    setReportUser]    = useState("");
-  const [reportSending, setReportSending] = useState(false);
-
-  // ── ADMIN PANEL ──
-  const [adminUsers,    setAdminUsers]    = useState([]);
-  const [adminReports,  setAdminReports]  = useState([]);
-  const [adminTab,      setAdminTab]      = useState("users"); // users|reports|gifts|ranking
-  const [adminLoading,  setAdminLoading]  = useState(false);
-  const [giftUser,      setGiftUser]      = useState(null);
-  const [giftType,      setGiftType]      = useState("gems");
-  const [giftAmount,    setGiftAmount]    = useState(100);
-  const [giftMsg,       setGiftMsg]       = useState("");
-  const [adminSearch,   setAdminSearch]   = useState("");
 
   // ── CHALLENGE ASSIGNMENT (parent/teacher) ──
   const [showChallengeAssign, setShowChallengeAssign] = useState(false);
@@ -1063,43 +1015,6 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
   useEffect(()=>{ saveState("assignedChallenges", assignedChallenges); }, [assignedChallenges]);
   useEffect(()=>{ saveState("activeStudentChalls", activeStudentChalls); }, [activeStudentChalls]);
   useEffect(()=>{ document.documentElement.style.background = dark?"#081810":"#F0FBF6"; },[dark]);
-
-  // ── SYNC PROFILE FROM SUPABASE on load ──
-  useEffect(()=>{
-    if(initialProfile) {
-      const u = profileToUser(initialProfile);
-      setUser(u);
-      // Auto-set role from profile
-      if(initialProfile.role) {
-        setRole(initialProfile.role);
-        setTab(initialProfile.role==="student"?"home":initialProfile.role==="parent"?"validate":"panel");
-        setTutDone(initialProfile.role!=="student");
-        setScreen("app");
-      }
-      // Auto-set age group
-      if(initialProfile.age_group) setAgeGroup(initialProfile.age_group);
-    }
-  },[initialProfile]);
-
-  // ── SAVE USER CHANGES BACK TO SUPABASE ──
-  const syncToSupabase = async(updates) => {
-    if(!userId) return;
-    try {
-      const { supabase } = await import("./supabase.js");
-      await supabase.from("profiles").update({
-        gems:   updates.gems   ?? user.gems,
-        coins:  updates.coins  ?? user.coins,
-        xp:     updates.xp    ?? user.xp,
-        level:  updates.level  ?? user.level,
-        streak: updates.streak ?? user.streak,
-        trophies: updates.trophies ?? user.trophies,
-        streak_shields: updates.streakShields ?? user.streakShields,
-        allowance_spent: updates.allowanceSpent ?? user.allowanceSpent,
-        savings_goal_saved: updates.savingsGoal?.saved ?? user.savingsGoal.saved,
-        last_seen: new Date().toISOString(),
-      }).eq("id", userId);
-    } catch(e){ console.warn("Supabase sync:", e.message); }
-  };
 
   // ── DAILY LOGIN BONUS CHECK ──
   useEffect(()=>{
@@ -1226,11 +1141,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
   const chestsToday  = 0; // would track from chest open log
   const savingsWeekly = Math.round((user.savingsGoal.target - user.savingsGoal.saved) / 52);
 
-  const tabsStudent = [
-    {id:"home",l:"Inicio"},{id:"tasks",l:"Tareas"},{id:"clan",l:"Clan"},
-    {id:"shop",l:"Cofres"},{id:"store",l:"Tienda"},{id:"chat",l:"Chat"},{id:"me",l:"Yo"},
-    ...(user.isAdmin?[{id:"admin",l:"Admin"}]:[]),
-  ];
+  const tabsStudent = [{id:"home",l:"Inicio"},{id:"tasks",l:"Tareas"},{id:"clan",l:"Clan"},{id:"shop",l:"Cofres"},{id:"chat",l:"Chat"},{id:"me",l:"Yo"}];
   const tabsParent  = [{id:"validate",l:"Validar"},{id:"progress",l:"Progreso"},{id:"allowance",l:"Mesada"},{id:"clanchat",l:"Chat"},{id:"qrcode",l:"Mi QR"}];
   const tabsTeacher = [{id:"panel",l:"Panel"},{id:"assign",l:"Misiones"},{id:"ranking",l:"Ranking"},{id:"tchat",l:"Chat"}];
   const currentTabs = role===ROLES.STUDENT?tabsStudent:role===ROLES.PARENT?tabsParent:tabsTeacher;
@@ -2304,71 +2215,6 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
         </div>
       )}
 
-
-      {/* ════ REPORT MODAL ════ */}
-      {showReport&&(
-        <div className="overlay">
-          <div className="modal pop-in">
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-              <div style={{fontWeight:900,fontSize:18,color:C.text}}>🚨 Reportar conducta</div>
-              <button onClick={()=>setShowReport(false)} style={{background:C.border,border:"none",borderRadius:9,padding:"5px 10px",cursor:"pointer",color:C.textMed}}>✕</button>
-            </div>
-            <div style={{background:C.coralLt,border:`1.5px solid ${C.coral}30`,borderRadius:12,padding:"10px 14px",marginBottom:14,fontSize:12,color:C.coral}}>
-              🔒 Tu reporte es anónimo. El equipo de KidQuest lo revisará en menos de 24 horas.
-            </div>
-            <div style={{marginBottom:11}}>
-              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:6}}>Nombre de usuario reportado</div>
-              <input value={reportUser} onChange={e=>setReportUser(e.target.value)} placeholder="@usuario o nombre del usuario"
-                style={{width:"100%",padding:"11px 14px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:13,color:C.text,background:C.card,outline:"none"}}/>
-            </div>
-            <div style={{marginBottom:11}}>
-              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:6}}>Tipo de conducta</div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7}}>
-                {[
-                  {id:"bullying",      l:"Acoso / Bullying",    icon:"😡"},
-                  {id:"inappropriate_content", l:"Contenido inapropiado", icon:"🚫"},
-                  {id:"spam",          l:"Spam",                icon:"📢"},
-                  {id:"hate_speech",   l:"Lenguaje ofensivo",   icon:"💢"},
-                  {id:"fake_account",  l:"Cuenta falsa",        icon:"🎭"},
-                  {id:"grooming",      l:"Comportamiento peligroso", icon:"⚠️"},
-                ].map(t=>(
-                  <button key={t.id} onClick={()=>setReportType(t.id)}
-                    style={{padding:"9px 8px",borderRadius:11,border:`2px solid ${reportType===t.id?C.coral:C.border}`,
-                      background:reportType===t.id?C.coralLt:C.card,cursor:"pointer",fontSize:11,fontWeight:700,
-                      color:reportType===t.id?C.coral:C.textMed,textAlign:"center"}}>
-                    <div style={{fontSize:18,marginBottom:3}}>{t.icon}</div>{t.l}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div style={{marginBottom:16}}>
-              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:6}}>Descripción (opcional)</div>
-              <textarea value={reportDesc} onChange={e=>setReportDesc(e.target.value)}
-                placeholder="Describe lo que pasó con el mayor detalle posible..."
-                style={{width:"100%",padding:"11px 14px",borderRadius:12,border:`1.5px solid ${C.border}`,
-                  fontSize:13,color:C.text,background:C.card,outline:"none",minHeight:80,resize:"vertical",fontFamily:"'Nunito',sans-serif"}}/>
-            </div>
-            <BtnMain onClick={async()=>{
-              if(!reportUser.trim()) return notify("Indica el nombre del usuario","⚠️");
-              setReportSending(true);
-              try {
-                const {supabase} = await import("./supabase.js");
-                await supabase.from("reports").insert({
-                  reporter_id: userId,
-                  report_type: reportType,
-                  description: `Usuario: ${reportUser}. ${reportDesc}`,
-                });
-                setShowReport(false); setReportDesc(""); setReportUser("");
-                notify("Reporte enviado. Lo revisaremos pronto.","🔒");
-              } catch(e){ notify("Error al enviar reporte","⚠️"); }
-              setReportSending(false);
-            }} bg={`linear-gradient(135deg,${C.coral},#C40000)`} style={{width:"100%"}}>
-              {reportSending?"Enviando…":"🚨 Enviar reporte"}
-            </BtnMain>
-          </div>
-        </div>
-      )}
-
       {/* ════ HEADER ════ */}
       <div style={{background:C.card,borderBottom:`2px solid ${C.border}`,padding:"12px 16px 10px",position:"sticky",top:0,zIndex:100,boxShadow:`0 2px 10px ${C.mint}10`}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -2479,7 +2325,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             {/* greet + ring */}
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
               <div>
-                <div style={{fontWeight:900,fontSize:22,color:C.text}}>¡Hola, {user.name.split(" ")[0]}! 👋</div>
+                <div style={{fontWeight:900,fontSize:22,color:C.text}}>¡Hola, Mateo! 👋</div>
                 <div style={{fontSize:12,color:C.textMed}}>{new Date().toLocaleDateString("es",{weekday:"long",day:"numeric",month:"long"})}</div>
               </div>
               <MiniRing pct={(dailyDone/Math.max(dailyTotal,1))*100} color={C.mint} size={56}/>
@@ -2942,7 +2788,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
 
         {/* ── STUDENT: CHAT ── */}
         {role===ROLES.STUDENT&&tab==="chat"&&(
-          <ChatView msgs={kMsgs} setMsgs={setKMsgs} isMe={m=>m.author===user.name} myAuthor={user.name} myAvatar={user.avatar} myRole="student"
+          <ChatView msgs={kMsgs} setMsgs={setKMsgs} isMe={m=>m.author==="Mateo"} myAuthor="Mateo" myAvatar="🦁" myRole="student"
             input={chatInput} setInput={setChatInput} chatEndRef={chatEndRef} C={C}
             header={{title:"Chat del clan",sub:"Solo miembros · Moderado por adultos",gradient:`linear-gradient(135deg,${C.mint},${C.mintDk})`}}
             quickReplies={["🔥 ¡Vamos!","✅ ¡Lo hice!","💪 ¡A por ello!","😎 ¡Fácil!"]}
@@ -3147,45 +2993,6 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
               );
             })()}
 
-            {/* sign out */}
-            {onSignOut&&(
-              <button onClick={()=>{if(confirm("¿Cerrar sesión?")) onSignOut();}}
-                style={{width:"100%",background:C.coralLt,border:`1.5px solid ${C.coral}30`,borderRadius:14,padding:"11px 16px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}}>
-                <div style={{display:"flex",gap:10,alignItems:"center"}}>
-                  <span style={{fontSize:20}}>🚪</span>
-                  <div style={{fontWeight:700,fontSize:13,color:C.coral}}>Cerrar sesión</div>
-                </div>
-              </button>
-            )}
-
-            {/* report button */}
-            <button onClick={()=>setShowReport(true)}
-              style={{width:"100%",background:C.card,border:`1.5px solid ${C.border}`,borderRadius:14,padding:"11px 16px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer",boxShadow:C.shadow}}>
-              <div style={{display:"flex",gap:10,alignItems:"center"}}>
-                <span style={{fontSize:20}}>🚨</span>
-                <div style={{textAlign:"left"}}>
-                  <div style={{fontWeight:700,fontSize:13,color:C.text}}>Reportar conducta inapropiada</div>
-                  <div style={{fontSize:11,color:C.textMed}}>Ayúdanos a mantener KidQuest seguro</div>
-                </div>
-              </div>
-              <span style={{color:C.textLt,fontSize:16}}>›</span>
-            </button>
-
-            {/* admin panel access */}
-            {user.isAdmin&&(
-              <button onClick={()=>setTab("admin")}
-                style={{width:"100%",background:`linear-gradient(135deg,${C.purple}15,${C.sky}10)`,border:`2px solid ${C.purple}50`,borderRadius:14,padding:"11px 16px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer",boxShadow:C.shadow}}>
-                <div style={{display:"flex",gap:10,alignItems:"center"}}>
-                  <span style={{fontSize:20}}>⚙️</span>
-                  <div style={{textAlign:"left"}}>
-                    <div style={{fontWeight:800,fontSize:13,color:C.purple}}>Panel de Administración</div>
-                    <div style={{fontSize:11,color:C.textMed}}>{user.isMaster?"Maestro":"Admin"} · Control total</div>
-                  </div>
-                </div>
-                <span style={{color:C.purple,fontSize:16}}>›</span>
-              </button>
-            )}
-
             {/* age profile picker */}
             <button onClick={()=>setShowAgePick(true)} style={{width:"100%",background:C.card,border:`1.5px solid ${C.border}`,borderRadius:14,padding:"11px 16px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer",boxShadow:C.shadow}}>
               <div style={{display:"flex",gap:10,alignItems:"center"}}>
@@ -3374,11 +3181,11 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                   {v.note&&<div style={{fontSize:11,color:C.goldDk,marginTop:2}}>⚠️ {v.note}</div>}
                 </div>}
                 {v.selfDesc&&<div style={{background:C.skyLt,border:`1.5px solid ${C.sky}30`,borderRadius:12,padding:10,marginBottom:10}}>
-                  <div style={{fontSize:11,fontWeight:700,color:C.sky,marginBottom:4}}>📝 Descripción enviada</div>
+                  <div style={{fontSize:11,fontWeight:700,color:C.sky,marginBottom:4}}>📝 Descripción enviada por Mateo</div>
                   <div style={{fontSize:12,color:C.textMed,fontStyle:"italic"}}>"{v.selfDesc}"</div>
                 </div>}
                 {v.appealed&&<div style={{background:C.purpleLt,border:`1.5px solid ${C.purple}30`,borderRadius:12,padding:10,marginBottom:10}}>
-                  <div style={{fontSize:11,fontWeight:700,color:C.purple,marginBottom:4}}>⚖️ Apelación enviada</div>
+                  <div style={{fontSize:11,fontWeight:700,color:C.purple,marginBottom:4}}>⚖️ Apelación de Mateo</div>
                   <div style={{fontSize:12,color:C.textMed,fontStyle:"italic"}}>"{v.appealText}"</div>
                 </div>}
                 <div style={{display:"flex",gap:8}}>
@@ -3652,326 +3459,6 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             locked={false}/>
         )}
       </div>
-
-
-      {/* ════ STORE TAB ════ */}
-      {tab==="store"&&(
-        <div style={{padding:"16px 14px 100px"}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-            <div style={{fontWeight:900,fontSize:22,color:C.text}}>Tienda</div>
-            <div className="gem-badge">💎 {user.gems}</div>
-          </div>
-
-          {/* Coming soon banner */}
-          <div style={{background:`linear-gradient(135deg,${C.purple},${C.sky})`,borderRadius:22,padding:28,textAlign:"center",marginBottom:18,position:"relative",overflow:"hidden",boxShadow:`0 8px 32px ${C.purple}40`}}>
-            <div style={{position:"absolute",inset:0,background:"rgba(255,255,255,0.05)",backdropFilter:"blur(1px)"}}/>
-            <div style={{position:"relative"}}>
-              <div style={{fontSize:56,marginBottom:10}} className="float">🏗️</div>
-              <div style={{fontWeight:900,fontSize:22,color:"white",marginBottom:6}}>¡Pronto estará habilitada esta zona!</div>
-              <div style={{fontSize:14,color:"rgba(255,255,255,0.85)",lineHeight:1.6,marginBottom:16}}>
-                Estamos construyendo la tienda de cristales de KidQuest.<br/>
-                Muy pronto podrás comprar paquetes especiales para acelerar tu progreso.
-              </div>
-              <div style={{display:"inline-flex",alignItems:"center",gap:8,background:"rgba(255,255,255,0.2)",borderRadius:20,padding:"8px 18px"}}>
-                <span style={{fontSize:14}}>🔔</span>
-                <span style={{fontSize:13,color:"white",fontWeight:700}}>Te avisaremos cuando esté lista</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Preview packages */}
-          <div style={{fontWeight:800,fontSize:15,color:C.text,marginBottom:12}}>Vista previa — Paquetes de cristales</div>
-          {[
-            {name:"Bolsita",     gems:100,  price:"$0.99",  icon:"💎", color:C.sky},
-            {name:"Cofre",       gems:550,  price:"$4.99",  icon:"📦", color:C.mint,  bonus:"+ 50 💎 gratis"},
-            {name:"Saco",        gems:1200, price:"$9.99",  icon:"🎒", color:C.purple, bonus:"+ 200 💎 gratis"},
-            {name:"Legendario",  gems:2500, price:"$19.99", icon:"🏆", color:C.gold,   bonus:"+ 500 💎 gratis", best:true},
-          ].map((p,i)=>(
-            <div key={i} style={{background:C.card,borderRadius:18,padding:16,marginBottom:10,
-              boxShadow:p.best?`0 4px 20px ${C.gold}40`:C.shadow,
-              border:`2px solid ${p.best?C.gold:C.border}`,position:"relative",overflow:"hidden"}}>
-              {p.best&&<div style={{position:"absolute",top:0,right:0,background:C.gold,color:"white",fontSize:10,fontWeight:800,padding:"4px 12px",borderRadius:"0 18px 0 12px"}}>⭐ MEJOR VALOR</div>}
-              <div style={{display:"flex",alignItems:"center",gap:14}}>
-                <div style={{width:52,height:52,borderRadius:14,background:p.color+"20",border:`2px solid ${p.color}40`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,flexShrink:0}}>{p.icon}</div>
-                <div style={{flex:1}}>
-                  <div style={{fontWeight:800,fontSize:15,color:C.text}}>{p.name}</div>
-                  <div style={{fontWeight:900,fontSize:18,color:p.color}}>{p.gems.toLocaleString()} 💎</div>
-                  {p.bonus&&<div style={{fontSize:11,color:C.mint,fontWeight:700}}>{p.bonus}</div>}
-                </div>
-                <div style={{textAlign:"right"}}>
-                  <div style={{fontWeight:900,fontSize:18,color:C.text}}>{p.price}</div>
-                  <div style={{background:C.border,borderRadius:10,padding:"6px 14px",fontSize:12,color:C.textMed,fontWeight:700,marginTop:4,cursor:"not-allowed"}}>Pronto</div>
-                </div>
-              </div>
-            </div>
-          ))}
-          <div style={{background:C.goldLt,borderRadius:14,padding:"12px 16px",fontSize:12,color:C.goldDk,fontWeight:600,textAlign:"center"}}>
-            💡 Los cristales gratis se ganan completando misiones y subiendo de nivel. ¡Nunca necesitas comprar para disfrutar KidQuest!
-          </div>
-        </div>
-      )}
-
-      {/* ════ ADMIN PANEL ════ */}
-      {tab==="admin"&&user.isAdmin&&(
-        <div style={{padding:"16px 14px 100px"}}>
-          {/* Header */}
-          <div style={{background:`linear-gradient(135deg,${C.purple},${C.sky})`,borderRadius:20,padding:16,marginBottom:16,color:"white",position:"relative",overflow:"hidden"}}>
-            <div style={{position:"absolute",right:-10,top:-10,fontSize:60,opacity:0.1}}>⚙️</div>
-            <div style={{fontWeight:900,fontSize:20}}>Panel de Administración</div>
-            <div style={{fontSize:12,opacity:0.85,marginTop:2}}>{user.isMaster?"👑 Maestro":"⚙️ Admin"} · {user.name} · @{user.username}</div>
-          </div>
-
-          {/* Admin sub-tabs */}
-          <div style={{display:"flex",gap:7,marginBottom:16,overflowX:"auto",paddingBottom:4}}>
-            {[
-              {id:"users",   l:"Usuarios",  icon:"👥"},
-              {id:"reports", l:"Reportes",  icon:"🚨"},
-              {id:"gifts",   l:"Regalos",   icon:"🎁"},
-              {id:"ranking", l:"Ranking",   icon:"🏆"},
-              ...(user.isMaster?[{id:"admins",l:"Admins",icon:"⭐"}]:[]),
-            ].map(t=>(
-              <button key={t.id} onClick={async()=>{
-                setAdminTab(t.id);
-                setAdminLoading(true);
-                try {
-                  const {supabase} = await import("./supabase.js");
-                  if(t.id==="users"||t.id==="ranking"||t.id==="admins"||t.id==="gifts") {
-                    const {data} = await supabase.from("profiles").select("*").order("xp",{ascending:false}).limit(100);
-                    setAdminUsers(data||[]);
-                  }
-                  if(t.id==="reports") {
-                    const {data} = await supabase.from("reports").select("*").order("created_at",{ascending:false}).limit(50);
-                    setAdminReports(data||[]);
-                  }
-                } catch(e){ notify("Error cargando datos","⚠️"); }
-                setAdminLoading(false);
-              }} style={{flexShrink:0,padding:"8px 14px",borderRadius:13,border:`2px solid ${adminTab===t.id?C.purple:C.border}`,background:adminTab===t.id?C.purpleLt:C.card,cursor:"pointer",fontWeight:700,fontSize:12,color:adminTab===t.id?C.purple:C.textMed,display:"flex",gap:5,alignItems:"center"}}>
-                <span>{t.icon}</span>{t.l}
-              </button>
-            ))}
-          </div>
-
-          {adminLoading&&<div style={{textAlign:"center",padding:20,color:C.textMed}}>Cargando…</div>}
-
-          {/* USERS tab */}
-          {adminTab==="users"&&!adminLoading&&(
-            <div>
-              <input value={adminSearch} onChange={e=>setAdminSearch(e.target.value)}
-                placeholder="Buscar por nombre o email…"
-                style={{width:"100%",padding:"11px 14px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:13,color:C.text,background:C.card,outline:"none",marginBottom:12}}/>
-              {(adminUsers.filter(u=>!adminSearch||u.name?.toLowerCase().includes(adminSearch.toLowerCase())||u.username?.includes(adminSearch))).map(u=>(
-                <div key={u.id} style={{background:C.card,borderRadius:14,padding:"12px 14px",marginBottom:8,boxShadow:C.shadow,border:`1.5px solid ${u.account_status==="banned"?C.coral:u.admin_role!=="none"?C.purple:C.border}`}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                    <div style={{display:"flex",gap:9,alignItems:"center"}}>
-                      <div style={{width:36,height:36,borderRadius:"50%",background:`linear-gradient(135deg,${C.mint},${C.mintDk})`,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
-                        <KQIcon id={u.avatar_key||"a_cub"} size={32}/>
-                      </div>
-                      <div>
-                        <div style={{fontWeight:800,fontSize:13,color:C.text}}>{u.name||"Sin nombre"}</div>
-                        <div style={{fontSize:10,color:C.textMed}}>@{u.username||"—"} · {u.role} · Nv.{u.level||1}</div>
-                        <div style={{display:"flex",gap:4,marginTop:2}}>
-                          {u.admin_role!=="none"&&<span style={{background:C.purpleLt,color:C.purple,fontSize:9,fontWeight:700,borderRadius:6,padding:"1px 5px"}}>{u.admin_role}</span>}
-                          <span style={{background:u.account_status==="active"?C.mintLt:u.account_status==="banned"?C.coralLt:C.goldLt,color:u.account_status==="active"?C.mintDk:u.account_status==="banned"?C.coral:C.goldDk,fontSize:9,fontWeight:700,borderRadius:6,padding:"1px 5px"}}>{u.account_status}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div style={{display:"flex",gap:5,flexWrap:"wrap",justifyContent:"flex-end"}}>
-                      <button onClick={()=>{setGiftUser(u);setAdminTab("gifts")}}
-                        style={{padding:"5px 9px",borderRadius:9,border:`1.5px solid ${C.gold}`,background:C.goldLt,color:C.goldDk,fontSize:10,fontWeight:700,cursor:"pointer"}}>🎁</button>
-                      {user.isMaster&&u.id!==userId&&(
-                        <>
-                          <button onClick={async()=>{
-                            const newStatus = u.account_status==="active"?"suspended":"active";
-                            const {supabase}=await import("./supabase.js");
-                            await supabase.from("profiles").update({account_status:newStatus}).eq("id",u.id);
-                            setAdminUsers(p=>p.map(x=>x.id===u.id?{...x,account_status:newStatus}:x));
-                            notify(`Usuario ${newStatus==="active"?"activado":"suspendido"}`,"⚙️");
-                          }} style={{padding:"5px 9px",borderRadius:9,border:`1.5px solid ${C.coral}`,background:C.coralLt,color:C.coral,fontSize:10,fontWeight:700,cursor:"pointer"}}>
-                            {u.account_status==="active"?"🚫 Susp.":"✅ Activ."}
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  <div style={{display:"flex",gap:10,marginTop:8,fontSize:11,color:C.textMed}}>
-                    <span>💎 {u.gems||0}</span>
-                    <span>⭐ {u.xp||0} XP</span>
-                    <span>🔥 {u.streak||0}d</span>
-                    <span>📅 {u.created_at?new Date(u.created_at).toLocaleDateString("es"):"—"}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* REPORTS tab */}
-          {adminTab==="reports"&&!adminLoading&&(
-            <div>
-              {adminReports.length===0&&<div style={{textAlign:"center",padding:24,color:C.textMed}}>No hay reportes pendientes ✓</div>}
-              {adminReports.map(r=>(
-                <div key={r.id} style={{background:C.card,borderRadius:14,padding:14,marginBottom:10,boxShadow:C.shadow,border:`2px solid ${r.status==="pending"?C.coral:C.border}`}}>
-                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
-                    <div style={{fontWeight:800,fontSize:13,color:C.text}}>{r.report_type?.replace(/_/g," ")}</div>
-                    <span style={{background:r.status==="pending"?C.coralLt:C.mintLt,color:r.status==="pending"?C.coral:C.mintDk,fontSize:10,fontWeight:700,borderRadius:8,padding:"2px 8px"}}>{r.status}</span>
-                  </div>
-                  <div style={{fontSize:12,color:C.textMed,marginBottom:10,lineHeight:1.5}}>{r.description}</div>
-                  <div style={{fontSize:10,color:C.textLt,marginBottom:10}}>📅 {new Date(r.created_at).toLocaleDateString("es")}</div>
-                  {r.status==="pending"&&(
-                    <div style={{display:"flex",gap:7}}>
-                      <button onClick={async()=>{
-                        const {supabase}=await import("./supabase.js");
-                        await supabase.from("reports").update({status:"resolved",admin_notes:"Revisado y resuelto",resolved_by:userId,resolved_at:new Date().toISOString()}).eq("id",r.id);
-                        setAdminReports(p=>p.map(x=>x.id===r.id?{...x,status:"resolved"}:x));
-                        notify("Reporte resuelto","✅");
-                      }} style={{flex:1,padding:"8px",borderRadius:10,border:`1.5px solid ${C.mint}`,background:C.mintLt,color:C.mintDk,fontWeight:700,fontSize:12,cursor:"pointer"}}>✅ Resolver</button>
-                      <button onClick={async()=>{
-                        const {supabase}=await import("./supabase.js");
-                        await supabase.from("reports").update({status:"dismissed",resolved_by:userId}).eq("id",r.id);
-                        setAdminReports(p=>p.map(x=>x.id===r.id?{...x,status:"dismissed"}:x));
-                        notify("Reporte descartado","🗑️");
-                      }} style={{flex:1,padding:"8px",borderRadius:10,border:`1.5px solid ${C.border}`,background:C.card,color:C.textMed,fontWeight:700,fontSize:12,cursor:"pointer"}}>🗑️ Descartar</button>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* GIFTS tab */}
-          {adminTab==="gifts"&&!adminLoading&&(
-            <div>
-              <div style={{fontWeight:800,fontSize:15,color:C.text,marginBottom:12}}>🎁 Regalar a usuario</div>
-              {!giftUser?(
-                <div>
-                  <div style={{fontSize:13,color:C.textMed,marginBottom:10}}>Selecciona un usuario para regalar:</div>
-                  {adminUsers.map(u=>(
-                    <button key={u.id} onClick={()=>setGiftUser(u)}
-                      style={{width:"100%",padding:"11px 14px",marginBottom:7,borderRadius:13,border:`1.5px solid ${C.border}`,background:C.card,display:"flex",gap:10,alignItems:"center",cursor:"pointer",textAlign:"left"}}>
-                      <div style={{width:32,height:32,borderRadius:"50%",background:C.mintLt,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0}}>
-                        <KQIcon id={u.avatar_key||"a_cub"} size={28}/>
-                      </div>
-                      <div>
-                        <div style={{fontWeight:700,fontSize:13,color:C.text}}>{u.name}</div>
-                        <div style={{fontSize:10,color:C.textMed}}>@{u.username} · 💎{u.gems||0}</div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              ):(
-                <div>
-                  <div style={{background:C.purpleLt,borderRadius:13,padding:12,marginBottom:14,display:"flex",gap:10,alignItems:"center"}}>
-                    <div style={{width:36,height:36,borderRadius:"50%",background:C.mintLt,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0}}>
-                      <KQIcon id={giftUser.avatar_key||"a_cub"} size={32}/>
-                    </div>
-                    <div style={{flex:1}}>
-                      <div style={{fontWeight:800,fontSize:14,color:C.text}}>{giftUser.name}</div>
-                      <div style={{fontSize:11,color:C.textMed}}>@{giftUser.username}</div>
-                    </div>
-                    <button onClick={()=>setGiftUser(null)} style={{background:"none",border:"none",color:C.textMed,cursor:"pointer",fontSize:18}}>✕</button>
-                  </div>
-                  <div style={{marginBottom:11}}>
-                    <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:6}}>Tipo de regalo</div>
-                    <div style={{display:"flex",gap:7}}>
-                      {[{id:"gems",l:"💎 Cristales"},{id:"coins",l:"💰 Monedas"},{id:"xp",l:"⭐ XP"}].map(t=>(
-                        <button key={t.id} onClick={()=>setGiftType(t.id)}
-                          style={{flex:1,padding:"9px 6px",borderRadius:11,border:`2px solid ${giftType===t.id?C.purple:C.border}`,background:giftType===t.id?C.purpleLt:C.card,cursor:"pointer",fontWeight:700,fontSize:12,color:giftType===t.id?C.purple:C.textMed}}>
-                          {t.l}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div style={{marginBottom:11}}>
-                    <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:6}}>Cantidad</div>
-                    <input type="number" value={giftAmount} onChange={e=>setGiftAmount(Number(e.target.value))} min="1" max="99999"
-                      style={{width:"100%",padding:"11px 14px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:16,fontWeight:700,color:C.text,background:C.card,outline:"none"}}/>
-                  </div>
-                  <div style={{marginBottom:16}}>
-                    <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:6}}>Mensaje (opcional)</div>
-                    <input value={giftMsg} onChange={e=>setGiftMsg(e.target.value)} placeholder="¡Sigue así campeón!"
-                      style={{width:"100%",padding:"11px 14px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:13,color:C.text,background:C.card,outline:"none"}}/>
-                  </div>
-                  <BtnMain onClick={async()=>{
-                    try {
-                      const {supabase}=await import("./supabase.js");
-                      const updates={};
-                      if(giftType==="gems")  updates.gems  =(giftUser.gems||0)+giftAmount;
-                      if(giftType==="coins") updates.coins =(giftUser.coins||0)+giftAmount;
-                      if(giftType==="xp")    updates.xp    =(giftUser.xp||0)+giftAmount;
-                      await supabase.from("profiles").update(updates).eq("id",giftUser.id);
-                      await supabase.from("gifts").insert({from_admin:userId,to_user:giftUser.id,gift_type:giftType,amount:giftAmount,message:giftMsg});
-                      setAdminUsers(p=>p.map(u=>u.id===giftUser.id?{...u,...updates}:u));
-                      notify(`🎁 Regalo enviado a ${giftUser.name}`,"✅");
-                      setGiftUser(null); setGiftAmount(100); setGiftMsg("");
-                    } catch(e){ notify("Error al enviar regalo","⚠️"); }
-                  }} bg={`linear-gradient(135deg,${C.gold},${C.goldDk})`} style={{width:"100%"}}>
-                    🎁 Enviar regalo
-                  </BtnMain>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* RANKING tab */}
-          {adminTab==="ranking"&&!adminLoading&&(
-            <div>
-              <div style={{fontWeight:800,fontSize:15,color:C.text,marginBottom:12}}>🏆 Ranking global</div>
-              {adminUsers.slice(0,20).map((u,i)=>(
-                <div key={u.id} style={{background:i<3?`linear-gradient(135deg,${[C.gold,C.textLt,"#CD7F32"][i]}18,${C.card})`:C.card,borderRadius:13,padding:"11px 14px",marginBottom:7,boxShadow:C.shadow,display:"flex",gap:10,alignItems:"center",border:`1.5px solid ${i<3?[C.gold,C.textLt,"#CD7F32"][i]:C.border}30`}}>
-                  <div style={{width:28,height:28,borderRadius:"50%",background:i<3?[C.gold,C.textLt,"#CD7F32"][i]:C.border,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:13,color:"white",flexShrink:0}}>
-                    {i<3?["🥇","🥈","🥉"][i]:i+1}
-                  </div>
-                  <div style={{width:30,height:30,borderRadius:"50%",background:C.mintLt,overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                    <KQIcon id={u.avatar_key||"a_cub"} size={26}/>
-                  </div>
-                  <div style={{flex:1}}>
-                    <div style={{fontWeight:800,fontSize:13,color:C.text}}>{u.name}</div>
-                    <div style={{fontSize:10,color:C.textMed}}>@{u.username} · {u.role}</div>
-                  </div>
-                  <div style={{textAlign:"right"}}>
-                    <div style={{fontWeight:900,fontSize:15,color:C.gold}}>{(u.xp||0).toLocaleString()} XP</div>
-                    <div style={{fontSize:10,color:C.textMed}}>Nv.{u.level||1}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* ADMINS tab (master only) */}
-          {adminTab==="admins"&&user.isMaster&&!adminLoading&&(
-            <div>
-              <div style={{fontWeight:800,fontSize:15,color:C.text,marginBottom:12}}>⭐ Gestión de administradores</div>
-              <div style={{background:C.goldLt,border:`1.5px solid ${C.gold}30`,borderRadius:12,padding:"10px 14px",marginBottom:14,fontSize:12,color:C.goldDk}}>
-                💡 Solo el usuario Maestro puede asignar o revocar roles de administración
-              </div>
-              {adminUsers.map(u=>(
-                <div key={u.id} style={{background:C.card,borderRadius:13,padding:"12px 14px",marginBottom:7,boxShadow:C.shadow,border:`1.5px solid ${u.admin_role!=="none"?C.purple:C.border}`}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                    <div>
-                      <div style={{fontWeight:800,fontSize:13,color:C.text}}>{u.name}</div>
-                      <div style={{fontSize:10,color:C.textMed}}>@{u.username} · {u.role}</div>
-                    </div>
-                    {u.id!==userId&&(
-                      <select value={u.admin_role||"none"} onChange={async(e)=>{
-                        const newRole=e.target.value;
-                        const {supabase}=await import("./supabase.js");
-                        await supabase.from("profiles").update({admin_role:newRole}).eq("id",u.id);
-                        setAdminUsers(p=>p.map(x=>x.id===u.id?{...x,admin_role:newRole}:x));
-                        notify(`Rol de ${u.name} actualizado a ${newRole}`,"⭐");
-                      }} style={{padding:"7px 10px",borderRadius:10,border:`1.5px solid ${C.purple}`,background:C.purpleLt,color:C.purple,fontWeight:700,fontSize:12,cursor:"pointer",outline:"none"}}>
-                        <option value="none">Sin rol</option>
-                        <option value="moderator">Moderador</option>
-                        <option value="admin">Admin</option>
-                        {u.admin_role==="master"&&<option value="master">Maestro</option>}
-                      </select>
-                    )}
-                    {u.id===userId&&<span style={{fontSize:11,color:C.purple,fontWeight:700}}>👑 Tú</span>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
 
       {/* ════ BOTTOM NAV ════ */}
       <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:430,background:C.card,borderTop:`1.5px solid ${C.border}`,display:"flex",justifyContent:"space-around",padding:"10px 0 16px",zIndex:200,boxShadow:`0 -4px 24px ${C.mint}18`}}>
