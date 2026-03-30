@@ -994,11 +994,6 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
   const [reportUser,    setReportUser]    = useState("");
   const [reportSending, setReportSending] = useState(false);
 
-  // ── PENDING TASKS FOR PARENT ──
-  const [pendingTasks,    setPendingTasks]    = useState([]);
-  const [loadingPending,  setLoadingPending]  = useState(false);
-  const [pendingLoaded,   setPendingLoaded]   = useState(false);
-
   // ── ADMIN PANEL ──
   const [adminView,     setAdminView]     = useState("admin"); // admin|student|parent|teacher
   const [adminUsers,    setAdminUsers]    = useState([]);
@@ -1085,11 +1080,20 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
 
   // chat
   const [chatInput, setChatInput] = useState("");
-  // ── CHAT (Supabase Realtime) ──
-  const [kMsgs,     setKMsgs]     = useState([]);
-  const [aMsgs,     setAMsgs]     = useState([]);
-  const [chatRoom,  setChatRoom]  = useState("clan");   // clan | adult
-  const [chatInited,setChatInited]= useState(false);
+  const [kMsgs, setKMsgs] = useState([
+    {id:1,author:"Sofía",avatar:"🦊",role:"student",text:"¡Tendí la cama! ✅ la IA me aprobó al instante 🔥",time:"10:02",system:false},
+    {id:2,author:"Sistema",avatar:"🦎",role:"system",text:"🎯 Sofía completó TENDER LA CAMA · +50 XP al clan",time:"10:02",system:true},
+    {id:3,author:"Carlos",avatar:"🐯",role:"student",text:"yo también voy ahora!",time:"10:04",system:false},
+    {id:4,author:"Sistema",avatar:"🦎",role:"system",text:"⚔️ ¡El clan sube a Nivel 9! — 50 XP para Nivel 10",time:"10:05",system:true},
+    {id:5,author:"Diego",avatar:"🐺",role:"student",text:"la IA me rechazó pero apeló y me dieron crédito parcial 😅",time:"10:09",system:false},
+    {id:6,author:"Sofía",avatar:"🦊",role:"student",text:"@Diego la próxima vez abre la ventana para mejor luz 💡",time:"10:12",system:false},
+  ]);
+  const [aMsgs, setAMsgs] = useState([
+    {id:1,author:"Mamá Laura",avatar:"👩",role:"parent",text:"Mateo hizo todo sin que le pidiera nada 😊",time:"09:45",system:false},
+    {id:2,author:"Prof. García",avatar:"👨‍🏫",role:"teacher",text:"21/28 alumnos activos. El sistema de apelaciones funciona muy bien",time:"09:48",system:false},
+    {id:3,author:"Sistema",avatar:"🦎",role:"system",text:"📊 12 tareas completadas hoy · Guerra: 340 pts",time:"09:50",system:true},
+    {id:4,author:"Papá Marcos",avatar:"👨",role:"parent",text:"Diego apeló su rechazo con buena justificación, lo aprobó la IA 👍",time:"10:10",system:false},
+  ]);
   const chatEndRef = useRef(null);
   const [assignedM, setAssignedM] = useState([]);
 
@@ -1178,30 +1182,6 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
     } catch(e){ console.warn("Supabase sync:", e.message); }
   };
 
-  // ── LOAD PENDING TASKS WHEN PARENT OPENS VALIDATE TAB ──
-  useEffect(()=>{
-    if(role!=="parent" && role!=="teacher") return;
-    if(tab!=="validate") return;
-    if(pendingLoaded || loadingPending) return;
-    if(!userId || linkedStudents.length===0) return;
-    setLoadingPending(true);
-    import("./supabase.js").then(async({supabase})=>{
-      try {
-        const childIds = linkedStudents.map(s=>s.id);
-        // Get pending task progress from all linked children
-        const {data} = await supabase
-          .from("task_progress")
-          .select("*, profiles!user_id(name,avatar_key,level)")
-          .in("user_id", childIds)
-          .eq("status","pending")
-          .order("created_at",{ascending:false});
-        setPendingTasks(data||[]);
-        setPendingLoaded(true);
-      } catch(e){ console.warn("Load pending tasks:", e.message); }
-      setLoadingPending(false);
-    });
-  },[tab, role, linkedStudents.length, userId]);
-
   // ── AUTO-LOAD ADMIN DATA WHEN TAB CHANGES TO ADMIN ──
   useEffect(()=>{
     if(tab==="admin" && user.isAdmin && userId && adminUsers.length===0) {
@@ -1232,95 +1212,6 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
     }
   },[role]);
   useEffect(()=>{ chatEndRef.current?.scrollIntoView({behavior:"smooth"}); },[kMsgs,aMsgs,tab]);
-
-  // ── REALTIME CHAT INIT ──
-  useEffect(()=>{
-    if(!userId || chatInited) return;
-    setChatInited(true);
-    let clanChannel, adultChannel;
-
-    import("./supabase.js").then(async({supabase})=>{
-      // Load last 50 messages for clan chat
-      const {data:clanMsgs} = await supabase
-        .from("chat_messages")
-        .select("*")
-        .eq("room","clan")
-        .order("created_at",{ascending:true})
-        .limit(50);
-      if(clanMsgs?.length) setKMsgs(clanMsgs.map(m=>({
-        id:m.id, author:m.author_name, avatar:m.avatar_key||"a_cub",
-        role:m.author_role, text:m.text, time:new Date(m.created_at).toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"}),
-        system:m.is_system,
-      })));
-
-      // Load adult chat
-      const {data:adultMsgs} = await supabase
-        .from("chat_messages")
-        .select("*")
-        .eq("room","adult")
-        .order("created_at",{ascending:true})
-        .limit(50);
-      if(adultMsgs?.length) setAMsgs(adultMsgs.map(m=>({
-        id:m.id, author:m.author_name, avatar:m.avatar_key||"a_buddy",
-        role:m.author_role, text:m.text, time:new Date(m.created_at).toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"}),
-        system:m.is_system,
-      })));
-
-      // Subscribe to real-time clan chat
-      clanChannel = supabase
-        .channel("clan-chat")
-        .on("postgres_changes",{event:"INSERT",schema:"public",table:"chat_messages",filter:"room=eq.clan"},
-          payload=>{
-            const m = payload.new;
-            setKMsgs(p=>[...p,{
-              id:m.id, author:m.author_name, avatar:m.avatar_key||"a_cub",
-              role:m.author_role, text:m.text,
-              time:new Date(m.created_at).toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"}),
-              system:m.is_system,
-            }]);
-          })
-        .subscribe();
-
-      // Subscribe to real-time adult chat
-      adultChannel = supabase
-        .channel("adult-chat")
-        .on("postgres_changes",{event:"INSERT",schema:"public",table:"chat_messages",filter:"room=eq.adult"},
-          payload=>{
-            const m = payload.new;
-            setAMsgs(p=>[...p,{
-              id:m.id, author:m.author_name, avatar:m.avatar_key||"a_buddy",
-              role:m.author_role, text:m.text,
-              time:new Date(m.created_at).toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"}),
-              system:m.is_system,
-            }]);
-          })
-        .subscribe();
-    });
-
-    return ()=>{
-      import("./supabase.js").then(({supabase})=>{
-        if(clanChannel)  supabase.removeChannel(clanChannel);
-        if(adultChannel) supabase.removeChannel(adultChannel);
-      });
-    };
-  },[userId]);
-
-  // ── SEND CHAT MESSAGE ──
-  const sendChatMsg = async(text, room="clan") => {
-    if(!text.trim()||!userId) return;
-    try {
-      const {supabase} = await import("./supabase.js");
-      await supabase.from("chat_messages").insert({
-        room,
-        author_id: userId,
-        author_name: user.name,
-        author_role: role,
-        avatar_key: user.avatar,
-        text: text.trim(),
-        is_system: false,
-      });
-    } catch(e){ notify("Error enviando mensaje","⚠️"); }
-  };
 
   const canClan = user.level >= MIN_CLAN;
   const curLvl  = getLvl(user.xp);
@@ -3280,7 +3171,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
 
         {/* ── STUDENT: CHAT ── */}
         {role===ROLES.STUDENT&&tab==="chat"&&(
-          <ChatView msgs={kMsgs} setMsgs={setKMsgs} isMe={m=>m.author===user.name} myAuthor={user.name} myAvatar={user.avatar} myRole="student" onSend={t=>sendChatMsg(t,"clan")}
+          <ChatView msgs={kMsgs} setMsgs={setKMsgs} isMe={m=>m.author===user.name} myAuthor={user.name} myAvatar={user.avatar} myRole="student"
             input={chatInput} setInput={setChatInput} chatEndRef={chatEndRef} C={C}
             header={{title:"Chat del clan",sub:"Solo miembros · Moderado por adultos",gradient:`linear-gradient(135deg,${C.mint},${C.mintDk})`}}
             quickReplies={["🔥 ¡Vamos!","✅ ¡Lo hice!","💪 ¡A por ello!","😎 ¡Fácil!"]}
@@ -3695,84 +3586,46 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             <TutorRequestsPanel userId={userId} C={C} notify={notify} onApprove={(childId,childName)=>{
               setLinkedStudents(p=>[...p,{id:childId,name:childName,avatar:"a_cub",level:1,gem_reward_claimed:false}]);
             }}/>
-            {/* Real pending tasks from Supabase */}
-            {loadingPending&&(
-              <div style={{textAlign:"center",padding:24,color:C.textMed}}>
-                <div style={{fontSize:32,marginBottom:8}} className="float">⏳</div>
-                Cargando tareas pendientes…
-              </div>
-            )}
-            {!loadingPending&&linkedStudents.length===0&&(
-              <div style={{background:C.goldLt,border:`1.5px solid ${C.gold}30`,borderRadius:16,padding:18,textAlign:"center"}}>
-                <div style={{fontSize:32,marginBottom:8}}>👦</div>
-                <div style={{fontWeight:700,fontSize:14,color:C.goldDk,marginBottom:6}}>No tienes hijos vinculados aún</div>
-                <div style={{fontSize:12,color:C.textMed,marginBottom:12}}>Ve a la pestaña "Mi QR" y genera un código para que tu hijo se una</div>
-                <BtnMain onClick={()=>setTab("qrcode")} bg={`linear-gradient(135deg,${C.gold},${C.goldDk})`} style={{display:"inline-block",padding:"8px 20px",fontSize:13}}>
-                  Ir a Mi QR →
-                </BtnMain>
-              </div>
-            )}
-            {!loadingPending&&linkedStudents.length>0&&pendingTasks.length===0&&pendingLoaded&&(
-              <div style={{background:C.mintLt,border:`1.5px solid ${C.mint}30`,borderRadius:16,padding:18,textAlign:"center"}}>
-                <div style={{fontSize:32,marginBottom:8}}>✅</div>
-                <div style={{fontWeight:700,fontSize:14,color:C.mintDk}}>¡Todo al día!</div>
-                <div style={{fontSize:12,color:C.textMed,marginTop:4}}>No hay tareas pendientes de revisión</div>
-              </div>
-            )}
-            {pendingTasks.map(v=>{
-              const child = linkedStudents.find(s=>s.id===v.user_id)||{name:"Estudiante",avatar:"a_cub"};
-              const timeAgo = v.completed_at ? new Date(v.completed_at).toLocaleString("es",{hour:"2-digit",minute:"2-digit",day:"numeric",month:"short"}) : "Pendiente";
-              return(
-                <div key={v.id} style={{background:C.card,borderRadius:18,padding:16,marginBottom:12,boxShadow:C.shadow}}>
-                  <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:10}}>
-                    <div style={{width:38,height:38,borderRadius:"50%",background:C.mintLt,border:`2px solid ${C.mint}`,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0}}>
-                      <KQIcon id={child.avatar||"a_cub"} size={34}/>
-                    </div>
-                    <div style={{flex:1}}>
-                      <div style={{fontWeight:800,fontSize:14,color:C.text}}>{child.name}</div>
-                      <div style={{fontSize:12,color:C.mint,fontWeight:700}}>{v.task_title}</div>
-                      <div style={{fontSize:11,color:C.textLt}}>{timeAgo}</div>
-                    </div>
-                    {v.ai_score>0&&<Chip label={`🤖 ${v.ai_score}%`} bg={v.ai_score>=70?C.mintLt:C.goldLt} color={v.ai_score>=70?C.mintDk:C.goldDk}/>}
+            {[
+              {id:"v1",task:"Lavar los platos",    aiScore:94,detected:"platos limpios, fregadero vacío",gps:"Casa familiar",time:"hace 5 min",photo:true,appealed:false},
+              {id:"v2",task:"Tender la cama",      aiScore:62,detected:"cama parcialmente ordenada",gps:null,time:"hace 18 min",photo:true,appealed:false,note:"Confianza baja — revise la foto"},
+              {id:"v3",task:"Guardar dinero hoy",  aiScore:0, detected:"",gps:null,time:"hace 30 min",photo:false,appealed:false,selfDesc:"Guardé $500 en mi alcancía celeste, la puse en el cajón de mi escritorio junto a mis ahorros anteriores"},
+              {id:"v4",task:"Revisar gastos",      aiScore:0, detected:"",gps:null,time:"hace 45 min",photo:false,appealed:true,appealText:"La IA rechazó mi foto de la libreta porque tenía sombra pero sí la llené completa"},
+            ].map(v=>(
+              <div key={v.id} style={{background:C.card,borderRadius:18,padding:16,marginBottom:12,boxShadow:C.shadow}}>
+                <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:10}}>
+                  <div style={{width:38,height:38,borderRadius:"50%",background:C.mintLt,border:`2px solid ${C.mint}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>🦁</div>
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:800,fontSize:14,color:C.text}}>Mateo</div>
+                    <div style={{fontSize:12,color:C.mint,fontWeight:700}}>{v.task}</div>
+                    <div style={{fontSize:11,color:C.textLt}}>{v.time}</div>
                   </div>
-                  {v.self_desc&&(
-                    <div style={{background:C.skyLt,border:`1.5px solid ${C.sky}30`,borderRadius:12,padding:10,marginBottom:10}}>
-                      <div style={{fontSize:11,fontWeight:700,color:C.sky,marginBottom:4}}>📝 Descripción del niño</div>
-                      <div style={{fontSize:12,color:C.textMed,fontStyle:"italic"}}>"{v.self_desc}"</div>
-                    </div>
-                  )}
-                  {v.evidence_url&&(
-                    <div style={{background:C.mintLt,borderRadius:12,padding:10,marginBottom:10,fontSize:12,color:C.mintDk,fontWeight:600}}>
-                      📸 Foto enviada como evidencia
-                    </div>
-                  )}
-                  <div style={{display:"flex",gap:8}}>
-                    <button onClick={async()=>{
-                      const {supabase}=await import("./supabase.js");
-                      await supabase.from("task_progress").update({status:"rejected"}).eq("id",v.id);
-                      setPendingTasks(p=>p.filter(t=>t.id!==v.id));
-                      notify(`Tarea rechazada — ${child.name} puede apelar`,"❌");
-                    }} style={{flex:1,padding:"10px",borderRadius:12,border:`1.5px solid ${C.coral}60`,background:C.coralLt,color:C.coral,cursor:"pointer",fontWeight:800,fontSize:12}}>❌ Rechazar</button>
-                    <button onClick={async()=>{
-                      const {supabase}=await import("./supabase.js");
-                      await supabase.from("task_progress").update({status:"approved"}).eq("id",v.id);
-                      // Give XP/coins to child
-                      const {data:childProf}=await supabase.from("profiles").select("xp,coins,trophies").eq("id",v.user_id).single();
-                      if(childProf){
-                        await supabase.from("profiles").update({
-                          xp:(childProf.xp||0)+100,
-                          coins:(childProf.coins||0)+25,
-                          trophies:(childProf.trophies||0)+10,
-                        }).eq("id",v.user_id);
-                      }
-                      setPendingTasks(p=>p.filter(t=>t.id!==v.id));
-                      boom();
-                      notify(`¡Aprobada! ${child.name} ganó sus recompensas 🎉`,"✅");
-                    }} style={{flex:2,padding:"10px",borderRadius:12,border:"none",background:`linear-gradient(135deg,${C.mint},${C.mintDk})`,color:"white",cursor:"pointer",fontWeight:800,fontSize:13}}>✅ Aprobar</button>
-                  </div>
+                  {v.appealed&&<Chip label="⚖️ Apeló" bg={C.purpleLt} color={C.purple}/>}
+                  {v.note&&<Chip label="⚠️ Revisar" bg={C.goldLt} color={C.goldDk}/>}
                 </div>
-              );
-            })}
+                {v.photo&&<div style={{background:C.mintLt,border:`1.5px solid ${C.mint}40`,borderRadius:12,padding:10,marginBottom:10}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
+                    <span style={{fontSize:12,fontWeight:700,color:C.mintDk}}>🤖 IA: {v.aiScore>=70?"Aprobado":v.aiScore>0?"Parcial":"No analizado"}</span>
+                    {v.aiScore>0&&<span style={{fontSize:12,fontWeight:800,color:C.mint}}>{v.aiScore}%</span>}
+                  </div>
+                  {v.detected&&<div style={{fontSize:11,color:C.textMed}}>Detectado: {v.detected}</div>}
+                  {v.gps&&<div style={{fontSize:11,color:C.mint,marginTop:2}}>📍 {v.gps}</div>}
+                  {v.note&&<div style={{fontSize:11,color:C.goldDk,marginTop:2}}>⚠️ {v.note}</div>}
+                </div>}
+                {v.selfDesc&&<div style={{background:C.skyLt,border:`1.5px solid ${C.sky}30`,borderRadius:12,padding:10,marginBottom:10}}>
+                  <div style={{fontSize:11,fontWeight:700,color:C.sky,marginBottom:4}}>📝 Descripción enviada</div>
+                  <div style={{fontSize:12,color:C.textMed,fontStyle:"italic"}}>"{v.selfDesc}"</div>
+                </div>}
+                {v.appealed&&<div style={{background:C.purpleLt,border:`1.5px solid ${C.purple}30`,borderRadius:12,padding:10,marginBottom:10}}>
+                  <div style={{fontSize:11,fontWeight:700,color:C.purple,marginBottom:4}}>⚖️ Apelación enviada</div>
+                  <div style={{fontSize:12,color:C.textMed,fontStyle:"italic"}}>"{v.appealText}"</div>
+                </div>}
+                <div style={{display:"flex",gap:8}}>
+                  <button onClick={()=>notify(`Tarea rechazada — ${linkedStudents[0]?.name||"el estudiante"} puede apelar`,"❌")} style={{flex:1,padding:"10px",borderRadius:12,border:`1.5px solid ${C.coral}60`,background:C.coralLt,color:C.coral,cursor:"pointer",fontWeight:800,fontSize:12}}>❌ Rechazar</button>
+                  <button onClick={()=>{boom();notify(`¡Aprobada! ${linkedStudents[0]?.name||"El estudiante"} ganó sus recompensas 🎉`,"✅");}} style={{flex:2,padding:"10px",borderRadius:12,border:"none",background:`linear-gradient(135deg,${C.mint},${C.mintDk})`,color:"white",cursor:"pointer",fontWeight:800,fontSize:13}}>✅ Aprobar</button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
@@ -3880,7 +3733,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
 
         {/* ── PARENT: CLAN CHAT ── */}
         {role===ROLES.PARENT&&tab==="clanchat"&&(
-          <ChatView msgs={aMsgs} setMsgs={setAMsgs} isMe={m=>m.author===user.name} myAuthor={user.name} myAvatar={user.avatar} myRole="parent" onSend={t=>sendChatMsg(t,"adult")}
+          <ChatView msgs={aMsgs} setMsgs={setAMsgs} isMe={m=>m.author===user.name} myAuthor={user.name} myAvatar={user.avatar} myRole="parent"
             input={chatInput} setInput={setChatInput} chatEndRef={chatEndRef} C={C}
             header={{title:"Chat adultos — Dragones del Norte",sub:"Solo padres y profesores",gradient:`linear-gradient(135deg,${C.gold},${C.goldDk})`}}
             locked={false}/>
@@ -4083,7 +3936,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
 
         {/* ── TEACHER: CHAT ── */}
         {role===ROLES.TEACHER&&tab==="tchat"&&(
-          <ChatView msgs={aMsgs} setMsgs={setAMsgs} isMe={m=>m.author===user.name} myAuthor={user.name} myAvatar={user.avatar} myRole="teacher" onSend={t=>sendChatMsg(t,"adult")}
+          <ChatView msgs={aMsgs} setMsgs={setAMsgs} isMe={m=>m.author===user.name} myAuthor={user.name} myAvatar={user.avatar} myRole="teacher"
             input={chatInput} setInput={setChatInput} chatEndRef={chatEndRef} C={C}
             header={{title:"Chat adultos del clan",sub:"Padres y profesores · 5to B",gradient:`linear-gradient(135deg,${C.sky},#2d8fd4)`}}
             quickReplies={["📢 Recordatorio","✅ ¡Bien hecho!","📊 Reporte","🎯 Nueva misión"]}
@@ -4578,8 +4431,8 @@ function TCard({task,full,onVerify,C}){
   );
 }
 
-function ChatView({msgs,setMsgs,isMe,myAuthor,myAvatar,myRole,input,setInput,chatEndRef,C,header,quickReplies=[],onQuick,locked,lockMsg,onSend}){
-  const send=()=>{ if(!input.trim()) return; if(onSend){ onSend(input.trim()); } else { setMsgs(p=>[...p,{id:Date.now(),author:myAuthor,avatar:myAvatar,role:myRole,text:input.trim(),time:now_t(),system:false}]); } setInput(""); };
+function ChatView({msgs,setMsgs,isMe,myAuthor,myAvatar,myRole,input,setInput,chatEndRef,C,header,quickReplies=[],onQuick,locked,lockMsg}){
+  const send=()=>{ if(!input.trim()) return; setMsgs(p=>[...p,{id:Date.now(),author:myAuthor,avatar:myAvatar,role:myRole,text:input.trim(),time:now_t(),system:false}]); setInput(""); };
   if(locked) return (
     <div style={{padding:28,textAlign:"center"}}>
       <div style={{fontSize:48,marginBottom:12}}>🔒</div>
