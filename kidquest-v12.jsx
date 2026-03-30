@@ -1010,7 +1010,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
         creator_role: role,
         expires_at: new Date(Date.now()+7*24*60*60*1000).toISOString(),
       }).select().single();
-      if(error) { notify("Error: "+error.message,"⚠️"); setGeneratingToken(false); return; }
+      if(error) throw error;
       setMyInviteTokens(p=>[data,...p]);
       notify(`Código generado: ${token}`,"🔗");
     } catch(e){ notify("Error generando código","⚠️"); }
@@ -1160,24 +1160,6 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
       }).eq("id", userId);
     } catch(e){ console.warn("Supabase sync:", e.message); }
   };
-
-  // ── AUTO-LOAD ADMIN DATA WHEN TAB CHANGES TO ADMIN ──
-  useEffect(()=>{
-    if(tab==="admin" && user.isAdmin && userId && adminUsers.length===0) {
-      setAdminLoading(true);
-      import("./supabase.js").then(async({supabase})=>{
-        try {
-          const {data} = await supabase
-            .from("profiles")
-            .select("id,name,username,role,age_years,is_minor,gems,coins,xp,level,streak,account_status,admin_role,created_at,avatar_key,email_verified")
-            .order("created_at",{ascending:false})
-            .limit(200);
-          setAdminUsers(data||[]);
-        } catch(e){ notify("Error cargando usuarios","⚠️"); }
-        setAdminLoading(false);
-      });
-    }
-  },[tab, user.isAdmin]);
 
   // ── DAILY LOGIN BONUS CHECK ──
   useEffect(()=>{
@@ -3462,11 +3444,6 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             <div style={{background:C.purpleLt,border:`1.5px solid ${C.purple}30`,borderRadius:14,padding:"10px 14px",marginBottom:14,fontSize:12,color:C.purple,fontWeight:600}}>
               🤖 IA pre-analizó las fotos · Las apelaciones también son revisadas automáticamente
             </div>
-
-            {/* Pending tutor requests */}
-            <TutorRequestsPanel userId={userId} C={C} notify={notify} onApprove={(childId,childName)=>{
-              setLinkedStudents(p=>[...p,{id:childId,name:childName,avatar:"a_cub",level:1,gem_reward_claimed:false}]);
-            }}/>
             {[
               {id:"v1",task:"Lavar los platos",    aiScore:94,detected:"platos limpios, fregadero vacío",gps:"Casa familiar",time:"hace 5 min",photo:true,appealed:false},
               {id:"v2",task:"Tender la cama",      aiScore:62,detected:"cama parcialmente ordenada",gps:null,time:"hace 18 min",photo:true,appealed:false,note:"Confianza baja — revise la foto"},
@@ -3909,11 +3886,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                 try {
                   const {supabase} = await import("./supabase.js");
                   if(t.id==="users"||t.id==="ranking"||t.id==="admins"||t.id==="gifts") {
-                    const {data} = await supabase
-                      .from("profiles")
-                      .select("id,name,username,role,age_years,is_minor,gems,coins,xp,level,streak,account_status,admin_role,created_at,avatar_key,email_verified")
-                      .order(t.id==="ranking"?"xp":"created_at",{ascending:false})
-                      .limit(200);
+                    const {data} = await supabase.from("profiles").select("*").order("xp",{ascending:false}).limit(100);
                     setAdminUsers(data||[]);
                   }
                   if(t.id==="reports") {
@@ -3940,17 +3913,15 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                 <div key={u.id} style={{background:C.card,borderRadius:14,padding:"12px 14px",marginBottom:8,boxShadow:C.shadow,border:`1.5px solid ${u.account_status==="banned"?C.coral:u.admin_role!=="none"?C.purple:C.border}`}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                     <div style={{display:"flex",gap:9,alignItems:"center"}}>
-                      <div style={{width:40,height:40,borderRadius:"50%",background:u.is_minor?`linear-gradient(135deg,${C.purple}80,${C.purpleLt})`:`linear-gradient(135deg,${C.mint},${C.mintDk})`,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0}}>
-                        <KQIcon id={u.avatar_key||"a_cub"} size={36}/>
+                      <div style={{width:36,height:36,borderRadius:"50%",background:`linear-gradient(135deg,${C.mint},${C.mintDk})`,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
+                        <KQIcon id={u.avatar_key||"a_cub"} size={32}/>
                       </div>
-                      <div style={{flex:1,minWidth:0}}>
+                      <div>
                         <div style={{fontWeight:800,fontSize:13,color:C.text}}>{u.name||"Sin nombre"}</div>
-                        <div style={{fontSize:10,color:C.textMed}}>@{u.username||"—"} · {u.age_years||"?"}a · Nv.{u.level||1}</div>
-                        <div style={{display:"flex",gap:3,marginTop:3,flexWrap:"wrap"}}>
-                          <span style={{background:u.role==="student"?C.mintLt:u.role==="parent"?C.goldLt:C.skyLt,color:u.role==="student"?C.mintDk:u.role==="parent"?C.goldDk:C.sky,fontSize:9,fontWeight:800,borderRadius:6,padding:"2px 5px"}}>{u.role==="student"?"🎮 Niño":u.role==="parent"?"👨‍👩‍👦 Padre":"🏫 Profe"}</span>
-                          <span style={{background:u.is_minor?C.purpleLt:C.mintLt,color:u.is_minor?C.purple:C.mintDk,fontSize:9,fontWeight:700,borderRadius:6,padding:"2px 5px"}}>{u.is_minor?"Menor":"Adulto"}</span>
-                          {u.admin_role&&u.admin_role!=="none"&&<span style={{background:C.purpleLt,color:C.purple,fontSize:9,fontWeight:700,borderRadius:6,padding:"2px 5px"}}>⭐{u.admin_role}</span>}
-                          <span style={{background:u.account_status==="active"?C.mintLt:u.account_status==="banned"?C.coralLt:C.goldLt,color:u.account_status==="active"?C.mintDk:u.account_status==="banned"?C.coral:C.goldDk,fontSize:9,fontWeight:700,borderRadius:6,padding:"2px 5px"}}>{u.account_status==="active"?"✅ Activo":u.account_status==="suspended"?"⏸ Suspendido":"🚫 "+u.account_status}</span>
+                        <div style={{fontSize:10,color:C.textMed}}>@{u.username||"—"} · {u.role} · Nv.{u.level||1}</div>
+                        <div style={{display:"flex",gap:4,marginTop:2}}>
+                          {u.admin_role!=="none"&&<span style={{background:C.purpleLt,color:C.purple,fontSize:9,fontWeight:700,borderRadius:6,padding:"1px 5px"}}>{u.admin_role}</span>}
+                          <span style={{background:u.account_status==="active"?C.mintLt:u.account_status==="banned"?C.coralLt:C.goldLt,color:u.account_status==="active"?C.mintDk:u.account_status==="banned"?C.coral:C.goldDk,fontSize:9,fontWeight:700,borderRadius:6,padding:"1px 5px"}}>{u.account_status}</span>
                         </div>
                       </div>
                     </div>
@@ -4185,85 +4156,6 @@ function RarDot({r}){
   if(r==="rare")      return <svg width="10" height="10" viewBox="0 0 10 10"><polygon points="5,1 6.2,3.8 9,3.8 6.9,5.7 7.6,8.5 5,7 2.4,8.5 3.1,5.7 1,3.8 3.8,3.8" fill={c} opacity="0.75" stroke={c} strokeWidth="0.5"/></svg>;
   if(r==="epic")      return <svg width="10" height="10" viewBox="0 0 10 10"><polygon points="5,1 6.2,3.8 9,3.8 6.9,5.7 7.6,8.5 5,7 2.4,8.5 3.1,5.7 1,3.8 3.8,3.8" fill={c} stroke="white" strokeWidth="0.6"/></svg>;
   return <svg width="12" height="12" viewBox="0 0 12 12"><defs><radialGradient id="rd_g"><stop stopColor="#FFE97A"/><stop offset="1" stopColor="#C89A00"/></radialGradient></defs><polygon points="6,1 7.2,4.3 10.8,4.3 7.9,6.5 9,10 6,8 3,10 4.1,6.5 1.2,4.3 4.8,4.3" fill="url(#rd_g)" stroke="white" strokeWidth="0.5"/></svg>;
-}
-
-
-// ═══════════════════════════════════════════════════════════
-// TUTOR REQUESTS PANEL — parents see pending child requests
-// ═══════════════════════════════════════════════════════════
-function TutorRequestsPanel({userId, C, notify, onApprove}) {
-  const [requests, setRequests] = useState([]);
-  const [loading,  setLoading]  = useState(false);
-  const [loaded,   setLoaded]   = useState(false);
-
-  useEffect(()=>{
-    if(!userId) return;
-    setLoading(true);
-    import("./supabase.js").then(async({supabase})=>{
-      try {
-        // Get this parent's email
-        const {data:{user}} = await supabase.auth.getUser();
-        if(!user) return;
-        // Get pending requests sent to this email
-        const {data} = await supabase
-          .from("tutor_requests")
-          .select("*")
-          .eq("tutor_email", user.email)
-          .eq("status","pending");
-        setRequests(data||[]);
-        setLoaded(true);
-      } catch(e){ console.warn("Tutor requests:", e.message); }
-      setLoading(false);
-    });
-  },[userId]);
-
-  if(loading) return <div style={{textAlign:"center",padding:"10px 0",fontSize:12,color:C.textMed}}>Cargando solicitudes…</div>;
-  if(!requests.length) return null;
-
-  const approve = async(req) => {
-    import("./supabase.js").then(async({supabase})=>{
-      try {
-        // Link parent to child
-        await supabase.from("parent_child").insert({parent_id:userId, child_id:req.child_id});
-        // Activate child account
-        await supabase.from("profiles").update({account_status:"active"}).eq("id",req.child_id);
-        // Mark request as approved
-        await supabase.from("tutor_requests").update({status:"approved",tutor_id:userId,resolved_at:new Date().toISOString()}).eq("id",req.id);
-        setRequests(p=>p.filter(r=>r.id!==req.id));
-        onApprove(req.child_id, req.child_name);
-        notify(`✅ Vinculado con ${req.child_name}`,"🔗");
-      } catch(e){ notify("Error: "+e.message,"⚠️"); }
-    });
-  };
-
-  const reject = async(req) => {
-    import("./supabase.js").then(async({supabase})=>{
-      await supabase.from("tutor_requests").update({status:"rejected",resolved_at:new Date().toISOString()}).eq("id",req.id);
-      setRequests(p=>p.filter(r=>r.id!==req.id));
-      notify("Solicitud rechazada","❌");
-    });
-  };
-
-  return (
-    <div style={{background:C.goldLt,border:`2px solid ${C.gold}50`,borderRadius:16,padding:14,marginBottom:14}}>
-      <div style={{fontWeight:800,fontSize:14,color:C.goldDk,marginBottom:10}}>
-        🔔 Solicitudes de vinculación ({requests.length})
-      </div>
-      {requests.map(req=>(
-        <div key={req.id} style={{background:C.card,borderRadius:12,padding:12,marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center",gap:10}}>
-          <div>
-            <div style={{fontWeight:700,fontSize:13,color:C.text}}>{req.child_name}</div>
-            <div style={{fontSize:11,color:C.textMed}}>Quiere vincularte como tutor</div>
-            <div style={{fontSize:10,color:C.textLt}}>{new Date(req.created_at).toLocaleDateString("es")}</div>
-          </div>
-          <div style={{display:"flex",gap:6,flexShrink:0}}>
-            <button onClick={()=>reject(req)} style={{padding:"6px 10px",borderRadius:9,border:`1.5px solid ${C.coral}`,background:C.coralLt,color:C.coral,fontSize:11,fontWeight:700,cursor:"pointer"}}>✗</button>
-            <button onClick={()=>approve(req)} style={{padding:"6px 12px",borderRadius:9,border:"none",background:`linear-gradient(135deg,${C.mint},${C.mintDk})`,color:"white",fontSize:11,fontWeight:800,cursor:"pointer"}}>✅ Aceptar</button>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
 }
 
 function Shell({C,children}){

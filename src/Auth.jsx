@@ -115,7 +115,7 @@ export default function Auth({ onAuth }) {
     if(!role)              return err("Elige tu rol")
     if(!name.trim())       return err("Escribe tu nombre")
     if(!birthDate)         return err("Ingresa tu fecha de nacimiento")
-    if(age < 6)            return err("Debes tener al menos 6 años para usar KidQuest")
+    if(age < 6 && role==="student") return err("Los estudiantes deben tener al menos 6 años")
     if(!isMinor && role==="student") return err("Los estudiantes deben ser menores de 18 años")
     if(isMinor && role!=="student") return err("Padres y profesores deben ser mayores de 18 años")
     if(password.length < 8) return err("La contraseña debe tener al menos 8 caracteres")
@@ -151,21 +151,35 @@ export default function Auth({ onAuth }) {
     if(!tutorEmail.trim()) return err("Ingresa el email de tu tutor")
     setLoading(true)
     try {
-      const {data:{user}} = await supabase.auth.getUser()
-      if(!user) return err("Sesión expirada")
+      const {data:{user}, error:uErr} = await supabase.auth.getUser()
+      if(uErr || !user) return err("Sesión expirada. Inicia sesión de nuevo.")
+      
       const {data:prof} = await supabase.from("profiles").select("name").eq("id",user.id).single()
-      const token = Math.random().toString(36).slice(2,18)
+      
+      // Check if tutor exists in the system
+      const {data:tutorProfiles} = await supabase
+        .from("profiles")
+        .select("id,name,role")
+        .in("role", ["parent","teacher"])
+      
+      // Try to find by email (we can't query auth.users from client, so we insert and let tutor approve)
+      const token = Math.random().toString(36).slice(2,10).toUpperCase() + 
+                    Math.random().toString(36).slice(2,6).toUpperCase()
+      
       const {error:er} = await supabase.from("tutor_requests").insert({
         child_id: user.id,
         child_name: prof?.name || name,
         tutor_email: tutorEmail.toLowerCase().trim(),
         token,
       })
-      if(er) return err(er.message)
-      ok(`✅ Solicitud enviada a ${tutorEmail}. Pídele que revise su email para aprobarte.`)
-      // In production: Supabase Edge Function sends email with approve link
-      // For now, the tutor can approve from their app panel
-    } catch(e){ err(e.message) }
+      
+      if(er) {
+        if(er.code === "23505") return err("Ya enviaste una solicitud a este email.")
+        return err("Error al enviar: " + er.message)
+      }
+      
+      ok(`✅ Solicitud enviada. Pídele a ${tutorEmail} que entre a KidQuest, vaya a "Validar" y busque tu solicitud pendiente.`)
+    } catch(e){ err("Error: " + e.message) }
     setLoading(false)
   }
 
@@ -174,24 +188,57 @@ export default function Auth({ onAuth }) {
     if(!inviteCode.trim()) return err("Ingresa el código de invitación")
     setLoading(true)
     try {
-      const {data:token} = await supabase
+      // Look up the token
+      const {data:tokens, error:tokErr} = await supabase
         .from("invite_tokens")
         .select("*")
-        .eq("token", inviteCode.toUpperCase())
+        .eq("token", inviteCode.trim().toUpperCase())
         .eq("used", false)
-        .gt("expires_at", new Date().toISOString())
-        .single()
-      if(!token) return err("Código inválido o expirado. Pide uno nuevo a tu tutor.")
-      const {data:{user}} = await supabase.auth.getUser()
-      // Mark token as used and link
-      await supabase.from("invite_tokens").update({used:true, used_by:user.id}).eq("id",token.id)
-      if(token.creator_role==="parent" || token.creator_role==="teacher") {
-        await supabase.from("parent_child").insert({parent_id:token.created_by, child_id:user.id}).select()
-        await supabase.from("profiles").update({account_status:"active"}).eq("id",user.id)
+      
+      if(tokErr) return err("Error al verificar código: " + tokErr.message)
+      
+      // Filter valid (not expired)
+      const validTokens = (tokens||[]).filter(t => new Date(t.expires_at) > new Date())
+      
+      if(!validTokens.length) {
+        return err("Código inválido o expirado. Pide uno nuevo a tu tutor.")
       }
-      ok("¡Código válido! Tu cuenta está activada.")
-      setTimeout(()=>{ supabase.auth.getSession().then(({data:{session}})=>{ if(session) onAuth(session,null) }) }, 1500)
-    } catch(e){ err(e.message) }
+      
+      const token = validTokens[0]
+      const {data:{user}, error:uErr} = await supabase.auth.getUser()
+      if(uErr || !user) return err("Sesión expirada. Inicia sesión de nuevo.")
+      
+      // Mark token as used
+      await supabase.from("invite_tokens")
+        .update({used:true, used_by:user.id})
+        .eq("id", token.id)
+      
+      // Link parent/teacher to child
+      const table = token.creator_role==="teacher" ? "teacher_student" : "parent_child"
+      const fk1   = token.creator_role==="teacher" ? "teacher_id" : "parent_id"
+      const fk2   = token.creator_role==="teacher" ? "student_id" : "child_id"
+      
+      const {error:linkErr} = await supabase.from(table).insert({
+        [fk1]: token.created_by,
+        [fk2]: user.id
+      })
+      
+      if(linkErr && linkErr.code !== "23505") {
+        console.warn("Link error:", linkErr.message)
+      }
+      
+      // Activate account
+      await supabase.from("profiles")
+        .update({account_status:"active"})
+        .eq("id", user.id)
+      
+      ok(`✅ ¡Código válido! Vinculado con ${token.creator_name||"tu tutor"}. Tu cuenta está activa.`)
+      setTimeout(()=>{
+        supabase.auth.getSession().then(({data:{session}})=>{
+          if(session) onAuth(session, null)
+        })
+      }, 2000)
+    } catch(e){ err("Error inesperado: " + e.message) }
     setLoading(false)
   }
 
@@ -308,7 +355,7 @@ export default function Auth({ onAuth }) {
               <label style={{fontSize:12,fontWeight:700,color:C.textMed,display:"block",marginBottom:6}}>Fecha de nacimiento</label>
               <input style={inp()} type="date"
                 max={new Date().toISOString().split("T")[0]}
-                min="2006-01-01"
+                min="1967-01-01"
                 value={birthDate} onChange={e=>setBirthDate(e.target.value)}/>
             </div>
             {birthDate&&age!==null&&(
