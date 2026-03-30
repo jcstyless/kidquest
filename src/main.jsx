@@ -6,71 +6,51 @@ import Auth from './Auth.jsx'
 import { supabase } from './supabase.js'
 
 function Root() {
-  const [session,  setSession]  = useState(undefined)
-  const [profile,  setProfile]  = useState(null)
-  const [loading,  setLoading]  = useState(true)
+  const [session,       setSession]       = useState(undefined)
+  const [profile,       setProfile]       = useState(null)
+  const [profileReady,  setProfileReady]  = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       if (session) loadProfile(session.user.id)
-      else setLoading(false)
+      else setProfileReady(true)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
       if (session) loadProfile(session.user.id)
-      else { setProfile(null); setLoading(false) }
+      else { setProfile(null); setProfileReady(true) }
     })
 
     return () => subscription.unsubscribe()
   }, [])
 
   const loadProfile = async (userId) => {
-    setLoading(true)
-
-    // Safety timeout — never stay stuck more than 5 seconds
-    const timeout = setTimeout(() => {
-      setLoading(false)
-    }, 5000)
-
+    // Max 4 seconds to load, then show app anyway
+    const timer = setTimeout(() => setProfileReady(true), 4000)
     try {
-      // Try to load profile with retries
-      let prof = null
-      for (let attempt = 0; attempt < 3; attempt++) {
+      for (let i = 0; i < 3; i++) {
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', userId)
           .single()
 
-        if (data) { prof = data; break }
-
-        // Profile might not exist yet (trigger delay on first login)
-        if (error?.code === 'PGRST116') {
-          // Row not found — wait and retry
-          await new Promise(r => setTimeout(r, 1000))
-          continue
-        }
-
-        // Other error — break and continue without profile
-        console.warn('Profile error:', error?.message)
-        break
+        if (data) { setProfile(data); break }
+        if (error?.code !== 'PGRST116') break
+        await new Promise(r => setTimeout(r, 800))
       }
-
-      setProfile(prof)
-    } catch (err) {
-      console.error('Profile load failed:', err.message)
-      // Don't block the app — show it without profile data
-      setProfile(null)
+    } catch (e) {
+      console.warn('Profile load error:', e.message)
     } finally {
-      clearTimeout(timeout)
-      setLoading(false)
+      clearTimeout(timer)
+      setProfileReady(true)
     }
   }
 
-  // Loading
-  if (loading || session === undefined) {
+  // Show spinner while loading
+  if (session === undefined || (!profileReady && session)) {
     return (
       <div style={{
         minHeight:'100vh', display:'flex', flexDirection:'column',
@@ -89,13 +69,12 @@ function Root() {
           border:'4px solid #C8EDE0', borderTopColor:'#00C896',
           animation:'spin 0.8s linear infinite', marginTop:20
         }}/>
-        <div style={{fontSize:12, color:'#8FB5AA', marginTop:16}}>Cargando tu perfil…</div>
       </div>
     )
   }
 
   if (!session) {
-    return <Auth onAuth={(session) => setSession(session)} />
+    return <Auth onAuth={(s) => setSession(s)} />
   }
 
   return (
@@ -107,13 +86,12 @@ function Root() {
         supabase.auth.signOut()
         setSession(null)
         setProfile(null)
+        setProfileReady(false)
       }}
     />
   )
 }
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <Root />
-  </StrictMode>
+  <StrictMode><Root /></StrictMode>
 )

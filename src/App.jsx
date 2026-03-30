@@ -519,6 +519,7 @@ const NAV = {
   assign:(a,C)=><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="2" width="14" height="18" rx="2.5" fill={a?C.sky:C.textLt} fillOpacity={a?0.12:0.06} stroke={a?C.sky:C.textLt} strokeWidth="1.6"/><path d="M7 8H13M7 12H11" stroke={a?C.sky:C.textLt} strokeWidth="1.8" strokeLinecap="round"/><circle cx="19" cy="18" r="4.5" fill={a?C.sky:C.textLt}/><path d="M16.5 18H21.5M19 15.5V20.5" stroke="white" strokeWidth="2" strokeLinecap="round"/></svg>,
   ranking:(a,C)=><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2L13.5 7H19L14.5 10.5L16 16L12 13L8 16L9.5 10.5L5 7H10.5L12 2Z" fill={a?C.sky:C.textLt} fillOpacity={a?0.2:0.08} stroke={a?C.sky:C.textLt} strokeWidth="1.3"/><path d="M5 22V19M12 22V15M19 22V19" stroke={a?C.sky:C.textLt} strokeWidth="2.5" strokeLinecap="round"/><circle cx="5" cy="17" r="1.8" fill={a?C.sky:C.textLt} opacity="0.7"/><circle cx="12" cy="13" r="2" fill={a?C.sky:C.textLt}/><circle cx="19" cy="17" r="1.8" fill={a?C.sky:C.textLt} opacity="0.7"/></svg>,
   store:(a,C)=><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 9L5 3H19L21 9V10C21 10.6 20.6 11 20 11H4C3.4 11 3 10.6 3 10V9Z" fill={a?C.gold:C.textLt} fillOpacity={a?0.3:0.1} stroke={a?C.gold:C.textLt} strokeWidth="1.6"/><rect x="3" y="11" width="18" height="10" rx="2" fill={a?C.gold:C.textLt} fillOpacity={a?0.15:0.06} stroke={a?C.gold:C.textLt} strokeWidth="1.6"/><path d="M9 11V21M15 11V21" stroke={a?C.gold:C.textLt} strokeWidth="1.2" opacity="0.5"/></svg>,
+  perfil:(a,C)=><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4.5" fill={a?C.gold:C.textLt} fillOpacity={a?0.7:0.25} stroke={a?C.gold:C.textLt} strokeWidth="1.4"/><path d="M3 21C3 16.6 7.1 13 12 13C16.9 13 21 16.6 21 21" stroke={a?C.gold:C.textLt} strokeWidth="2" strokeLinecap="round"/></svg>,
   admin:(a,C)=><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2L14 8H20L15 12L17 18L12 15L7 18L9 12L4 8H10L12 2Z" fill={a?C.purple:C.textLt} fillOpacity={a?0.3:0.1} stroke={a?C.purple:C.textLt} strokeWidth="1.4"/><circle cx="12" cy="10" r="2" fill={a?C.purple:C.textLt}/></svg>,
   tchat:(a,C)=><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 4H20C20.6 4 21 4.4 21 5V16C21 16.6 20.6 17 20 17H7L3 21V5C3 4.4 3.4 4 4 4Z" fill={a?C.sky:C.textLt} fillOpacity={a?0.12:0.06} stroke={a?C.sky:C.textLt} strokeWidth="1.8" strokeLinejoin="round"/><circle cx="8" cy="10.5" r="1.3" fill={a?C.sky:C.textLt}/><circle cx="12" cy="10.5" r="1.3" fill={a?C.sky:C.textLt}/><circle cx="16" cy="10.5" r="1.3" fill={a?C.sky:C.textLt}/></svg>,
 };
@@ -848,20 +849,26 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
   const C = dark ? DARK : T;
 
   // navigation — if userId exists, never show splash (user is logged in)
+  // If userId exists (logged in), skip splash entirely — go straight to app
   const [screen,    setScreen]    = useState(()=>{
     if(initialProfile?.role) return "app";
-    return "splash"; // show splash while profile loads or if no profile
+    if(userId) return "app";      // logged in but profile delayed → app anyway
+    return "splash";              // not logged in → show splash
   });
-  const [role,      setRole]      = useState(()=> initialProfile?.role || null);
+  const [role,      setRole]      = useState(()=> initialProfile?.role || (userId ? "student" : null));
   const [tab,       setTab]       = useState(()=>{
-    if(!initialProfile?.role) return "home";
-    if(initialProfile.admin_role==="master" || initialProfile.admin_role==="admin") return "admin";
+    if(!initialProfile?.role) return userId ? "home" : "home";
+    const ar = initialProfile.admin_role;
+    if(ar==="master"||ar==="admin") return "admin";
     if(initialProfile.role==="student") return "home";
     if(initialProfile.role==="parent")  return "validate";
     return "panel";
   });
   const [tutStep,   setTutStep]   = useState(0);
-  const [tutDone,   setTutDone]   = useState(()=> initialProfile?.role ? initialProfile.role!=="student" : false);
+  const [tutDone,   setTutDone]   = useState(()=>{
+    if(initialProfile?.role) return initialProfile.role!=="student";
+    return userId ? true : false; // if logged in, skip tutorial
+  });
 
   // ── USER STATE — loads from Supabase profile if logged in ──
   const defaultUser = {
@@ -1464,8 +1471,8 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
     {id:"shop",l:"Cofres"},{id:"store",l:"Tienda"},{id:"chat",l:"Chat"},{id:"me",l:"Yo"},
     ...(user.isAdmin?[{id:"admin",l:"Admin"}]:[]),
   ];
-  const tabsParent  = [{id:"validate",l:"Validar"},{id:"progress",l:"Progreso"},{id:"allowance",l:"Mesada"},{id:"clanchat",l:"Chat"},{id:"qrcode",l:"Mi QR"},...(user.isAdmin?[{id:"admin",l:"Admin"}]:[]),];
-  const tabsTeacher = [{id:"panel",l:"Panel"},{id:"assign",l:"Misiones"},{id:"ranking",l:"Ranking"},{id:"tchat",l:"Chat"},...(user.isAdmin?[{id:"admin",l:"Admin"}]:[]),];
+  const tabsParent  = [{id:"validate",l:"Validar"},{id:"progress",l:"Progreso"},{id:"allowance",l:"Mesada"},{id:"clanchat",l:"Chat"},{id:"qrcode",l:"Mi QR"},{id:"perfil",l:"Perfil"},...(user.isAdmin?[{id:"admin",l:"Admin"}]:[]),];
+  const tabsTeacher = [{id:"panel",l:"Panel"},{id:"assign",l:"Misiones"},{id:"ranking",l:"Ranking"},{id:"tchat",l:"Chat"},{id:"perfil",l:"Perfil"},...(user.isAdmin?[{id:"admin",l:"Admin"}]:[]),];
   const currentTabs = role===ROLES.STUDENT?tabsStudent:role===ROLES.PARENT?tabsParent:tabsTeacher;
 
   // css with current theme
@@ -4406,6 +4413,84 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                 </div>
               ))}
             </div>
+          )}
+        </div>
+      )}
+
+
+      {/* ════ PERFIL TAB (parent + teacher) ════ */}
+      {(role===ROLES.PARENT||role===ROLES.TEACHER)&&tab==="perfil"&&(
+        <div style={{padding:"16px 14px 100px"}}>
+
+          {/* Profile hero */}
+          <div style={{background:`linear-gradient(135deg,${role===ROLES.PARENT?C.gold:C.sky},${role===ROLES.PARENT?C.goldDk:C.mintDk})`,borderRadius:22,padding:22,marginBottom:16,textAlign:"center",color:"white",position:"relative",overflow:"hidden",boxShadow:`0 6px 24px ${role===ROLES.PARENT?C.gold:C.sky}50`}}>
+            <div style={{position:"absolute",right:-10,top:-10,fontSize:80,opacity:0.08}}>{role===ROLES.PARENT?"👨‍👩‍👦":"🏫"}</div>
+            <div style={{width:80,height:80,borderRadius:"50%",background:"rgba(255,255,255,0.25)",margin:"0 auto 12px",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",border:"3px solid rgba(255,255,255,0.5)"}}>
+              <KQIcon id={user.avatar||"a_buddy"} size={72}/>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:8,justifyContent:"center",marginBottom:4}}>
+              <div style={{fontWeight:900,fontSize:22}}>{user.name||"Sin nombre"}</div>
+              <button onClick={()=>{setEditDisplayName(user.name||"");setEditUsername(user.username||"");setShowProfileEdit(true);}}
+                style={{background:"rgba(255,255,255,0.25)",border:"1.5px solid rgba(255,255,255,0.4)",borderRadius:8,padding:"3px 8px",fontSize:10,fontWeight:700,color:"white",cursor:"pointer"}}>✏️</button>
+            </div>
+            {user.username&&<div style={{fontSize:12,opacity:0.8,marginBottom:4}}>@{user.username}</div>}
+            <div style={{fontSize:12,opacity:0.85}}>{role===ROLES.PARENT?"Padre / Tutor":"Profesor"}</div>
+          </div>
+
+          {/* Stats */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
+            {[
+              {l:"Cristales",v:`💎 ${user.gems}`,   c:C.sky},
+              {l:"Monedas",  v:`💰 ${user.coins}`,  c:C.gold},
+              {l:"Vinculados",v:`👦 ${linkedStudents.length}`, c:C.mint},
+            ].map((s,i)=>(
+              <div key={i} style={{background:C.card,borderRadius:14,padding:"12px 8px",textAlign:"center",boxShadow:C.shadow}}>
+                <div style={{fontWeight:900,fontSize:16,color:s.c}}>{s.v}</div>
+                <div style={{fontSize:10,color:C.textMed,marginTop:2}}>{s.l}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Actions */}
+          <div style={{background:C.card,borderRadius:18,overflow:"hidden",boxShadow:C.shadow,marginBottom:12}}>
+            {[
+              {icon:"✏️", label:"Editar nombre y usuario", action:()=>{setEditDisplayName(user.name||"");setEditUsername(user.username||"");setShowProfileEdit(true);}},
+              {icon:"🎨", label:"Cambiar avatar", action:()=>setShowAvatarEditor(true)},
+              {icon:"🔗", label:"Generar código de invitación", action:()=>setTab("qrcode")},
+              {icon:"🔔", label:"Solicitudes de vinculación", action:()=>setTab("validate")},
+              {icon:"🌙", label:dark?"Modo claro":"Modo oscuro", action:()=>setDark(d=>!d)},
+            ].map((item,i)=>(
+              <button key={i} onClick={item.action} style={{width:"100%",padding:"14px 18px",border:"none",borderBottom:`1px solid ${C.border}`,background:"none",display:"flex",alignItems:"center",gap:14,cursor:"pointer",textAlign:"left",fontFamily:"'Nunito',sans-serif"}}>
+                <span style={{fontSize:20,flexShrink:0}}>{item.icon}</span>
+                <span style={{fontSize:14,fontWeight:600,color:C.text,flex:1}}>{item.label}</span>
+                <span style={{color:C.textLt}}>›</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Admin access */}
+          {user.isAdmin&&(
+            <button onClick={()=>setTab("admin")} style={{width:"100%",background:`linear-gradient(135deg,${C.purple}15,${C.sky}10)`,border:`2px solid ${C.purple}40`,borderRadius:16,padding:"13px 18px",marginBottom:12,display:"flex",alignItems:"center",gap:12,cursor:"pointer",boxShadow:C.shadow}}>
+              <span style={{fontSize:22}}>⚙️</span>
+              <div style={{flex:1,textAlign:"left"}}>
+                <div style={{fontWeight:800,fontSize:14,color:C.purple}}>Panel de Administración</div>
+                <div style={{fontSize:11,color:C.textMed}}>{user.isMaster?"👑 Maestro":"Admin"} · Control total</div>
+              </div>
+              <span style={{color:C.purple}}>›</span>
+            </button>
+          )}
+
+          {/* Report + Sign out */}
+          <button onClick={()=>setShowReport(true)} style={{width:"100%",background:C.card,border:`1.5px solid ${C.border}`,borderRadius:14,padding:"12px 18px",marginBottom:8,display:"flex",alignItems:"center",gap:12,cursor:"pointer",boxShadow:C.shadow}}>
+            <span style={{fontSize:20}}>🚨</span>
+            <span style={{fontSize:13,fontWeight:600,color:C.text,flex:1}}>Reportar conducta inapropiada</span>
+            <span style={{color:C.textLt}}>›</span>
+          </button>
+          {onSignOut&&(
+            <button onClick={()=>onSignOut()} style={{width:"100%",background:C.coralLt,border:`1.5px solid ${C.coral}30`,borderRadius:14,padding:"12px 18px",display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}>
+              <span style={{fontSize:20}}>🚪</span>
+              <span style={{fontSize:13,fontWeight:700,color:C.coral,flex:1}}>Cerrar sesión</span>
+            </button>
           )}
         </div>
       )}
