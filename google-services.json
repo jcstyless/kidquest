@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "518851937718",
+    "project_id": "todoproapp-e408e",
+    "storage_bucket": "todoproapp-e408e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:518851937718:android:5d418215db07e270a06d17",
+        "android_client_info": {
+          "package_name": "com.todoproapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "518851937718-4i14mnnl7209lfdqm6ombopvv9i6ebgi.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBKNCQf0BTpP-ODXGBqddFPjirZ7gogWsQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "518851937718-4i14mnnl7209lfdqm6ombopvv9i6ebgi.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
