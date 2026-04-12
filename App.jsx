@@ -1243,12 +1243,35 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
         // Custom tasks assigned to me
         const {data:ct} = await supabase.from("custom_tasks").select("*").eq("assigned_to",userId);
         if(ct?.length) setCustomTasks(ct.map(t=>({...t,isCustom:true,status:t.status||"idle"})));
-        // Challenges
-        const {data:ch} = await supabase.from("challenges").select("*").eq("assigned_to",userId).eq("status","pending");
-        if(ch?.length) setActiveStudentChalls(ch.map(c=>({
-          id:c.id,challengeId:c.template_id,status:c.status,assignedBy:c.assigned_by,
-          challenge:{id:c.template_id,title:c.title,desc:c.description,emoji:c.emoji||"🎯",xp:c.xp,coins:c.coins,freq:c.freq},
-        })));
+        // Challenges + Trueques for student
+        const {data:ch} = await supabase.from("challenges").select("*, profiles!assigned_by(name)").eq("assigned_to",userId).in("status",["pending","active"]);
+        if(ch?.length) {
+          const regular = ch.filter(c=>!c.template_id?.startsWith("trueque_"));
+          const trueques = ch.filter(c=>c.template_id?.startsWith("trueque_"));
+          setActiveStudentChalls(regular.map(c=>({
+            id:c.id,challengeId:c.template_id,status:c.status,
+            assignedBy:c.profiles?.name||c.assigned_by,
+            challenge:{id:c.template_id,title:c.title,desc:c.description,emoji:c.emoji||"🎯",xp:c.xp,coins:c.coins,freq:c.freq},
+          })));
+          // Map trueques to deals state
+          if(trueques.length) setDeals(prev=>{
+            const existingIds = new Set(prev.map(d=>d.id));
+            const newDeals = trueques
+              .filter(t=>!existingIds.has(t.id))
+              .map(t=>({
+                id:t.id, title:t.title,
+                reward:t.description?.split("→ ")?.[1]||t.title,
+                rewardEmoji:"🤝", taskCount:t.xp/80||3,
+                freq:t.freq, targetId:userId, targetName:"Yo",
+                creatorName:t.profiles?.name||"Tutor",
+                tasksCompleted:t.tasks_done||0,
+                status:t.status==="active"?"active":"pending",
+                createdAt:new Date(t.created_at).getTime(),
+                createdBy:t.assigned_by,
+              }));
+            return [...prev,...newDeals];
+          });
+        }
         // Spend log
         const {data:sl} = await supabase.from("spend_log").select("*").eq("user_id",userId).order("created_at",{ascending:false}).limit(50);
         if(sl?.length) setSpendLog(sl.map(e=>({id:e.id,amt:e.amount,cat:e.category,note:e.note,ts:new Date(e.created_at).getTime()})));
@@ -1259,6 +1282,27 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             setClassRoom(`class_${tLinks[0].teacher_id}`);
           }
         }
+        // Load parent's created trueques from Supabase
+        if(initialProfile.role==="parent"||initialProfile.role==="teacher"){
+          const {data:myDeals} = await supabase
+            .from("challenges")
+            .select("*, profiles!assigned_to(name)")
+            .eq("assigned_by",userId)
+            .like("template_id","trueque_%")
+            .order("created_at",{ascending:false});
+          if(myDeals?.length) setDeals(myDeals.map(d=>({
+            id:d.id, title:d.title,
+            reward:d.description?.split("→ ")?.[1]||d.title,
+            rewardEmoji:"🤝", taskCount:d.xp/80||3,
+            freq:d.freq, targetId:d.assigned_to||"all",
+            targetName:d.profiles?.name||"todos",
+            creatorName:"Yo", tasksCompleted:d.tasks_done||0,
+            status:d.status==="active"?"active":"pending",
+            createdAt:new Date(d.created_at).getTime(),
+            createdBy:userId,
+          })));
+        }
+
         // Linked children/students (for parent/teacher)
         if(initialProfile.role==="parent"||initialProfile.role==="teacher"){
           const tbl = initialProfile.role==="parent"?"parent_child":"teacher_student";
@@ -1594,6 +1638,14 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
     triggerMascot(`El niño completó la tarea: ${t.title}`);
     setTimeout(()=>{ setWheelRes(null); setShowWheel(true); },800);
     // Advance trueque progress
+    // Update trueque progress in Supabase
+    const activeDeal = deals.find(d=>d.status==="active"&&(d.targetId==="all"||d.targetId===userId));
+    if(activeDeal && userId){
+      const newDone = (activeDeal.tasksCompleted||0)+1;
+      import("./supabase.js").then(({supabase})=>supabase.from("challenges")
+        .update({tasks_done:newDone, status:newDone>=activeDeal.taskCount?"completed":"active"})
+        .eq("id",activeDeal.id)).catch(()=>{});
+    }
     setDeals(prev=>prev.map(d=>{
       if(d.status!=="active") return d;
       if(d.targetId!=="all"&&d.targetId!==userId) return d;
@@ -3015,7 +3067,9 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                 freq:dealFreq,
                 assigned_by:userId,
                 assigned_to:dealTargetId||null,
-              })).catch(()=>{}); }
+                status:"active",
+                tasks_done:0,
+              })).catch(e=>console.warn("Trueque save:",e.message)); }
               setShowDealCreate(false);
               setDealTitle("");setDealReward("");setDealRewardEmoji("🏆");setDealTaskCount(3);
               notify(`Trueque creado para ${dealTargetId?linkedStudents.find(s=>s.id===dealTargetId)?.name:"todos"} 🤝`,"🤝");
@@ -4189,15 +4243,21 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             </div>
             <div style={{background:C.card,borderRadius:18,padding:16,marginBottom:14,boxShadow:C.shadow}}>
               <div style={{fontWeight:800,fontSize:14,color:C.text,marginBottom:12}}>📅 Esta semana</div>
-              <div style={{display:"flex",alignItems:"flex-end",gap:6,height:72}}>
-                {WEEK_DATA.map((d,i)=>(
-                  <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
-                    {d.pts>0&&<div style={{fontSize:9,fontWeight:800,color:C.mint}}>{d.pts}</div>}
-                    <div style={{width:"100%",height:Math.max((d.pts/MAX_BAR)*60,4),background:d.pts?`linear-gradient(to top,${C.mintDk},${C.mint})`:C.border,borderRadius:"5px 5px 0 0"}}/>
-                    <div style={{fontSize:9,color:C.textMed}}>{d.day}</div>
+              {(() => {
+                const wdata = realWeekData.length>0 ? realWeekData : WEEK_DATA;
+                const maxPts = Math.max(...wdata.map(d=>d.pts), 1);
+                return (
+                  <div style={{display:"flex",alignItems:"flex-end",gap:6,height:72}}>
+                    {wdata.map((d,i)=>(
+                      <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+                        {d.pts>0&&<div style={{fontSize:9,fontWeight:800,color:C.mint}}>{d.pts}</div>}
+                        <div style={{width:"100%",height:Math.max((d.pts/maxPts)*60,4),background:d.pts?`linear-gradient(to top,${C.mintDk},${C.mint})`:C.border,borderRadius:"5px 5px 0 0"}}/>
+                        <div style={{fontSize:9,color:C.textMed}}>{d.day}</div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                );
+              })()}
             </div>
             <div style={{background:C.card,borderRadius:18,padding:16,boxShadow:C.shadow}}>
               <div style={{fontWeight:800,fontSize:14,color:C.text,marginBottom:8}}>🐷 {user.savingsGoal.emoji} Meta: {user.savingsGoal.name}</div>
