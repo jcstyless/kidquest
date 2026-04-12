@@ -1453,8 +1453,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
         system:m.is_system,
       })));
 
-      // Subscribe to real-time clan chat
-      const clanRoom = role===ROLES.TEACHER ? `class_${userId}` : "clan";
+      // Subscribe to real-time clan chat (clanRoom already declared above)
       clanChannel = supabase
         .channel(`clan-chat-${clanRoom}`)
         .on("postgres_changes",{event:"INSERT",schema:"public",table:"chat_messages",filter:`room=eq.${clanRoom}`},

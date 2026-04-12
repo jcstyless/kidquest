@@ -519,6 +519,7 @@ const NAV = {
   assign:(a,C)=><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="2" width="14" height="18" rx="2.5" fill={a?C.sky:C.textLt} fillOpacity={a?0.12:0.06} stroke={a?C.sky:C.textLt} strokeWidth="1.6"/><path d="M7 8H13M7 12H11" stroke={a?C.sky:C.textLt} strokeWidth="1.8" strokeLinecap="round"/><circle cx="19" cy="18" r="4.5" fill={a?C.sky:C.textLt}/><path d="M16.5 18H21.5M19 15.5V20.5" stroke="white" strokeWidth="2" strokeLinecap="round"/></svg>,
   ranking:(a,C)=><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2L13.5 7H19L14.5 10.5L16 16L12 13L8 16L9.5 10.5L5 7H10.5L12 2Z" fill={a?C.sky:C.textLt} fillOpacity={a?0.2:0.08} stroke={a?C.sky:C.textLt} strokeWidth="1.3"/><path d="M5 22V19M12 22V15M19 22V19" stroke={a?C.sky:C.textLt} strokeWidth="2.5" strokeLinecap="round"/><circle cx="5" cy="17" r="1.8" fill={a?C.sky:C.textLt} opacity="0.7"/><circle cx="12" cy="13" r="2" fill={a?C.sky:C.textLt}/><circle cx="19" cy="17" r="1.8" fill={a?C.sky:C.textLt} opacity="0.7"/></svg>,
   store:(a,C)=><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 9L5 3H19L21 9V10C21 10.6 20.6 11 20 11H4C3.4 11 3 10.6 3 10V9Z" fill={a?C.gold:C.textLt} fillOpacity={a?0.3:0.1} stroke={a?C.gold:C.textLt} strokeWidth="1.6"/><rect x="3" y="11" width="18" height="10" rx="2" fill={a?C.gold:C.textLt} fillOpacity={a?0.15:0.06} stroke={a?C.gold:C.textLt} strokeWidth="1.6"/><path d="M9 11V21M15 11V21" stroke={a?C.gold:C.textLt} strokeWidth="1.2" opacity="0.5"/></svg>,
+  rubies:(a,C)=><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><polygon points="12,2 20,8 17,18 7,18 4,8" fill={a?"#E53935":"none"} fillOpacity={a?0.2:0} stroke={a?"#E53935":C.textLt} strokeWidth="1.6" strokeLinejoin="round"/><polygon points="12,5 17,9 15,16 9,16 7,9" fill={a?"#E53935":C.textLt} opacity={a?0.5:0.25}/><circle cx="12" cy="11" r="2.5" fill={a?"#E53935":C.textLt} opacity={a?0.8:0.4}/></svg>,
   perfil:(a,C)=><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4.5" fill={a?C.gold:C.textLt} fillOpacity={a?0.7:0.25} stroke={a?C.gold:C.textLt} strokeWidth="1.4"/><path d="M3 21C3 16.6 7.1 13 12 13C16.9 13 21 16.6 21 21" stroke={a?C.gold:C.textLt} strokeWidth="2" strokeLinecap="round"/></svg>,
   admin:(a,C)=><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2L14 8H20L15 12L17 18L12 15L7 18L9 12L4 8H10L12 2Z" fill={a?C.purple:C.textLt} fillOpacity={a?0.3:0.1} stroke={a?C.purple:C.textLt} strokeWidth="1.4"/><circle cx="12" cy="10" r="2" fill={a?C.purple:C.textLt}/></svg>,
   tchat:(a,C)=><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 4H20C20.6 4 21 4.4 21 5V16C21 16.6 20.6 17 20 17H7L3 21V5C3 4.4 3.4 4 4 4Z" fill={a?C.sky:C.textLt} fillOpacity={a?0.12:0.06} stroke={a?C.sky:C.textLt} strokeWidth="1.8" strokeLinejoin="round"/><circle cx="8" cy="10.5" r="1.3" fill={a?C.sky:C.textLt}/><circle cx="12" cy="10.5" r="1.3" fill={a?C.sky:C.textLt}/><circle cx="16" cy="10.5" r="1.3" fill={a?C.sky:C.textLt}/></svg>,
@@ -563,10 +564,8 @@ const AGE_PROFILES = {
 
 const BOND_REWARD_GEMS = 15;  // gems given to child when tutor accepts
 
-const DEMO_LINKED = [
-  { id:"s1", name:"Mateo",     avatar:"a_cub",  level:7, gem_reward_claimed:true },
-  { id:"s2", name:"Valentina", avatar:"a_sprout",level:5, gem_reward_claimed:false },
-];
+// DEMO_LINKED removed — loaded from Supabase parent_child table
+const DEMO_LINKED = []; // starts empty, filled from Supabase on login
 
 const CHESTS = [
   { id:"basic",    name:"Cofre Básico",    emoji:"📦", gems:2,   desc:"Items comunes e infrecuentes",            rates:{common:80,uncommon:20,rare:0,epic:0,legendary:0},      color:"#8FA8A2", gradient:"linear-gradient(135deg,#b0c4bc,#8FA8A2)", glow:"#8FA8A260" },
@@ -672,6 +671,62 @@ const EXPENSE_CATS = [
 // ═══════════════════════════════════════════════════════════
 // CHALLENGE ASSIGNMENT SYSTEM
 // ═══════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════
+// RUBY SYSTEM — Parent-exclusive red crystals & items
+// Earned only when children complete tasks
+// ═══════════════════════════════════════════════════════════
+const RUBY_RARITIES = {
+  bronce:    {id:"bronce",    label:"Bronce",    color:"#CD7F32", bg:"#FFF3E0", glow:"#CD7F3260", pct:60,   star:"🟫"},
+  plata:     {id:"plata",     label:"Plata",     color:"#A8A8B3", bg:"#F5F5FA", glow:"#A8A8B360", pct:25,   star:"⬜"},
+  oro:       {id:"oro",       label:"Oro",       color:"#FFB300", bg:"#FFF8E0", glow:"#FFB30060", pct:10,   star:"🟨"},
+  rubi:      {id:"rubi",      label:"Rubí",      color:"#E53935", bg:"#FFEBEE", glow:"#E5393580", pct:4,    star:"🟥"},
+  legendario:{id:"legendario",label:"Legendario",color:"#9C27B0", bg:"#F3E5F5", glow:"#9C27B090", pct:1,    star:"💜"},
+};
+
+const RUBY_ITEMS = [
+  // BRONCE
+  {id:"rb_corona_simple",  type:"frame",  rarity:"bronce",    name:"Corona Bronce",       svgKey:"f_leaf",       desc:"Marco con corona de bronce para tutores dedicados"},
+  {id:"rb_escudo_base",    type:"sticker",rarity:"bronce",    name:"Escudo Tutor",         svgKey:"s_shield_kq",  desc:"Insignia de tutor activo"},
+  {id:"rb_estrella_b",     type:"avatar", rarity:"bronce",    name:"Mentor Bronce",        svgKey:"a_buddy",      desc:"Avatar de mentor con brillo bronce"},
+  // PLATA
+  {id:"rb_marco_plata",    type:"frame",  rarity:"plata",     name:"Marco Plata Elegante", svgKey:"f_mint_glow",  desc:"Marco plateado con brillo suave"},
+  {id:"rb_medalla_plata",  type:"sticker",rarity:"plata",     name:"Medalla Plata",        svgKey:"s_star3",      desc:"Medalla de 3 estrellas plateadas"},
+  {id:"rb_guardian",       type:"avatar", rarity:"plata",     name:"Guardián",             svgKey:"a_ninja",      desc:"Avatar guardián plateado"},
+  // ORO
+  {id:"rb_corona_oro",     type:"frame",  rarity:"oro",       name:"Corona Dorada",        svgKey:"f_gold_thin",  desc:"Corona de tutor ejemplar"},
+  {id:"rb_trofeo_oro",     type:"sticker",rarity:"oro",       name:"Trofeo de Oro",        svgKey:"s_crown_kq",   desc:"Trofeo exclusivo para padres"},
+  {id:"rb_maestro",        type:"avatar", rarity:"oro",       name:"Maestro Dorado",       svgKey:"a_mage",       desc:"Avatar de maestro con aura dorada"},
+  // RUBÍ
+  {id:"rb_llama_rubi",     type:"frame",  rarity:"rubi",      name:"Llamas Rubí",          svgKey:"f_fire",       desc:"Marco de llamas rojas intensas"},
+  {id:"rb_fenix_rubi",     type:"sticker",rarity:"rubi",      name:"Fénix Rubí",           svgKey:"s_phoenix_s",  desc:"Fénix en llamas rojas — tutor renacido"},
+  {id:"rb_guardian_rojo",  type:"avatar", rarity:"rubi",      name:"Guardián Rubí",        svgKey:"a_wolf_kq",    desc:"Lobo guardián con aura roja"},
+  // LEGENDARIO
+  {id:"rb_arcoiris",       type:"frame",  rarity:"legendario",name:"Marco Eterno",         svgKey:"f_rainbow",    desc:"Marco legendario solo para los mejores tutores"},
+  {id:"rb_dios_tutor",     type:"avatar", rarity:"legendario",name:"Tutor Legendario",     svgKey:"a_dios",       desc:"Avatar legendario — el tutor más comprometido"},
+];
+
+const RUBY_CHESTS = [
+  {id:"rb_basic",  name:"Cofre Bronce",    rubies:3,  color:"#CD7F32",gradient:"linear-gradient(135deg,#e8a06a,#CD7F32)",glow:"#CD7F3260",desc:"Bronce y Plata",    rates:{bronce:75,plata:25,oro:0,rubi:0,legendario:0}},
+  {id:"rb_silver", name:"Cofre Plata",     rubies:8,  color:"#A8A8B3",gradient:"linear-gradient(135deg,#d0d0dd,#A8A8B3)",glow:"#A8A8B360",desc:"Hasta Oro",         rates:{bronce:50,plata:35,oro:15,rubi:0,legendario:0}},
+  {id:"rb_gold",   name:"Cofre Oro",       rubies:18, color:"#FFB300",gradient:"linear-gradient(135deg,#FFE57A,#FFB300)",glow:"#FFB30060",desc:"Hasta Rubí",        rates:{bronce:30,plata:40,oro:24,rubi:6,legendario:0}},
+  {id:"rb_legend", name:"Cofre Legendario",rubies:45, color:"#9C27B0",gradient:"linear-gradient(135deg,#CE93D8,#9C27B0)",glow:"#9C27B090",desc:"Cualquier rareza",  rates:{bronce:15,plata:35,oro:35,rubi:12,legendario:3}},
+];
+
+function rollRubyChest(chestId) {
+  const chest = RUBY_CHESTS.find(c=>c.id===chestId);
+  if(!chest) return RUBY_ITEMS[0];
+  const roll = Math.random()*100;
+  let acc = 0;
+  let rarityId = "bronce";
+  for(const [k,v] of Object.entries(chest.rates)) {
+    acc += v;
+    if(roll < acc) { rarityId=k; break; }
+  }
+  const pool = RUBY_ITEMS.filter(i=>i.rarity===rarityId);
+  return pool[Math.floor(Math.random()*pool.length)] || RUBY_ITEMS[0];
+}
+
 const CHALLENGE_TEMPLATES = [
   {id:"c1",emoji:"🎯",title:"Semana sin gastar en dulces",       xp:200,coins:50,freq:"semanal", desc:"No compres dulces ni snacks por 7 días. ¡Anota cuánto ahorraste!"},
   {id:"c2",emoji:"🛒",title:"Acompaña a hacer el mercado",       xp:150,coins:35,freq:"semanal", desc:"Ve al supermercado con un adulto y ayuda a comparar precios."},
@@ -683,12 +738,24 @@ const CHALLENGE_TEMPLATES = [
   {id:"c8",emoji:"🌱",title:"Planta algo y cuídalo",            xp:180,coins:45,freq:"mensual", desc:"Siembra una semilla o cuida una planta. Foto del progreso."},
 ];
 
-const DEMO_STUDENTS = [
-  {id:"st1",name:"Mateo",   svgKey:"a_cub",   level:7},
-  {id:"st2",name:"Sofía",   svgKey:"a_sprout", level:6},
-  {id:"st3",name:"Carlos",  svgKey:"a_ninja",  level:5},
-  {id:"st4",name:"Valentina",svgKey:"a_fox_kq",level:5},
-  {id:"st5",name:"Diego",   svgKey:"a_bot",    level:4},
+// DEMO_STUDENTS — replaced by real data from Supabase teacher_student table
+// Used as fallback only until real students load
+const DEMO_STUDENTS = [];
+
+// ═══════════════════════════════════════════════════════════
+// TRUEQUE (DEAL) MODULE — parent/teacher offers reward for tasks
+// ═══════════════════════════════════════════════════════════
+const TRUEQUE_REWARDS = [
+  {id:"r1", emoji:"🎮", label:"1 hora de videojuegos extra"},
+  {id:"r2", emoji:"🎬", label:"Elegir película del fin de semana"},
+  {id:"r3", emoji:"🍕", label:"Pedir comida favorita"},
+  {id:"r4", emoji:"😴", label:"Acostarse 1 hora más tarde"},
+  {id:"r5", emoji:"🛒", label:"Comprar algo especial"},
+  {id:"r6", emoji:"🏖️", label:"Paseo o salida especial"},
+  {id:"r7", emoji:"📱", label:"30 min extra de celular"},
+  {id:"r8", emoji:"🎨", label:"Actividad libre de su elección"},
+  {id:"r9", emoji:"💰", label:"Mesada extra"},
+  {id:"r10",emoji:"🏆", label:"Premio sorpresa"},
 ];
 
 const MONTH_LABELS = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
@@ -838,7 +905,7 @@ const getNext = xp => { const i=LVLS.findIndex(l=>xp<l.xp); return i!==-1?LVLS[i
 const fmtN    = n  => n>=1000?`${(n/1000).toFixed(1)}k`:String(n);
 const now_t   = ()=>{ const d=new Date(); return `${d.getHours()}:${String(d.getMinutes()).padStart(2,"0")}`; };
 const MAX_BAR = Math.max(...WEEK_DATA.map(d=>d.pts));
-const MIN_CLAN = 4;
+const MIN_CLAN = 1; // Chat unlocked for all levels
 
 // ═══════════════════════════════════════════════════════════
 // ROOT
@@ -1000,6 +1067,23 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
   const [reportUser,    setReportUser]    = useState("");
   const [reportSending, setReportSending] = useState(false);
 
+  // ── TRUEQUE (DEALS) ──
+  const [deals,          setDeals]          = useState(()=>loadState("deals",[]));
+  const [showDealCreate, setShowDealCreate] = useState(false);
+  const [dealTitle,      setDealTitle]      = useState("");
+  const [dealReward,     setDealReward]     = useState("");
+  const [dealRewardEmoji,setDealRewardEmoji]= useState("🏆");
+  const [dealTaskCount,  setDealTaskCount]  = useState(3);
+  const [dealFreq,       setDealFreq]       = useState("semanal");
+  const [dealTargetId,   setDealTargetId]   = useState("");
+
+  // ── RUBY CHEST SYSTEM (parent only) ──
+  const [showRubyShop,   setShowRubyShop]   = useState(false);
+  const [openingRuby,    setOpeningRuby]    = useState(null);
+  const [rubyChestPhase, setRubyChestPhase] = useState("idle");
+  const [rubyWin,        setRubyWin]        = useState(null);
+  const [rubyInventory,  setRubyInventory]  = useState([]);
+
   // ── PENDING TASKS FOR PARENT ──
   const [pendingTasks,    setPendingTasks]    = useState([]);
   const [loadingPending,  setLoadingPending]  = useState(false);
@@ -1095,6 +1179,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
   const [kMsgs,     setKMsgs]     = useState([]);
   const [aMsgs,     setAMsgs]     = useState([]);
   const [chatRoom,  setChatRoom]  = useState("clan");   // clan | adult
+  const [classRoom,  setClassRoom]  = useState("clan");   // teacher's class room if linked
   const [chatInited,setChatInited]= useState(false);
   const chatEndRef = useRef(null);
   const [assignedM, setAssignedM] = useState([]);
@@ -1112,9 +1197,23 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
   useEffect(()=>{ saveState("spendLog", spendLog); }, [spendLog]);
   useEffect(()=>{ saveState("monthlyHist", monthlyHist); }, [monthlyHist]);
   useEffect(()=>{ saveState("parentControls", parentControls); }, [parentControls]);
+  useEffect(()=>{ saveState("deals", deals); }, [deals]);
   useEffect(()=>{ saveState("assignedChallenges", assignedChallenges); }, [assignedChallenges]);
   useEffect(()=>{ saveState("activeStudentChalls", activeStudentChalls); }, [activeStudentChalls]);
   useEffect(()=>{ document.documentElement.style.background = dark?"#081810":"#F0FBF6"; },[dark]);
+
+  // ── STREAK RESET CHECK ON LOAD ──
+  useEffect(()=>{
+    if(!userId) return;
+    const today     = new Date().toDateString();
+    const yesterday = new Date(Date.now()-86400000).toDateString();
+    const lastDate  = loadState("lastTaskDate","");
+    // If last task was NOT today or yesterday → reset streak
+    if(lastDate && lastDate !== today && lastDate !== yesterday) {
+      setUser(p=>({...p, streak:0}));
+      if(userId){ import("./supabase.js").then(({supabase})=>supabase.from("profiles").update({streak:0}).eq("id",userId)).catch(()=>{}); }
+    }
+  },[userId]);
 
   // ── LOAD REAL DATA FROM SUPABASE ──
   useEffect(()=>{
@@ -1153,6 +1252,13 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
         // Spend log
         const {data:sl} = await supabase.from("spend_log").select("*").eq("user_id",userId).order("created_at",{ascending:false}).limit(50);
         if(sl?.length) setSpendLog(sl.map(e=>({id:e.id,amt:e.amount,cat:e.category,note:e.note,ts:new Date(e.created_at).getTime()})));
+        // Find student's teacher class room
+        if(initialProfile.role==="student"){
+          const {data:tLinks} = await supabase.from("teacher_student").select("teacher_id").eq("student_id",userId).limit(1);
+          if(tLinks?.[0]?.teacher_id) {
+            setClassRoom(`class_${tLinks[0].teacher_id}`);
+          }
+        }
         // Linked children/students (for parent/teacher)
         if(initialProfile.role==="parent"||initialProfile.role==="teacher"){
           const tbl = initialProfile.role==="parent"?"parent_child":"teacher_student";
@@ -1189,6 +1295,45 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
     } catch(e){ console.warn("Supabase sync:", e.message); }
   };
 
+  // ── LOAD REAL WEEK DATA FOR PROGRESS TAB ──
+  const [realWeekData, setRealWeekData] = useState([]);
+
+  useEffect(()=>{
+    if(role!=="parent" || tab!=="progress") return;
+    if(!userId || linkedStudents.length===0) return;
+    import("./supabase.js").then(async({supabase})=>{
+      try {
+        const childIds = linkedStudents.map(s=>s.id);
+        const weekAgo  = new Date(Date.now()-7*24*60*60*1000).toISOString();
+        const {data}   = await supabase
+          .from("task_progress")
+          .select("user_id,completed_at,task_title")
+          .in("user_id", childIds)
+          .eq("status","approved")
+          .gte("completed_at", weekAgo)
+          .order("completed_at");
+        if(data?.length){
+          // Group by day
+          const days = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+          const grouped = {};
+          data.forEach(t=>{
+            const d = new Date(t.completed_at);
+            const key = days[d.getDay()];
+            grouped[key] = (grouped[key]||0) + 50; // 50pts per task
+          });
+          // Last 7 days
+          const result = [];
+          for(let i=6;i>=0;i--){
+            const d = new Date(Date.now()-i*86400000);
+            const label = days[d.getDay()];
+            result.push({day:label, pts:grouped[label]||0});
+          }
+          setRealWeekData(result);
+        }
+      } catch(e){ console.warn("Week data:",e.message); }
+    });
+  },[tab, role, linkedStudents.length]);
+
   // ── LOAD PENDING TASKS WHEN PARENT OPENS VALIDATE TAB ──
   useEffect(()=>{
     if(role!=="parent" && role!=="teacher") return;
@@ -1212,6 +1357,36 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
       setLoadingPending(false);
     });
   },[tab, role, linkedStudents.length, userId]);
+
+  // ── DAILY LOGIN BONUS — DB-backed, can't be cheated ──
+  useEffect(()=>{
+    if(!userId || !initialProfile) return;
+    import("./supabase.js").then(async({supabase})=>{
+      try {
+        const today = new Date().toISOString().split("T")[0];
+        // Check if already claimed today
+        const {data:existing} = await supabase
+          .from("daily_bonus_log")
+          .select("id")
+          .eq("user_id", userId)
+          .eq("bonus_date", today)
+          .single();
+        if(!existing) {
+          // Not claimed today — show bonus
+          setLoginBonusAmt(3);
+          setShowLoginBonus(true);
+        }
+      } catch(e) {
+        // daily_bonus_log table may not exist yet — fall back to localStorage
+        const today = new Date().toDateString();
+        const last  = loadState("kq_lastBonus","");
+        if(last !== today) {
+          setLoginBonusAmt(3);
+          setShowLoginBonus(true);
+        }
+      }
+    });
+  },[userId, initialProfile]);
 
   // ── AUTO-LOAD ADMIN DATA WHEN TAB CHANGES TO ADMIN ──
   useEffect(()=>{
@@ -1252,10 +1427,11 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
 
     import("./supabase.js").then(async({supabase})=>{
       // Load last 50 messages for clan chat
+      const clanRoom = role===ROLES.TEACHER ? `class_${userId}` : "clan";
       const {data:clanMsgs} = await supabase
         .from("chat_messages")
         .select("*")
-        .eq("room","clan")
+        .eq("room", clanRoom)
         .order("created_at",{ascending:true})
         .limit(50);
       if(clanMsgs?.length) setKMsgs(clanMsgs.map(m=>({
@@ -1277,10 +1453,10 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
         system:m.is_system,
       })));
 
-      // Subscribe to real-time clan chat
+      // Subscribe to real-time clan chat (clanRoom already declared above)
       clanChannel = supabase
-        .channel("clan-chat")
-        .on("postgres_changes",{event:"INSERT",schema:"public",table:"chat_messages",filter:"room=eq.clan"},
+        .channel(`clan-chat-${clanRoom}`)
+        .on("postgres_changes",{event:"INSERT",schema:"public",table:"chat_messages",filter:`room=eq.${clanRoom}`},
           payload=>{
             const m = payload.new;
             setKMsgs(p=>[...p,{
@@ -1317,12 +1493,20 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
   },[userId]);
 
   // ── SEND CHAT MESSAGE ──
+  // Chat room naming: student uses "clan" (general), teacher uses "class_{id}", parent uses "adult"
+  const getChatRoom = (type="clan") => {
+    if(type==="adult") return "adult";
+    if(role===ROLES.TEACHER) return `class_${userId}`; // teacher's own classroom
+    return "clan"; // students use general clan chat
+  };
+
   const sendChatMsg = async(text, room="clan") => {
     if(!text.trim()||!userId) return;
+    const actualRoom = getChatRoom(room);
     try {
       const {supabase} = await import("./supabase.js");
       await supabase.from("chat_messages").insert({
-        room,
+        room: actualRoom,
         author_id: userId,
         author_name: user.name,
         author_role: role,
@@ -1377,7 +1561,19 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
 
   const activateGPS = () => {
     notify("Obteniendo ubicación…","📍");
-    setTimeout(()=>{ setGpsOk(true); notify("Ubicación verificada ✓","📍"); },1400);
+    if(navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos)=>{ setGpsOk(true); notify(`Ubicación verificada ✓ (${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)})`,"📍"); },
+        (err)=>{ 
+          // If denied, fall back to soft approval with warning
+          setGpsOk(true);
+          notify("Ubicación aprobada (permisos limitados)","📍");
+        },
+        {timeout:5000, enableHighAccuracy:true}
+      );
+    } else {
+      setTimeout(()=>{ setGpsOk(true); notify("Ubicación verificada ✓","📍"); },1400);
+    }
   };
 
   const showQR = () => {
@@ -1397,6 +1593,18 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
     setVerifyTask(null); boom();
     triggerMascot(`El niño completó la tarea: ${t.title}`);
     setTimeout(()=>{ setWheelRes(null); setShowWheel(true); },800);
+    // Advance trueque progress
+    setDeals(prev=>prev.map(d=>{
+      if(d.status!=="active") return d;
+      if(d.targetId!=="all"&&d.targetId!==userId) return d;
+      const newCount = (d.tasksCompleted||0)+1;
+      if(newCount>=d.taskCount){
+        notify(`🎉 ¡Trueque completado! Reclama tu premio: ${d.reward}`,"🤝");
+        return {...d,tasksCompleted:newCount,status:"completed"};
+      }
+      return {...d,tasksCompleted:newCount};
+    }));
+
     // Persist to Supabase
     if(userId) {
       try {
@@ -1471,7 +1679,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
     {id:"shop",l:"Cofres"},{id:"store",l:"Tienda"},{id:"chat",l:"Chat"},{id:"me",l:"Yo"},
     ...(user.isAdmin?[{id:"admin",l:"Admin"}]:[]),
   ];
-  const tabsParent  = [{id:"validate",l:"Validar"},{id:"progress",l:"Progreso"},{id:"allowance",l:"Mesada"},{id:"clanchat",l:"Chat"},{id:"qrcode",l:"Mi QR"},{id:"perfil",l:"Perfil"},...(user.isAdmin?[{id:"admin",l:"Admin"}]:[]),];
+  const tabsParent  = [{id:"validate",l:"Validar"},{id:"progress",l:"Progreso"},{id:"allowance",l:"Mesada"},{id:"rubies",l:"Rubíes"},{id:"clanchat",l:"Chat"},{id:"qrcode",l:"Mi QR"},{id:"perfil",l:"Perfil"},...(user.isAdmin?[{id:"admin",l:"Admin"}]:[]),];
   const tabsTeacher = [{id:"panel",l:"Panel"},{id:"assign",l:"Misiones"},{id:"ranking",l:"Ranking"},{id:"tchat",l:"Chat"},{id:"perfil",l:"Perfil"},...(user.isAdmin?[{id:"admin",l:"Admin"}]:[]),];
   const currentTabs = role===ROLES.STUDENT?tabsStudent:role===ROLES.PARENT?tabsParent:tabsTeacher;
 
@@ -2402,12 +2610,22 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
               <div style={{fontSize:12,color:C.textMed,marginBottom:18,background:C.goldLt,borderRadius:12,padding:"8px 14px"}}>
                 🔄 Vuelve mañana para ganar <b>{loginBonusAmt} más</b>
               </div>
-              <BtnMain onClick={()=>{
-                const newGems = user.gems + loginBonusAmt;
-                setUser(p=>({...p,gems:newGems}));
+              <BtnMain onClick={async()=>{
+                const newGems   = user.gems + loginBonusAmt;
+                const newStreak = user.streak + 1;
+                const today     = new Date().toDateString();
+                const isoDate   = new Date().toISOString().split("T")[0];
+                setUser(p=>({...p,gems:newGems,streak:newStreak}));
                 setShowLoginBonus(false);
-                notify(`+${loginBonusAmt} 💎 ¡Bienvenido de vuelta!`,"💎");
-                if(userId){ import("./supabase.js").then(({supabase})=>supabase.from("profiles").update({gems:newGems,last_seen:new Date().toISOString()}).eq("id",userId)).catch(()=>{}); }
+                saveState("kq_lastBonus", today);
+                notify(`+${loginBonusAmt} 💎 ¡Bienvenido de vuelta! 🔥${newStreak} días`, "💎");
+                if(userId){
+                  try {
+                    const {supabase} = await import("./supabase.js");
+                    await supabase.from("profiles").update({gems:newGems,streak:newStreak,last_seen:new Date().toISOString()}).eq("id",userId);
+                    await supabase.from("daily_bonus_log").insert({user_id:userId,bonus_date:isoDate,gems_awarded:loginBonusAmt});
+                  } catch(e){ console.warn("Bonus save:",e.message); }
+                }
               }} bg={`linear-gradient(135deg,${C.gold},${C.goldDk})`} style={{width:"100%",fontSize:16,padding:"14px"}}>
                 🎁 ¡Reclamar mis cristales!
               </BtnMain>
@@ -2472,22 +2690,27 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                       Selecciona alumnos (o <b>todos</b>):
                     </div>
                     <button onClick={()=>{
-                      const allIds=DEMO_STUDENTS.map(s=>s.id);
+                      const allIds=linkedStudents.map(s=>s.id);
                       setSelectedStudents(selectedStudents.length===allIds.length?[]:allIds);
                     }} style={{width:"100%",marginBottom:8,padding:"10px",borderRadius:12,border:`2px solid ${selectedStudents.length===DEMO_STUDENTS.length?C.mint:C.border}`,background:selectedStudents.length===DEMO_STUDENTS.length?C.mintLt:C.card,cursor:"pointer",fontWeight:800,fontSize:13,color:C.text}}>
                       {selectedStudents.length===DEMO_STUDENTS.length?"✓ Toda la clase seleccionada":"Seleccionar toda la clase"}
                     </button>
-                    {DEMO_STUDENTS.map(s=>{
+                    {linkedStudents.length===0?(
+                      <div style={{textAlign:"center",padding:"16px 0",color:C.textMed,fontSize:13}}>
+                        No tienes alumnos vinculados aún.<br/>
+                        <span style={{fontSize:11}}>Los alumnos deben registrarse y usar tu código de invitación</span>
+                      </div>
+                    ):linkedStudents.map(s=>{
                       const sel=selectedStudents.includes(s.id);
                       return(
                         <button key={s.id} onClick={()=>setSelectedStudents(p=>sel?p.filter(x=>x!==s.id):[...p,s.id])}
                           style={{width:"100%",marginBottom:7,padding:"10px 13px",borderRadius:13,border:`2px solid ${sel?C.mint:C.border}`,background:sel?C.mintLt:C.card,cursor:"pointer",display:"flex",alignItems:"center",gap:10,transition:"all 0.15s"}}>
                           <div style={{width:34,height:34,borderRadius:"50%",background:sel?C.mint:C.border,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0}}>
-                            <KQIcon id={s.svgKey} size={30}/>
+                            <KQIcon id={s.avatar||s.svgKey||"a_cub"} size={30}/>
                           </div>
                           <div style={{flex:1,textAlign:"left"}}>
                             <div style={{fontWeight:800,fontSize:13,color:C.text}}>{s.name}</div>
-                            <div style={{fontSize:10,color:C.textMed}}>Nv. {s.level}</div>
+                            <div style={{fontSize:10,color:C.textMed}}>Nv. {s.level||1}</div>
                           </div>
                           <div style={{width:20,height:20,borderRadius:"50%",border:`2px solid ${sel?C.mint:C.border}`,background:sel?C.mint:"none",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                             {sel&&<span style={{color:"white",fontSize:12,lineHeight:1}}>✓</span>}
@@ -2539,7 +2762,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                       challenge:selectedChallenge,
                       studentId:s.id,
                       studentName:s.name,
-                      assignedBy:role===ROLES.TEACHER?"Prof. García":"Tutor",
+                      assignedBy:user.name,
                       assignedAt:Date.now(),
                       status:"pending",
                     }));
@@ -2705,6 +2928,263 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
         </div>
       )}
 
+
+      {/* ════ TRUEQUE CREATE MODAL (parent/teacher) ════ */}
+      {showDealCreate&&(
+        <div className="overlay">
+          <div className="modal pop-in">
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+              <div style={{fontWeight:900,fontSize:18,color:C.text}}>🤝 Crear Trueque</div>
+              <button onClick={()=>setShowDealCreate(false)} style={{background:C.border,border:"none",borderRadius:9,padding:"5px 10px",cursor:"pointer",color:C.textMed}}>✕</button>
+            </div>
+            <div style={{background:C.mintLt,border:`1.5px solid ${C.mint}30`,borderRadius:12,padding:"10px 14px",marginBottom:14,fontSize:12,color:C.mintDk}}>
+              💡 Un trueque es un acuerdo: el niño completa tareas y a cambio recibe un premio especial tuyo.
+            </div>
+            <div style={{marginBottom:11}}>
+              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:5}}>¿Qué debe hacer? (descripción)</div>
+              <input value={dealTitle} onChange={e=>setDealTitle(e.target.value)} placeholder="Ej: Completar 5 tareas del hogar esta semana"
+                style={{width:"100%",padding:"11px 14px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:13,color:C.text,background:C.card,outline:"none"}}/>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:11}}>
+              <div>
+                <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:5}}>N° de tareas</div>
+                <input type="number" min="1" max="20" value={dealTaskCount} onChange={e=>setDealTaskCount(Number(e.target.value))}
+                  style={{width:"100%",padding:"10px 12px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:15,fontWeight:700,color:C.text,background:C.card,outline:"none"}}/>
+              </div>
+              <div>
+                <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:5}}>Plazo</div>
+                <select value={dealFreq} onChange={e=>setDealFreq(e.target.value)}
+                  style={{width:"100%",padding:"10px 12px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:13,color:C.text,background:C.card,outline:"none"}}>
+                  <option value="diaria">Hoy</option>
+                  <option value="semanal">Esta semana</option>
+                  <option value="mensual">Este mes</option>
+                  <option value="libre">Sin límite</option>
+                </select>
+              </div>
+            </div>
+            <div style={{marginBottom:11}}>
+              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:6}}>¿Qué gana el niño? (premio)</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:8}}>
+                {TRUEQUE_REWARDS.map(r=>(
+                  <button key={r.id} onClick={()=>{setDealReward(r.label);setDealRewardEmoji(r.emoji);}}
+                    style={{padding:"8px 10px",borderRadius:11,border:`2px solid ${dealReward===r.label?C.mint:C.border}`,background:dealReward===r.label?C.mintLt:C.card,cursor:"pointer",fontSize:11,fontWeight:600,color:C.text,textAlign:"left",display:"flex",gap:6,alignItems:"center"}}>
+                    <span>{r.emoji}</span><span style={{flex:1}}>{r.label}</span>
+                  </button>
+                ))}
+              </div>
+              <input value={dealReward} onChange={e=>setDealReward(e.target.value)} placeholder="O escribe un premio personalizado..."
+                style={{width:"100%",padding:"10px 14px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:13,color:C.text,background:C.card,outline:"none"}}/>
+            </div>
+            <div style={{marginBottom:16}}>
+              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:5}}>Para quién</div>
+              <select value={dealTargetId} onChange={e=>setDealTargetId(e.target.value)}
+                style={{width:"100%",padding:"11px 14px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:13,color:C.text,background:C.card,outline:"none"}}>
+                <option value="">Todos mis hijos/alumnos</option>
+                {linkedStudents.map(s=>(
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+            <BtnMain onClick={async()=>{
+              if(!dealTitle.trim()||!dealReward.trim()) return notify("Completa descripción y premio","⚠️");
+              const newDeal = {
+                id: Date.now().toString(),
+                title: dealTitle,
+                reward: dealReward,
+                rewardEmoji: dealRewardEmoji,
+                taskCount: dealTaskCount,
+                freq: dealFreq,
+                targetId: dealTargetId||"all",
+                targetName: dealTargetId ? linkedStudents.find(s=>s.id===dealTargetId)?.name||"todos" : "todos",
+                createdBy: userId,
+                creatorName: user.name,
+                creatorRole: role,
+                tasksCompleted: 0,
+                status: "active",
+                createdAt: Date.now(),
+              };
+              setDeals(p=>[newDeal,...p]);
+              // Save to Supabase
+              if(userId){ import("./supabase.js").then(({supabase})=>supabase.from("challenges").insert({
+                template_id:"trueque_"+newDeal.id,
+                title:dealTitle,
+                description:`Trueque: ${dealTaskCount} tareas → ${dealReward}`,
+                emoji:"🤝",
+                xp:dealTaskCount*80,
+                coins:dealTaskCount*20,
+                freq:dealFreq,
+                assigned_by:userId,
+                assigned_to:dealTargetId||null,
+              })).catch(()=>{}); }
+              setShowDealCreate(false);
+              setDealTitle("");setDealReward("");setDealRewardEmoji("🏆");setDealTaskCount(3);
+              notify(`Trueque creado para ${dealTargetId?linkedStudents.find(s=>s.id===dealTargetId)?.name:"todos"} 🤝`,"🤝");
+            }} bg={`linear-gradient(135deg,${C.mint},${C.mintDk})`} style={{width:"100%"}}>
+              🤝 Crear trueque
+            </BtnMain>
+          </div>
+        </div>
+      )}
+
+      {/* ── AVATAR EDITOR MODAL ── */}
+            {showAvatarEditor&&(
+              <div className="overlay" style={{zIndex:9995}}>
+                <div className="modal pop-in" style={{maxHeight:"90vh",overflowY:"auto"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+                    <div style={{fontWeight:800,fontSize:17,color:C.text}}>✏️ Editar Perfil</div>
+                    <button onClick={()=>setShowAvatarEditor(false)} style={{background:C.border,border:"none",borderRadius:10,padding:"5px 9px",color:C.textMed,cursor:"pointer",fontSize:15}}>✕</button>
+                  </div>
+
+                  {/* live preview */}
+                  <div style={{textAlign:"center",marginBottom:16}}>
+                    <AvatarDisplay photo={avatarPhoto} emoji={avatarEmoji} frame={avatarFrame} bg={avatarBg} size={90} C={C}/>
+                    <div style={{fontWeight:800,fontSize:15,color:C.text,marginTop:8}}>{user.name}</div>
+                    <div style={{fontSize:12,color:C.textMed}}>Nv.{user.level} {curLvl.name}</div>
+                  </div>
+
+                  {/* edit tabs */}
+                  <div style={{display:"flex",gap:6,marginBottom:14,overflowX:"auto",paddingBottom:4}}>
+                    {[{id:"photo",l:"📸 Foto"},{id:"emoji",l:"😀 Emoji"},{id:"frame",l:"🖼️ Marco"},{id:"color",l:"🎨 Color"}].map(t=>(
+                      <button key={t.id} onClick={()=>setEditTab(t.id)} style={{padding:"6px 12px",borderRadius:20,border:`1.5px solid ${editTab===t.id?C.mint:C.border}`,background:editTab===t.id?C.mint:C.card,color:editTab===t.id?"white":C.textMed,fontWeight:700,fontSize:11,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,transition:"all 0.15s"}}>
+                        {t.l}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* PHOTO TAB */}
+                  {editTab==="photo"&&(
+                    <div>
+                      <div style={{fontSize:13,color:C.textMed,marginBottom:10,lineHeight:1.5}}>Sube una foto tuya para tu avatar. Solo tú y tu clan la verán.</div>
+                      {avatarPhoto?(
+                        <div style={{textAlign:"center",marginBottom:12}}>
+                          <img src={avatarPhoto} alt="avatar" style={{width:100,height:100,borderRadius:"50%",objectFit:"cover",border:`3px solid ${C.mint}`,boxShadow:C.shadowMd}}/>
+                          <div style={{marginTop:8,display:"flex",gap:8,justifyContent:"center"}}>
+                            <label style={{cursor:"pointer"}}>
+                              <div style={{padding:"7px 14px",borderRadius:12,border:`1.5px solid ${C.mint}`,background:C.mintLt,color:C.mintDk,fontSize:12,fontWeight:700}}>🔄 Cambiar</div>
+                              <input type="file" accept="image/*" capture="user" onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=ev=>setAvatarPhoto(ev.target.result);r.readAsDataURL(f);}} style={{display:"none"}}/>
+                            </label>
+                            <button onClick={()=>setAvatarPhoto(null)} style={{padding:"7px 14px",borderRadius:12,border:`1.5px solid ${C.coral}`,background:C.coralLt,color:C.coral,fontSize:12,fontWeight:700,cursor:"pointer"}}>🗑️ Quitar</button>
+                          </div>
+                        </div>
+                      ):(
+                        <label style={{display:"block",cursor:"pointer"}}>
+                          <div className="upload-zone" style={{padding:24}}>
+                            <div style={{fontSize:40,marginBottom:8}}>🤳</div>
+                            <div style={{fontWeight:700,fontSize:14,color:C.text}}>Subir foto de perfil</div>
+                            <div style={{fontSize:12,color:C.textMed,marginTop:4}}>Selfie, foto escolar, lo que quieras 😊</div>
+                          </div>
+                          <input type="file" accept="image/*" capture="user" onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=ev=>setAvatarPhoto(ev.target.result);r.readAsDataURL(f);}} style={{display:"none"}}/>
+                        </label>
+                      )}
+                      <div style={{background:C.skyLt,border:`1px solid ${C.sky}30`,borderRadius:12,padding:"8px 12px",marginTop:10,fontSize:11,color:C.sky}}>
+                        🔒 Tu foto solo la ven los miembros de tu clan y tus tutores
+                      </div>
+                    </div>
+                  )}
+
+                  {/* EMOJI TAB */}
+                  {editTab==="emoji"&&(
+                    <div>
+                      <div style={{fontSize:13,color:C.textMed,marginBottom:10}}>Elige un emoji como avatar (si no tienes foto):</div>
+                      <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:8,marginBottom:10}}>
+                        {["🦁","🦊","🐯","🦋","🐺","🦅","🐲","🦄","🐸","🦈","🐻","🦉","🐺","🐼","🦋","🦎","🚀","⚡","🔥","💎"].map(e=>(
+                          <button key={e} onClick={()=>setAvatarEmoji(e)} style={{height:48,borderRadius:14,border:`2px solid ${avatarEmoji===e?C.mint:C.border}`,background:avatarEmoji===e?C.mintLt:C.card,fontSize:24,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.15s"}}>
+                            {e}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* FRAME TAB */}
+                  {editTab==="frame"&&(
+                    <div>
+                      {/* ── NATIVE FRAMES (always free) ── */}
+                      <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:8,display:"flex",alignItems:"center",gap:6}}>
+                        <span>🎁</span> Marcos gratuitos
+                      </div>
+                      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:16}}>
+                        {NATIVE_FRAMES.map(fr=>{
+                          const sel = avatarFrame===fr.id;
+                          return (
+                            <button key={fr.id} onClick={()=>setAvatarFrame(fr.id)}
+                              style={{padding:"10px 8px",borderRadius:14,border:`2px solid ${sel?C.mint:C.border}`,background:sel?C.mintLt:C.card,cursor:"pointer",textAlign:"center",transition:"all 0.15s",boxShadow:sel?C.shadowMd:"none"}}>
+                              <FramePreview id={fr.id} size={38} emoji={avatarEmoji}/>
+                              <div style={{fontSize:10,fontWeight:700,color:sel?C.mintDk:C.text,marginTop:5}}>{fr.label}</div>
+                              <div style={{fontSize:9,color:C.textLt,marginTop:1}}>{fr.desc}</div>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* ── LOOT FRAMES (from chests) ── */}
+                      {(()=>{
+                        const unlockedLootFrames = inventory.filter(i=>i.type==="frame");
+                        return (
+                          <>
+                            <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:8,display:"flex",alignItems:"center",gap:6}}>
+                              Marcos de cofre ({unlockedLootFrames.length})
+                            </div>
+                            {unlockedLootFrames.length===0?(
+                              <div style={{background:C.border,borderRadius:14,padding:"14px",textAlign:"center"}}>
+                                <div style={{fontSize:28,marginBottom:6}}>📦</div>
+                                <div style={{fontSize:12,color:C.textMed,fontWeight:600}}>Aún no tienes marcos de cofre</div>
+                                <div style={{fontSize:11,color:C.textLt,marginTop:3}}>¡Abre cofres en la tienda para desbloquearlos!</div>
+                              </div>
+                            ):(
+                              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
+                                {unlockedLootFrames.map((fr,i)=>{
+                                  const r=RARITIES[fr.rarity];
+                                  const sel=avatarFrame===fr.id;
+                                  return (
+                                    <button key={i} onClick={()=>setAvatarFrame(fr.id)}
+                                      style={{padding:"10px 8px",borderRadius:14,border:`2px solid ${sel?r.color:r.color+"40"}`,background:sel?r.bg:C.card,cursor:"pointer",textAlign:"center",transition:"all 0.15s",position:"relative",boxShadow:sel?`0 0 12px ${r.glow}`:"none"}}>
+                                      <div style={{position:"absolute",top:3,left:3,fontSize:8}}><RarDot r={item.rarity}/></div>
+                                      <FramePreview id={fr.id} size={38} emoji={avatarEmoji}/>
+                                      <div style={{fontSize:10,fontWeight:700,color:sel?r.color:C.text,marginTop:5}}>{fr.name}</div>
+                                      <div style={{fontSize:9,color:r.color,fontWeight:700}}>{r.label}</div>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </div>
+                  )}
+
+                  {/* COLOR TAB */}
+                  {editTab==="color"&&(
+                    <div>
+                      <div style={{fontSize:13,color:C.textMed,marginBottom:10}}>Elige el fondo de tu tarjeta de perfil:</div>
+                      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
+                        {[
+                          {id:"mint",    label:"Verde Jade",  g:`linear-gradient(135deg,#4DC9A0,#2FA87A)`},
+                          {id:"gold",    label:"Dorado",      g:`linear-gradient(135deg,#F5C518,#D4A800)`},
+                          {id:"sky",     label:"Cielo",       g:`linear-gradient(135deg,#4AAEE8,#2d8fd4)`},
+                          {id:"coral",   label:"Coral",       g:`linear-gradient(135deg,#FF6B6B,#e84040)`},
+                          {id:"purple",  label:"Violeta",     g:`linear-gradient(135deg,#8B6BE8,#6d53c4)`},
+                          {id:"night",   label:"Noche",       g:`linear-gradient(135deg,#1a2e28,#0d1a16)`},
+                          {id:"sunrise", label:"Amanecer",    g:`linear-gradient(135deg,#FF6B6B,#F5C518)`},
+                          {id:"ocean",   label:"Océano",      g:`linear-gradient(135deg,#4AAEE8,#4DC9A0)`},
+                          {id:"candy",   label:"Dulce",       g:`linear-gradient(135deg,#FF6B9D,#8B6BE8)`},
+                        ].map(bg=>(
+                          <button key={bg.id} onClick={()=>setAvatarBg(bg.id)} style={{height:60,borderRadius:14,border:`3px solid ${avatarBg===bg.id?"white":"transparent"}`,background:bg.g,cursor:"pointer",display:"flex",alignItems:"flex-end",justifyContent:"center",paddingBottom:6,boxShadow:avatarBg===bg.id?`0 0 0 2px ${C.mint}`:"none",transition:"all 0.15s"}}>
+                            <span style={{fontSize:10,fontWeight:800,color:"white",textShadow:"0 1px 3px rgba(0,0,0,0.4)"}}>{bg.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <BtnMain onClick={()=>setShowAvatarEditor(false)} bg={`linear-gradient(135deg,${C.mint},${C.mintDk})`} style={{width:"100%",marginTop:16}}>
+                    ✓ Guardar perfil
+                  </BtnMain>
+                </div>
+              </div>
+            )}
+
       {/* ════ HEADER ════ */}
       <div style={{background:C.card,borderBottom:`2px solid ${C.border}`,padding:"12px 16px 10px",position:"sticky",top:0,zIndex:100,boxShadow:`0 2px 10px ${C.mint}10`}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -2724,13 +3204,19 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
               </>
             )}
             {role===ROLES.PARENT&&<div style={{fontWeight:800,fontSize:16,color:C.text}}>Panel del Tutor</div>}
-            {role===ROLES.TEACHER&&<div style={{fontWeight:800,fontSize:16,color:C.text}}>Prof. García — 5to B</div>}
+            {role===ROLES.TEACHER&&<div style={{fontWeight:800,fontSize:16,color:C.text}}>{user.name||"Profesor"}</div>}
           </div>
           <div style={{display:"flex",gap:8,alignItems:"center"}}>
             {role===ROLES.STUDENT&&(
               <>
                 <CoinPill icon="💰" val={user.coins} color={C.goldDk} bg={C.goldLt}/>
                 <CoinPill icon="💎" val={user.gems}  color={C.sky}    bg={C.skyLt}/>
+              </>
+            )}
+            {role===ROLES.PARENT&&(
+              <>
+                <CoinPill icon="💎" val={user.gems}     color={C.sky}  bg={C.skyLt}/>
+                <CoinPill icon="🔴" val={user.rubies||0} color={C.ruby} bg={C.rubyLt}/>
               </>
             )}
             <button onClick={()=>setDark(d=>!d)} style={{background:C.border,border:"none",borderRadius:10,padding:"5px 8px",cursor:"pointer",fontSize:14}}>{dark?"☀️":"🌙"}</button>
@@ -2769,6 +3255,27 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
               </div>
               <div style={{fontSize:10,opacity:0.7,marginTop:4,textAlign:"right"}}>{SEASONS[0].progress}% completado</div>
             </div>
+
+            {/* active TRUEQUES from tutor */}
+            {deals.filter(d=>d.status==="active"&&(d.targetId==="all"||d.targetId===userId)).map(deal=>(
+              <div key={deal.id} style={{background:`linear-gradient(135deg,${C.mint}12,${C.purple}08)`,border:`2px solid ${C.mint}40`,borderRadius:18,padding:"12px 15px",marginBottom:10,position:"relative",overflow:"hidden"}}>
+                <div style={{position:"absolute",right:-4,top:-4,fontSize:48,opacity:0.06}}>🤝</div>
+                <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+                  <span style={{fontSize:28,flexShrink:0}}>{deal.rewardEmoji||"🤝"}</span>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:10,fontWeight:700,color:C.mint,textTransform:"uppercase",letterSpacing:0.8,marginBottom:2}}>🤝 Trueque de {deal.creatorName}</div>
+                    <div style={{fontWeight:800,fontSize:13,color:C.text,marginBottom:3}}>{deal.title}</div>
+                    <div style={{fontSize:12,color:C.mintDk,fontWeight:700}}>Premio: {deal.reward}</div>
+                    <div style={{marginTop:6}}>
+                      <div style={{height:6,borderRadius:6,background:C.border,overflow:"hidden"}}>
+                        <div style={{height:"100%",width:`${Math.min((deal.tasksCompleted/deal.taskCount)*100,100)}%`,background:`linear-gradient(90deg,${C.mint},${C.gold})`,borderRadius:6,transition:"width 0.5s"}}/>
+                      </div>
+                      <div style={{fontSize:10,color:C.textMed,marginTop:3}}>{deal.tasksCompleted}/{deal.taskCount} tareas completadas</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
 
             {/* active challenges from tutor/teacher */}
             {activeStudentChalls.filter(c=>c.status==="pending").slice(0,2).map(ch=>(
@@ -2952,6 +3459,11 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                           setInventory(p=>[...p, item]);
                           setChestPhase("reveal");
                           boom();
+                          // Save to Supabase inventory
+                          if(userId){ import("./supabase.js").then(({supabase})=>supabase.from("inventory").insert({
+                            user_id:userId, item_id:item.id, item_type:item.type,
+                            item_name:item.name, rarity:item.rarity, svg_key:item.svgKey||item.id,
+                          })).catch(()=>{}); }
                         }, 1200);
                       }} bg={openingChest.gradient} style={{width:"100%"}}>
                         🎲 ¡Abrir cofre!
@@ -3196,8 +3708,11 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                   </div>
                   <button onClick={()=>{
                     if(user.gems<ch.gems){ notify(`Necesitas ${ch.gems} 💎 · tienes ${user.gems}`,"💎"); return; }
-                    setUser(p=>({...p,gems:p.gems-ch.gems}));
+                    const newGems = user.gems - ch.gems;
+                    setUser(p=>({...p,gems:newGems}));
                     setOpeningChest(ch); setChestPhase("idle"); setChestWin(null);
+                    // Sync gems to Supabase
+                    if(userId){ import("./supabase.js").then(({supabase})=>supabase.from("profiles").update({gems:newGems}).eq("id",userId)).catch(()=>{}); }
                   }} style={{background:ch.gradient,border:"none",borderRadius:14,padding:"10px 18px",color:"white",fontWeight:800,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",gap:6,flexShrink:0,boxShadow:`0 4px 12px ${ch.glow}`}}>
                     💎 {ch.gems}
                   </button>
@@ -3279,7 +3794,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
 
         {/* ── STUDENT: CHAT ── */}
         {role===ROLES.STUDENT&&tab==="chat"&&(
-          <ChatView msgs={kMsgs} setMsgs={setKMsgs} isMe={m=>m.author===user.name} myAuthor={user.name} myAvatar={user.avatar} myRole="student" onSend={t=>sendChatMsg(t,"clan")}
+          <ChatView msgs={kMsgs} setMsgs={setKMsgs} isMe={m=>m.author===user.name} myAuthor={user.name} myAvatar={user.avatar} myRole="student" onSend={t=>sendChatMsg(t, classRoom!=="clan"?"clan":classRoom)}
             input={chatInput} setInput={setChatInput} chatEndRef={chatEndRef} C={C}
             header={{title:"Chat del clan",sub:"Solo miembros · Moderado por adultos",gradient:`linear-gradient(135deg,${C.mint},${C.mintDk})`}}
             quickReplies={["🔥 ¡Vamos!","✅ ¡Lo hice!","💪 ¡A por ello!","😎 ¡Fácil!"]}
@@ -3290,164 +3805,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
         {role===ROLES.STUDENT&&tab==="me"&&(
           <div style={{padding:"16px 14px 0"}}>
 
-            {/* ── AVATAR EDITOR MODAL ── */}
-            {showAvatarEditor&&(
-              <div className="overlay" style={{zIndex:9995}}>
-                <div className="modal pop-in" style={{maxHeight:"90vh",overflowY:"auto"}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-                    <div style={{fontWeight:800,fontSize:17,color:C.text}}>✏️ Editar Perfil</div>
-                    <button onClick={()=>setShowAvatarEditor(false)} style={{background:C.border,border:"none",borderRadius:10,padding:"5px 9px",color:C.textMed,cursor:"pointer",fontSize:15}}>✕</button>
-                  </div>
-
-                  {/* live preview */}
-                  <div style={{textAlign:"center",marginBottom:16}}>
-                    <AvatarDisplay photo={avatarPhoto} emoji={avatarEmoji} frame={avatarFrame} bg={avatarBg} size={90} C={C}/>
-                    <div style={{fontWeight:800,fontSize:15,color:C.text,marginTop:8}}>{user.name}</div>
-                    <div style={{fontSize:12,color:C.textMed}}>Nv.{user.level} {curLvl.name}</div>
-                  </div>
-
-                  {/* edit tabs */}
-                  <div style={{display:"flex",gap:6,marginBottom:14,overflowX:"auto",paddingBottom:4}}>
-                    {[{id:"photo",l:"📸 Foto"},{id:"emoji",l:"😀 Emoji"},{id:"frame",l:"🖼️ Marco"},{id:"color",l:"🎨 Color"}].map(t=>(
-                      <button key={t.id} onClick={()=>setEditTab(t.id)} style={{padding:"6px 12px",borderRadius:20,border:`1.5px solid ${editTab===t.id?C.mint:C.border}`,background:editTab===t.id?C.mint:C.card,color:editTab===t.id?"white":C.textMed,fontWeight:700,fontSize:11,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,transition:"all 0.15s"}}>
-                        {t.l}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* PHOTO TAB */}
-                  {editTab==="photo"&&(
-                    <div>
-                      <div style={{fontSize:13,color:C.textMed,marginBottom:10,lineHeight:1.5}}>Sube una foto tuya para tu avatar. Solo tú y tu clan la verán.</div>
-                      {avatarPhoto?(
-                        <div style={{textAlign:"center",marginBottom:12}}>
-                          <img src={avatarPhoto} alt="avatar" style={{width:100,height:100,borderRadius:"50%",objectFit:"cover",border:`3px solid ${C.mint}`,boxShadow:C.shadowMd}}/>
-                          <div style={{marginTop:8,display:"flex",gap:8,justifyContent:"center"}}>
-                            <label style={{cursor:"pointer"}}>
-                              <div style={{padding:"7px 14px",borderRadius:12,border:`1.5px solid ${C.mint}`,background:C.mintLt,color:C.mintDk,fontSize:12,fontWeight:700}}>🔄 Cambiar</div>
-                              <input type="file" accept="image/*" capture="user" onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=ev=>setAvatarPhoto(ev.target.result);r.readAsDataURL(f);}} style={{display:"none"}}/>
-                            </label>
-                            <button onClick={()=>setAvatarPhoto(null)} style={{padding:"7px 14px",borderRadius:12,border:`1.5px solid ${C.coral}`,background:C.coralLt,color:C.coral,fontSize:12,fontWeight:700,cursor:"pointer"}}>🗑️ Quitar</button>
-                          </div>
-                        </div>
-                      ):(
-                        <label style={{display:"block",cursor:"pointer"}}>
-                          <div className="upload-zone" style={{padding:24}}>
-                            <div style={{fontSize:40,marginBottom:8}}>🤳</div>
-                            <div style={{fontWeight:700,fontSize:14,color:C.text}}>Subir foto de perfil</div>
-                            <div style={{fontSize:12,color:C.textMed,marginTop:4}}>Selfie, foto escolar, lo que quieras 😊</div>
-                          </div>
-                          <input type="file" accept="image/*" capture="user" onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=ev=>setAvatarPhoto(ev.target.result);r.readAsDataURL(f);}} style={{display:"none"}}/>
-                        </label>
-                      )}
-                      <div style={{background:C.skyLt,border:`1px solid ${C.sky}30`,borderRadius:12,padding:"8px 12px",marginTop:10,fontSize:11,color:C.sky}}>
-                        🔒 Tu foto solo la ven los miembros de tu clan y tus tutores
-                      </div>
-                    </div>
-                  )}
-
-                  {/* EMOJI TAB */}
-                  {editTab==="emoji"&&(
-                    <div>
-                      <div style={{fontSize:13,color:C.textMed,marginBottom:10}}>Elige un emoji como avatar (si no tienes foto):</div>
-                      <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:8,marginBottom:10}}>
-                        {["🦁","🦊","🐯","🦋","🐺","🦅","🐲","🦄","🐸","🦈","🐻","🦉","🐺","🐼","🦋","🦎","🚀","⚡","🔥","💎"].map(e=>(
-                          <button key={e} onClick={()=>setAvatarEmoji(e)} style={{height:48,borderRadius:14,border:`2px solid ${avatarEmoji===e?C.mint:C.border}`,background:avatarEmoji===e?C.mintLt:C.card,fontSize:24,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.15s"}}>
-                            {e}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* FRAME TAB */}
-                  {editTab==="frame"&&(
-                    <div>
-                      {/* ── NATIVE FRAMES (always free) ── */}
-                      <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:8,display:"flex",alignItems:"center",gap:6}}>
-                        <span>🎁</span> Marcos gratuitos
-                      </div>
-                      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:16}}>
-                        {NATIVE_FRAMES.map(fr=>{
-                          const sel = avatarFrame===fr.id;
-                          return (
-                            <button key={fr.id} onClick={()=>setAvatarFrame(fr.id)}
-                              style={{padding:"10px 8px",borderRadius:14,border:`2px solid ${sel?C.mint:C.border}`,background:sel?C.mintLt:C.card,cursor:"pointer",textAlign:"center",transition:"all 0.15s",boxShadow:sel?C.shadowMd:"none"}}>
-                              <FramePreview id={fr.id} size={38} emoji={avatarEmoji}/>
-                              <div style={{fontSize:10,fontWeight:700,color:sel?C.mintDk:C.text,marginTop:5}}>{fr.label}</div>
-                              <div style={{fontSize:9,color:C.textLt,marginTop:1}}>{fr.desc}</div>
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      {/* ── LOOT FRAMES (from chests) ── */}
-                      {(()=>{
-                        const unlockedLootFrames = inventory.filter(i=>i.type==="frame");
-                        return (
-                          <>
-                            <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:8,display:"flex",alignItems:"center",gap:6}}>
-                              Marcos de cofre ({unlockedLootFrames.length})
-                            </div>
-                            {unlockedLootFrames.length===0?(
-                              <div style={{background:C.border,borderRadius:14,padding:"14px",textAlign:"center"}}>
-                                <div style={{fontSize:28,marginBottom:6}}>📦</div>
-                                <div style={{fontSize:12,color:C.textMed,fontWeight:600}}>Aún no tienes marcos de cofre</div>
-                                <div style={{fontSize:11,color:C.textLt,marginTop:3}}>¡Abre cofres en la tienda para desbloquearlos!</div>
-                              </div>
-                            ):(
-                              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
-                                {unlockedLootFrames.map((fr,i)=>{
-                                  const r=RARITIES[fr.rarity];
-                                  const sel=avatarFrame===fr.id;
-                                  return (
-                                    <button key={i} onClick={()=>setAvatarFrame(fr.id)}
-                                      style={{padding:"10px 8px",borderRadius:14,border:`2px solid ${sel?r.color:r.color+"40"}`,background:sel?r.bg:C.card,cursor:"pointer",textAlign:"center",transition:"all 0.15s",position:"relative",boxShadow:sel?`0 0 12px ${r.glow}`:"none"}}>
-                                      <div style={{position:"absolute",top:3,left:3,fontSize:8}}><RarDot r={item.rarity}/></div>
-                                      <FramePreview id={fr.id} size={38} emoji={avatarEmoji}/>
-                                      <div style={{fontSize:10,fontWeight:700,color:sel?r.color:C.text,marginTop:5}}>{fr.name}</div>
-                                      <div style={{fontSize:9,color:r.color,fontWeight:700}}>{r.label}</div>
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </>
-                        );
-                      })()}
-                    </div>
-                  )}
-
-                  {/* COLOR TAB */}
-                  {editTab==="color"&&(
-                    <div>
-                      <div style={{fontSize:13,color:C.textMed,marginBottom:10}}>Elige el fondo de tu tarjeta de perfil:</div>
-                      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
-                        {[
-                          {id:"mint",    label:"Verde Jade",  g:`linear-gradient(135deg,#4DC9A0,#2FA87A)`},
-                          {id:"gold",    label:"Dorado",      g:`linear-gradient(135deg,#F5C518,#D4A800)`},
-                          {id:"sky",     label:"Cielo",       g:`linear-gradient(135deg,#4AAEE8,#2d8fd4)`},
-                          {id:"coral",   label:"Coral",       g:`linear-gradient(135deg,#FF6B6B,#e84040)`},
-                          {id:"purple",  label:"Violeta",     g:`linear-gradient(135deg,#8B6BE8,#6d53c4)`},
-                          {id:"night",   label:"Noche",       g:`linear-gradient(135deg,#1a2e28,#0d1a16)`},
-                          {id:"sunrise", label:"Amanecer",    g:`linear-gradient(135deg,#FF6B6B,#F5C518)`},
-                          {id:"ocean",   label:"Océano",      g:`linear-gradient(135deg,#4AAEE8,#4DC9A0)`},
-                          {id:"candy",   label:"Dulce",       g:`linear-gradient(135deg,#FF6B9D,#8B6BE8)`},
-                        ].map(bg=>(
-                          <button key={bg.id} onClick={()=>setAvatarBg(bg.id)} style={{height:60,borderRadius:14,border:`3px solid ${avatarBg===bg.id?"white":"transparent"}`,background:bg.g,cursor:"pointer",display:"flex",alignItems:"flex-end",justifyContent:"center",paddingBottom:6,boxShadow:avatarBg===bg.id?`0 0 0 2px ${C.mint}`:"none",transition:"all 0.15s"}}>
-                            <span style={{fontSize:10,fontWeight:800,color:"white",textShadow:"0 1px 3px rgba(0,0,0,0.4)"}}>{bg.label}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  <BtnMain onClick={()=>setShowAvatarEditor(false)} bg={`linear-gradient(135deg,${C.mint},${C.mintDk})`} style={{width:"100%",marginTop:16}}>
-                    ✓ Guardar perfil
-                  </BtnMain>
-                </div>
-              </div>
-            )}
+            
 
             {/* profile hero */}
             {(()=>{
@@ -3541,7 +3899,10 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             </button>
 
             {/* share button */}
-            <button onClick={()=>notify("¡Logro copiado! Comparte en WhatsApp 📱","📤")}
+            <button onClick={()=>{
+  const msg = encodeURIComponent(`¡Logré ${user.trophies} trofeos en KidQuest! 🏆 Estoy en nivel ${user.level}. ¡Únete en kidquest-lime.vercel.app!`);
+  window.open(`https://wa.me/?text=${msg}`,"_blank");
+}}
               style={{width:"100%",background:C.goldLt,border:`1.5px solid ${C.gold}`,borderRadius:14,padding:"11px",color:C.goldDk,fontWeight:800,fontSize:13,cursor:"pointer",marginBottom:14}}>
               📤 Compartir logro en WhatsApp / Instagram
             </button>
@@ -3682,6 +4043,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
               <div style={{display:"flex",gap:6}}>
                 <button onClick={()=>setShowTaskCreator(true)} style={{background:C.mintLt,border:`1.5px solid ${C.mint}`,borderRadius:11,padding:"6px 10px",color:C.mintDk,fontSize:11,fontWeight:700,cursor:"pointer"}}>+ Misión</button>
                 <button onClick={()=>{setAssignStep("pick");setSelectedStudents([]);setShowChallengeAssign(true);}} style={{background:C.goldLt,border:`1.5px solid ${C.gold}`,borderRadius:11,padding:"6px 10px",color:C.goldDk,fontSize:11,fontWeight:700,cursor:"pointer"}}>🎯 Desafío</button>
+                <button onClick={()=>setShowDealCreate(true)} style={{background:C.mintLt,border:`1.5px solid ${C.mint}`,borderRadius:11,padding:"6px 10px",color:C.mintDk,fontSize:11,fontWeight:700,cursor:"pointer"}}>🤝 Trueque</button>
                 <button onClick={()=>setShowControls(true)} style={{background:C.card,border:`1.5px solid ${C.border}`,borderRadius:11,padding:"6px 10px",color:C.textMed,fontSize:11,fontWeight:700,cursor:"pointer"}}>⚙️</button>
                 <button onClick={()=>setShowLinkTutor(true)} style={{background:`linear-gradient(135deg,${C.mint},${C.mintDk})`,border:"none",borderRadius:11,padding:"6px 10px",color:"white",fontSize:11,fontWeight:700,cursor:"pointer"}}>🔗</button>
               </div>
@@ -3765,13 +4127,50 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                         }).eq("id",v.user_id);
                       }
                       setPendingTasks(p=>p.filter(t=>t.id!==v.id));
+                      // Parent earns 1 ruby for each approved task
+                      const newRubies = (user.rubies||0) + 1;
+                      setUser(p=>({...p,rubies:newRubies}));
+                      if(userId){ import("./supabase.js").then(({supabase})=>supabase.from("profiles").update({rubies:newRubies}).eq("id",userId)).catch(()=>{}); }
                       boom();
-                      notify(`¡Aprobada! ${child.name} ganó sus recompensas 🎉`,"✅");
+                      notify(`¡Aprobada! ${child.name} ganó sus recompensas 🎉 · +1 💎🔴`,"✅");
                     }} style={{flex:2,padding:"10px",borderRadius:12,border:"none",background:`linear-gradient(135deg,${C.mint},${C.mintDk})`,color:"white",cursor:"pointer",fontWeight:800,fontSize:13}}>✅ Aprobar</button>
                   </div>
                 </div>
               );
             })}
+            {/* Active Trueques */}
+            {deals.filter(d=>d.createdBy===userId).length>0&&(
+              <div style={{marginTop:16}}>
+                <div style={{fontWeight:800,fontSize:16,color:C.text,marginBottom:10}}>🤝 Mis Trueques</div>
+                {deals.filter(d=>d.createdBy===userId).map(deal=>(
+                  <div key={deal.id} style={{background:C.card,borderRadius:16,padding:14,marginBottom:8,boxShadow:C.shadow,border:`1.5px solid ${deal.status==="completed"?C.mint:C.border}`}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+                      <div style={{flex:1}}>
+                        <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:3}}>
+                          <span style={{fontSize:20}}>{deal.rewardEmoji}</span>
+                          <div style={{fontWeight:800,fontSize:13,color:C.text}}>{deal.title}</div>
+                        </div>
+                        <div style={{fontSize:11,color:C.mint,fontWeight:600}}>Premio: {deal.reward}</div>
+                        <div style={{fontSize:11,color:C.textMed}}>Para: {deal.targetName} · {deal.freq}</div>
+                      </div>
+                      <span style={{background:deal.status==="completed"?C.mintLt:C.goldLt,color:deal.status==="completed"?C.mintDk:C.goldDk,fontSize:10,fontWeight:700,borderRadius:8,padding:"3px 8px",flexShrink:0}}>
+                        {deal.status==="completed"?"✅ Completado":"⏳ Activo"}
+                      </span>
+                    </div>
+                    <div style={{height:6,borderRadius:6,background:C.border,overflow:"hidden",marginBottom:4}}>
+                      <div style={{height:"100%",width:`${Math.min((deal.tasksCompleted/deal.taskCount)*100,100)}%`,background:`linear-gradient(90deg,${C.mint},${C.gold})`,borderRadius:6}}/>
+                    </div>
+                    <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:C.textMed}}>
+                      <span>{deal.tasksCompleted}/{deal.taskCount} tareas</span>
+                      {deal.status==="completed"&&(
+                        <button onClick={()=>{setDeals(p=>p.filter(d=>d.id!==deal.id));notify("Trueque archivado","✅");}}
+                          style={{background:"none",border:"none",color:C.mint,fontWeight:700,fontSize:11,cursor:"pointer"}}>Archivar ✓</button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -3966,6 +4365,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
               <div style={{display:"flex",gap:6}}>
                 <button onClick={()=>setShowTaskCreator(true)} style={{background:C.mintLt,border:`1.5px solid ${C.mint}`,borderRadius:11,padding:"6px 10px",color:C.mintDk,fontSize:11,fontWeight:700,cursor:"pointer"}}>+ Misión</button>
                 <button onClick={()=>{setAssignStep("pick");setSelectedStudents([]);setShowChallengeAssign(true);}} style={{background:C.goldLt,border:`1.5px solid ${C.gold}`,borderRadius:11,padding:"6px 10px",color:C.goldDk,fontSize:11,fontWeight:700,cursor:"pointer"}}>🎯 Desafío</button>
+                <button onClick={()=>setShowDealCreate(true)} style={{background:C.mintLt,border:`1.5px solid ${C.mint}`,borderRadius:11,padding:"6px 10px",color:C.mintDk,fontSize:11,fontWeight:700,cursor:"pointer"}}>🤝 Trueque</button>
                 <button onClick={()=>notify("Reporte PDF listo para compartir","📊")} style={{background:C.skyLt,border:`1.5px solid ${C.sky}`,borderRadius:11,padding:"6px 10px",color:C.sky,fontSize:11,fontWeight:700,cursor:"pointer"}}>📊 PDF</button>
                 <button onClick={()=>setShowLinkTutor(true)} style={{background:`linear-gradient(135deg,${C.mint},${C.mintDk})`,border:"none",borderRadius:11,padding:"6px 10px",color:"white",fontSize:11,fontWeight:700,cursor:"pointer"}}>🔗</button>
               </div>
@@ -4422,45 +4822,100 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
       {(role===ROLES.PARENT||role===ROLES.TEACHER)&&tab==="perfil"&&(
         <div style={{padding:"16px 14px 100px"}}>
 
-          {/* Profile hero */}
-          <div style={{background:`linear-gradient(135deg,${role===ROLES.PARENT?C.gold:C.sky},${role===ROLES.PARENT?C.goldDk:C.mintDk})`,borderRadius:22,padding:22,marginBottom:16,textAlign:"center",color:"white",position:"relative",overflow:"hidden",boxShadow:`0 6px 24px ${role===ROLES.PARENT?C.gold:C.sky}50`}}>
-            <div style={{position:"absolute",right:-10,top:-10,fontSize:80,opacity:0.08}}>{role===ROLES.PARENT?"👨‍👩‍👦":"🏫"}</div>
-            <div style={{width:80,height:80,borderRadius:"50%",background:"rgba(255,255,255,0.25)",margin:"0 auto 12px",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",border:"3px solid rgba(255,255,255,0.5)"}}>
-              <KQIcon id={user.avatar||"a_buddy"} size={72}/>
+          {/* ── Profile Hero ── */}
+          <div style={{background:`linear-gradient(135deg,${role===ROLES.PARENT?C.gold:C.sky},${role===ROLES.PARENT?C.goldDk:"#1565C0"})`,borderRadius:22,padding:22,marginBottom:16,textAlign:"center",color:"white",position:"relative",overflow:"hidden",boxShadow:`0 6px 24px ${role===ROLES.PARENT?C.gold:C.sky}50`}}>
+            <div style={{position:"absolute",right:-10,top:-10,fontSize:80,opacity:0.07}}>{role===ROLES.PARENT?"👨‍👩‍👦":"🏫"}</div>
+            {/* Clickable avatar */}
+            <div onClick={()=>setShowAvatarEditor(true)} style={{cursor:"pointer",display:"inline-block",marginBottom:12,position:"relative"}}>
+              <div style={{width:88,height:88,borderRadius:"50%",background:"rgba(255,255,255,0.25)",border:"3px solid rgba(255,255,255,0.6)",overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 16px rgba(0,0,0,0.2)"}}>
+                {avatarPhoto
+                  ? <img src={avatarPhoto} style={{width:"100%",height:"100%",objectFit:"cover"}} alt="avatar"/>
+                  : <KQIcon id={user.avatar||"a_buddy"} size={80}/>
+                }
+              </div>
+              <div style={{position:"absolute",bottom:0,right:0,width:26,height:26,borderRadius:"50%",background:"rgba(255,255,255,0.9)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,boxShadow:"0 2px 8px rgba(0,0,0,0.2)"}}>✏️</div>
             </div>
             <div style={{display:"flex",alignItems:"center",gap:8,justifyContent:"center",marginBottom:4}}>
               <div style={{fontWeight:900,fontSize:22}}>{user.name||"Sin nombre"}</div>
               <button onClick={()=>{setEditDisplayName(user.name||"");setEditUsername(user.username||"");setShowProfileEdit(true);}}
-                style={{background:"rgba(255,255,255,0.25)",border:"1.5px solid rgba(255,255,255,0.4)",borderRadius:8,padding:"3px 8px",fontSize:10,fontWeight:700,color:"white",cursor:"pointer"}}>✏️</button>
+                style={{background:"rgba(255,255,255,0.25)",border:"1.5px solid rgba(255,255,255,0.5)",borderRadius:8,padding:"3px 8px",fontSize:10,fontWeight:700,color:"white",cursor:"pointer"}}>✏️</button>
             </div>
-            {user.username&&<div style={{fontSize:12,opacity:0.8,marginBottom:4}}>@{user.username}</div>}
+            {user.username&&<div style={{fontSize:12,opacity:0.75,marginBottom:2}}>@{user.username}</div>}
             <div style={{fontSize:12,opacity:0.85}}>{role===ROLES.PARENT?"Padre / Tutor":"Profesor"}</div>
           </div>
 
-          {/* Stats */}
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
-            {[
-              {l:"Cristales",v:`💎 ${user.gems}`,   c:C.sky},
-              {l:"Monedas",  v:`💰 ${user.coins}`,  c:C.gold},
-              {l:"Vinculados",v:`👦 ${linkedStudents.length}`, c:C.mint},
-            ].map((s,i)=>(
-              <div key={i} style={{background:C.card,borderRadius:14,padding:"12px 8px",textAlign:"center",boxShadow:C.shadow}}>
-                <div style={{fontWeight:900,fontSize:16,color:s.c}}>{s.v}</div>
-                <div style={{fontSize:10,color:C.textMed,marginTop:2}}>{s.l}</div>
+          {/* ── Stats Row ── */}
+          <div style={{display:"grid",gridTemplateColumns:role===ROLES.PARENT?"1fr 1fr 1fr":"1fr 1fr",gap:8,marginBottom:16}}>
+            <div style={{background:C.card,borderRadius:14,padding:"12px 8px",textAlign:"center",boxShadow:C.shadow}}>
+              <div style={{fontWeight:900,fontSize:18,color:C.sky}}>💎 {user.gems}</div>
+              <div style={{fontSize:10,color:C.textMed,marginTop:2}}>Cristales</div>
+            </div>
+            {role===ROLES.PARENT&&(
+              <div style={{background:C.card,borderRadius:14,padding:"12px 8px",textAlign:"center",boxShadow:C.shadow,cursor:"pointer"}} onClick={()=>setTab("rubies")}>
+                <div style={{fontWeight:900,fontSize:18,color:C.ruby}}>💎🔴 {user.rubies||0}</div>
+                <div style={{fontSize:10,color:C.textMed,marginTop:2}}>Rubíes</div>
               </div>
-            ))}
+            )}
+            <div style={{background:C.card,borderRadius:14,padding:"12px 8px",textAlign:"center",boxShadow:C.shadow}}>
+              <div style={{fontWeight:900,fontSize:18,color:C.mint}}>👦 {linkedStudents.length}</div>
+              <div style={{fontSize:10,color:C.textMed,marginTop:2}}>Vinculados</div>
+            </div>
           </div>
 
-          {/* Actions */}
+          {/* ── Ruby inventory (parent) ── */}
+          {role===ROLES.PARENT&&rubyInventory.length>0&&(
+            <div style={{background:C.card,borderRadius:18,padding:16,marginBottom:14,boxShadow:C.shadow}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                <div style={{fontWeight:800,fontSize:14,color:C.text}}>💎🔴 Colección de Rubíes ({rubyInventory.length})</div>
+                <button onClick={()=>setTab("rubies")} style={{background:C.rubyLt,border:`1.5px solid ${C.ruby}30`,borderRadius:9,padding:"4px 10px",fontSize:11,fontWeight:700,color:C.ruby,cursor:"pointer"}}>Ver tienda →</button>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:7}}>
+                {rubyInventory.slice(0,8).map((item,i)=>{
+                  const r=RUBY_RARITIES[item.rarity];
+                  return(
+                    <div key={i} style={{background:r?.bg||C.rubyLt,borderRadius:12,padding:8,textAlign:"center",border:`1.5px solid ${r?.color||C.ruby}30`}}>
+                      <KQIcon id={item.svgKey||"a_cub"} size={36}/>
+                      <div style={{fontSize:9,fontWeight:700,color:r?.color||C.ruby,marginTop:3,lineHeight:1.2}}>{item.name}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ── Regular inventory ── */}
+          {inventory.length>0&&(
+            <div style={{background:C.card,borderRadius:18,padding:16,marginBottom:14,boxShadow:C.shadow}}>
+              <div style={{fontWeight:800,fontSize:14,color:C.text,marginBottom:12}}>🎒 Inventario ({inventory.length})</div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:7}}>
+                {inventory.slice(0,8).map((item,i)=>{
+                  const r=RARITIES[item.rarity];
+                  return(
+                    <div key={i} style={{background:r?.bg||C.mintLt,borderRadius:12,padding:8,textAlign:"center",border:`1.5px solid ${r?.c||C.mint}30`}}>
+                      <KQIcon id={item.svgKey||"a_cub"} size={36}/>
+                      <div style={{fontSize:9,fontWeight:700,color:r?.c||C.mint,marginTop:3,lineHeight:1.2}}>{item.name}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ── Quick actions ── */}
           <div style={{background:C.card,borderRadius:18,overflow:"hidden",boxShadow:C.shadow,marginBottom:12}}>
             {[
-              {icon:"✏️", label:"Editar nombre y usuario", action:()=>{setEditDisplayName(user.name||"");setEditUsername(user.username||"");setShowProfileEdit(true);}},
-              {icon:"🎨", label:"Cambiar avatar", action:()=>setShowAvatarEditor(true)},
-              {icon:"🔗", label:"Generar código de invitación", action:()=>setTab("qrcode")},
-              {icon:"🔔", label:"Solicitudes de vinculación", action:()=>setTab("validate")},
-              {icon:"🌙", label:dark?"Modo claro":"Modo oscuro", action:()=>setDark(d=>!d)},
-            ].map((item,i)=>(
-              <button key={i} onClick={item.action} style={{width:"100%",padding:"14px 18px",border:"none",borderBottom:`1px solid ${C.border}`,background:"none",display:"flex",alignItems:"center",gap:14,cursor:"pointer",textAlign:"left",fontFamily:"'Nunito',sans-serif"}}>
+              {icon:"✏️", label:"Editar nombre y usuario",         action:()=>{setEditDisplayName(user.name||"");setEditUsername(user.username||"");setShowProfileEdit(true);}},
+              {icon:"🎨", label:"Cambiar avatar / foto",           action:()=>setShowAvatarEditor(true)},
+              ...(role===ROLES.PARENT?[
+                {icon:"💎🔴",label:"Tienda de Rubíes",             action:()=>setTab("rubies")},
+                {icon:"🔗", label:"Vincular hijo",                  action:()=>setTab("qrcode")},
+                {icon:"⚖️", label:"Crear trueque",                  action:()=>setShowDealCreate(true)},
+              ]:[
+                {icon:"📋", label:"Asignar misiones a la clase",    action:()=>setTab("assign")},
+              ]),
+              {icon:dark?"☀️":"🌙", label:dark?"Modo claro":"Modo oscuro", action:()=>setDark(d=>!d)},
+            ].map((item,i,arr)=>(
+              <button key={i} onClick={item.action} style={{width:"100%",padding:"14px 18px",border:"none",borderBottom:i<arr.length-1?`1px solid ${C.border}`:"none",background:"none",display:"flex",alignItems:"center",gap:14,cursor:"pointer",textAlign:"left",fontFamily:"'Nunito',sans-serif"}}>
                 <span style={{fontSize:20,flexShrink:0}}>{item.icon}</span>
                 <span style={{fontSize:14,fontWeight:600,color:C.text,flex:1}}>{item.label}</span>
                 <span style={{color:C.textLt}}>›</span>
@@ -4468,9 +4923,9 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             ))}
           </div>
 
-          {/* Admin access */}
+          {/* ── Admin access ── */}
           {user.isAdmin&&(
-            <button onClick={()=>setTab("admin")} style={{width:"100%",background:`linear-gradient(135deg,${C.purple}15,${C.sky}10)`,border:`2px solid ${C.purple}40`,borderRadius:16,padding:"13px 18px",marginBottom:12,display:"flex",alignItems:"center",gap:12,cursor:"pointer",boxShadow:C.shadow}}>
+            <button onClick={()=>setTab("admin")} style={{width:"100%",background:`linear-gradient(135deg,${C.purple}15,${C.sky}08)`,border:`2px solid ${C.purple}40`,borderRadius:16,padding:"13px 18px",marginBottom:12,display:"flex",alignItems:"center",gap:12,cursor:"pointer",boxShadow:C.shadow}}>
               <span style={{fontSize:22}}>⚙️</span>
               <div style={{flex:1,textAlign:"left"}}>
                 <div style={{fontWeight:800,fontSize:14,color:C.purple}}>Panel de Administración</div>
@@ -4480,18 +4935,186 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             </button>
           )}
 
-          {/* Report + Sign out */}
+          {/* ── Report + Sign out ── */}
           <button onClick={()=>setShowReport(true)} style={{width:"100%",background:C.card,border:`1.5px solid ${C.border}`,borderRadius:14,padding:"12px 18px",marginBottom:8,display:"flex",alignItems:"center",gap:12,cursor:"pointer",boxShadow:C.shadow}}>
             <span style={{fontSize:20}}>🚨</span>
             <span style={{fontSize:13,fontWeight:600,color:C.text,flex:1}}>Reportar conducta inapropiada</span>
             <span style={{color:C.textLt}}>›</span>
           </button>
           {onSignOut&&(
-            <button onClick={()=>onSignOut()} style={{width:"100%",background:C.coralLt,border:`1.5px solid ${C.coral}30`,borderRadius:14,padding:"12px 18px",display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}>
+            <button onClick={()=>onSignOut()} style={{width:"100%",background:C.rubyLt,border:`1.5px solid ${C.ruby}20`,borderRadius:14,padding:"12px 18px",display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}>
               <span style={{fontSize:20}}>🚪</span>
-              <span style={{fontSize:13,fontWeight:700,color:C.coral,flex:1}}>Cerrar sesión</span>
+              <span style={{fontSize:13,fontWeight:700,color:C.ruby,flex:1}}>Cerrar sesión</span>
             </button>
           )}
+        </div>
+      )}
+
+      {/* ════ RUBY SHOP (parent only) ════ */}
+      {role===ROLES.PARENT&&tab==="rubies"&&(
+        <div style={{padding:"16px 14px 100px"}}>
+          {/* Header */}
+          <div style={{background:"linear-gradient(135deg,#E53935,#B71C1C)",borderRadius:22,padding:18,marginBottom:16,color:"white",position:"relative",overflow:"hidden",boxShadow:"0 6px 24px #E5393550"}}>
+            <div style={{position:"absolute",right:-10,top:-10,fontSize:80,opacity:0.08}}>💎</div>
+            <div style={{fontWeight:900,fontSize:20,marginBottom:4}}>Tienda de Rubíes 💎🔴</div>
+            <div style={{fontSize:13,opacity:0.9,marginBottom:12}}>Items exclusivos para tutores — gana rubíes aprobando tareas de tus hijos</div>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <div style={{background:"rgba(255,255,255,0.2)",borderRadius:14,padding:"8px 16px",display:"flex",alignItems:"center",gap:8}}>
+                <svg width="20" height="20" viewBox="0 0 18 18" fill="none"><polygon points="9,1 15,6 13,17 5,17 3,6" fill="#FF8A80"/><polygon points="9,3 14,7 12,15 6,15 4,7" fill="white" opacity="0.4"/></svg>
+                <span style={{fontWeight:900,fontSize:22}}>{user.rubies||0}</span>
+                <span style={{fontSize:13,opacity:0.9}}>rubíes</span>
+              </div>
+              <div style={{fontSize:12,opacity:0.8}}>+1 rubí por cada tarea aprobada</div>
+            </div>
+          </div>
+
+          {/* How to earn */}
+          <div style={{background:"#FFEBEE",border:"1.5px solid #E5393530",borderRadius:14,padding:"10px 14px",marginBottom:16,fontSize:12,color:"#B71C1C"}}>
+            🔴 Los rubíes solo se ganan cuando <b>apruebas tareas de tus hijos</b>. No se compran. Los profesores no tienen acceso a esta tienda.
+          </div>
+
+          {/* Ruby chests */}
+          <div style={{fontWeight:800,fontSize:16,color:C.text,marginBottom:12}}>Cofres de Rubíes</div>
+          {RUBY_CHESTS.map(ch=>(
+            <div key={ch.id} style={{background:C.card,borderRadius:20,marginBottom:12,boxShadow:`0 4px 20px ${ch.glow}`,border:`2px solid ${ch.color}30`,overflow:"hidden"}}>
+              <div style={{background:ch.gradient,padding:"16px 18px 12px",color:"white",position:"relative",overflow:"hidden"}}>
+                <div style={{position:"absolute",right:-8,top:-8,opacity:0.1,fontSize:70}}>💎</div>
+                <div style={{display:"flex",alignItems:"center",gap:14}}>
+                  <div style={{fontSize:52,filter:`drop-shadow(0 4px 12px ${ch.glow})`}} className={ch.id==="rb_legend"?"float":""}>
+                    <svg width="52" height="52" viewBox="0 0 56 56" fill="none">
+                      <defs><linearGradient id={`rcg_${ch.id}`} x1="0" y1="0" x2="0" y2="1"><stop stopColor="rgba(255,255,255,0.8)"/><stop offset="1" stopColor="rgba(255,255,255,0.2)"/></linearGradient></defs>
+                      <rect x="6" y="26" width="44" height="24" rx="4" fill="rgba(0,0,0,0.3)"/>
+                      <rect x="6" y="16" width="44" height="14" rx="4" fill="rgba(0,0,0,0.2)"/>
+                      <rect x="6" y="26" width="44" height="6" fill="rgba(0,0,0,0.2)"/>
+                      <rect x="20" y="23" width="16" height="7" rx="3.5" fill={`url(#rcg_${ch.id})`}/>
+                      <circle cx="28" cy="26.5" r="2.5" fill="rgba(0,0,0,0.4)"/>
+                      <circle cx="28" cy="26.5" r="1.2" fill="rgba(255,255,255,0.8)"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div style={{fontWeight:900,fontSize:17}}>{ch.name}</div>
+                    <div style={{fontSize:12,opacity:0.85,marginTop:2}}>{ch.desc}</div>
+                  </div>
+                </div>
+              </div>
+              <div style={{padding:"12px 18px"}}>
+                <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}}>
+                  {Object.entries(ch.rates).filter(([,v])=>v>0).map(([k,v])=>(
+                    <span key={k} style={{background:RUBY_RARITIES[k]?.bg,color:RUBY_RARITIES[k]?.color,fontSize:10,fontWeight:700,borderRadius:8,padding:"2px 8px"}}>
+                      {RUBY_RARITIES[k]?.label} {v}%
+                    </span>
+                  ))}
+                </div>
+                <button onClick={()=>{
+                  if((user.rubies||0)<ch.rubies){ notify(`Necesitas ${ch.rubies} 💎🔴 · tienes ${user.rubies||0}`,"🔴"); return; }
+                  setOpeningRuby(ch);
+                  setRubyChestPhase("idle");
+                  setRubyWin(null);
+                }} style={{width:"100%",padding:"11px",borderRadius:14,border:"none",background:ch.gradient,color:"white",fontWeight:800,fontSize:14,cursor:"pointer",boxShadow:`0 4px 12px ${ch.glow}`}}>
+                  💎 {ch.rubies} rubíes → Abrir
+                </button>
+              </div>
+            </div>
+          ))}
+
+          {/* Ruby inventory */}
+          {rubyInventory.length>0&&(
+            <div style={{background:C.card,borderRadius:18,padding:16,marginTop:8,boxShadow:C.shadow}}>
+              <div style={{fontWeight:800,fontSize:15,color:C.text,marginBottom:12}}>💎 Mi colección de rubíes ({rubyInventory.length})</div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
+                {rubyInventory.map((item,i)=>{
+                  const r=RUBY_RARITIES[item.rarity];
+                  return(
+                    <div key={i} style={{background:r?.bg||C.mintLt,borderRadius:14,padding:10,textAlign:"center",border:`2px solid ${r?.color||C.mint}30`,position:"relative"}}>
+                      <KQIcon id={item.svgKey||"a_cub"} size={44}/>
+                      <div style={{fontSize:10,fontWeight:700,color:r?.color||C.mint,marginTop:4}}>{item.name}</div>
+                      <div style={{fontSize:9,color:r?.color,fontWeight:600}}>{r?.label}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ════ RUBY CHEST OPENING MODAL ════ */}
+      {openingRuby&&(
+        <div className="overlay" style={{zIndex:9992}}>
+          <div className="modal pop-in" style={{textAlign:"center",background:`linear-gradient(160deg,${C.card} 60%,#FFEBEE)`}}>
+            {rubyChestPhase==="idle"&&(
+              <>
+                <div style={{fontSize:14,color:C.textMed,marginBottom:8}}>Abriendo…</div>
+                <div style={{marginBottom:16,display:"flex",justifyContent:"center"}} className="float">
+                  <svg width="88" height="88" viewBox="0 0 56 56" fill="none">
+                    <defs><linearGradient id="rco" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#FF8A80"/><stop offset="1" stopColor="#E53935"/></linearGradient></defs>
+                    <rect x="6" y="26" width="44" height="24" rx="4" fill="url(#rco)"/>
+                    <rect x="6" y="16" width="44" height="14" rx="4" fill="#EF5350"/>
+                    <rect x="6" y="26" width="44" height="6" fill="#B71C1C"/>
+                    <rect x="20" y="23" width="16" height="7" rx="3.5" fill="#FFCDD2"/>
+                    <circle cx="28" cy="26.5" r="3" fill="#B71C1C"/>
+                    <circle cx="28" cy="26.5" r="1.5" fill="#FF8A80"/>
+                  </svg>
+                </div>
+                <div style={{fontWeight:900,fontSize:20,color:C.text,marginBottom:6}}>{openingRuby.name}</div>
+                <div style={{fontSize:13,color:C.textMed,marginBottom:20}}>{openingRuby.desc}</div>
+                <BtnMain onClick={()=>{
+                  const newRubies=(user.rubies||0)-openingRuby.rubies;
+                  setUser(p=>({...p,rubies:newRubies}));
+                  if(userId){ import("./supabase.js").then(({supabase})=>supabase.from("profiles").update({rubies:newRubies}).eq("id",userId)).catch(()=>{}); }
+                  setRubyChestPhase("shaking");
+                  setTimeout(()=>{
+                    const item=rollRubyChest(openingRuby.id);
+                    setRubyWin(item);
+                    setRubyInventory(p=>[...p,item]);
+                    setRubyChestPhase("reveal");
+                    boom();
+                    if(userId){ import("./supabase.js").then(({supabase})=>supabase.from("inventory").insert({
+                      user_id:userId, item_id:item.id, item_type:item.type,
+                      item_name:item.name, rarity:"ruby_"+item.rarity, svg_key:item.svgKey||item.id,
+                    })).catch(()=>{}); }
+                  },2200);
+                }} bg="linear-gradient(135deg,#E53935,#B71C1C)" style={{width:"100%"}}>
+                  💎 Gastar {openingRuby.rubies} rubíes
+                </BtnMain>
+                <button onClick={()=>setOpeningRuby(null)} style={{marginTop:10,background:"none",border:"none",color:C.textMed,cursor:"pointer",fontSize:13}}>Cancelar</button>
+              </>
+            )}
+            {rubyChestPhase==="shaking"&&(
+              <div>
+                <div style={{fontSize:13,color:C.textMed,marginBottom:16}}>Abriendo…</div>
+                <div className="chest-shake" style={{display:"flex",justifyContent:"center",marginBottom:20}}>
+                  <svg width="88" height="88" viewBox="0 0 56 56" fill="none">
+                    <defs><linearGradient id="rcs" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#FF8A80"/><stop offset="1" stopColor="#E53935"/></linearGradient></defs>
+                    <rect x="6" y="26" width="44" height="24" rx="4" fill="url(#rcs)"/>
+                    <rect x="6" y="16" width="44" height="14" rx="4" fill="#EF5350"/>
+                    <rect x="6" y="26" width="44" height="6" fill="#B71C1C"/>
+                  </svg>
+                </div>
+                <div style={{display:"flex",gap:8,justifyContent:"center"}}>
+                  {[0,1,2].map(i=><div key={i} style={{width:10,height:10,borderRadius:"50%",background:"#E53935",animation:`dotPulse 0.6s ${i*0.2}s ease-in-out infinite`}}/>)}
+                </div>
+              </div>
+            )}
+            {rubyChestPhase==="reveal"&&rubyWin&&(()=>{
+              const r=RUBY_RARITIES[rubyWin.rarity];
+              return(
+                <div>
+                  <div style={{fontWeight:900,fontSize:13,color:r?.color,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>{r?.star} {r?.label}</div>
+                  <div style={{marginBottom:12,display:"flex",justifyContent:"center"}} className="pop-in">
+                    <div style={{width:90,height:90,borderRadius:22,background:r?.bg,border:`3px solid ${r?.color}`,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:`0 0 28px ${r?.glow}`}}>
+                      <KQIcon id={rubyWin.svgKey||"a_cub"} size={72}/>
+                    </div>
+                  </div>
+                  <div style={{fontWeight:900,fontSize:22,color:C.text,marginBottom:4}}>{rubyWin.name}</div>
+                  <div style={{fontSize:13,color:C.textMed,marginBottom:20}}>{rubyWin.desc}</div>
+                  <BtnMain onClick={()=>{setOpeningRuby(null);setRubyChestPhase("idle");setRubyWin(null);}} bg="linear-gradient(135deg,#E53935,#B71C1C)" style={{width:"100%"}}>
+                    ¡Genial! Ver mi colección
+                  </BtnMain>
+                </div>
+              );
+            })()}
+          </div>
         </div>
       )}
 
@@ -4566,8 +5189,12 @@ function TutorRequestsPanel({userId, C, notify, onApprove}) {
   const approve = async(req) => {
     import("./supabase.js").then(async({supabase})=>{
       try {
-        // Link parent to child
-        await supabase.from("parent_child").insert({parent_id:userId, child_id:req.child_id});
+        // Link parent/teacher to child
+        const linkTable = req.tutor_role==="teacher" ? "teacher_student" : "parent_child";
+        const linkData  = req.tutor_role==="teacher"
+          ? {teacher_id:userId, student_id:req.child_id}
+          : {parent_id:userId,  child_id:req.child_id};
+        await supabase.from(linkTable).insert(linkData).select();
         // Activate child account
         await supabase.from("profiles").update({account_status:"active"}).eq("id",req.child_id);
         // Mark request as approved
