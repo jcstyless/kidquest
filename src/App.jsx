@@ -1090,6 +1090,9 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
   const [pendingLoaded,   setPendingLoaded]   = useState(false);
 
   // ── ADMIN PANEL ──
+  const [selectedUser,   setSelectedUser]   = useState(null); // user detail modal
+  const [userLinks,      setUserLinks]      = useState({parents:[],children:[],teachers:[],students:[]}); // links for selected user
+  const [loadingLinks,   setLoadingLinks]   = useState(false);
   const [adminView,     setAdminView]     = useState("admin"); // admin|student|parent|teacher
   const [adminUsers,    setAdminUsers]    = useState([]);
   const [adminReports,  setAdminReports]  = useState([]);
@@ -1219,7 +1222,14 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
   useEffect(()=>{
     if(!userId||!initialProfile) return;
     try{ localStorage.removeItem("kq_v1_user"); localStorage.removeItem("kq_v1_tasks"); }catch(e){}
-    if(initialProfile.age_group) setAgeGroup(initialProfile.age_group);
+    if(initialProfile.age_group)   setAgeGroup(initialProfile.age_group);
+    // ── Load avatar customization saved in DB ──
+    if(initialProfile.avatar_key)   setUser(p=>({...p, avatar:initialProfile.avatar_key}));
+    if(initialProfile.frame && initialProfile.frame!=="none") setAvatarFrame(initialProfile.frame);
+    if(initialProfile.avatar_bg)    setAvatarBg(initialProfile.avatar_bg);
+    if(initialProfile.avatar_emoji) setAvatarEmoji(initialProfile.avatar_emoji);
+    if(initialProfile.avatar_photo) setAvatarPhoto(initialProfile.avatar_photo);
+    if(initialProfile.avatar_photo) setAvatarPhoto(initialProfile.avatar_photo);
     // Sync navigation from profile
     if(initialProfile.role) {
       setRole(initialProfile.role);
@@ -3115,7 +3125,10 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                           <div style={{marginTop:8,display:"flex",gap:8,justifyContent:"center"}}>
                             <label style={{cursor:"pointer"}}>
                               <div style={{padding:"7px 14px",borderRadius:12,border:`1.5px solid ${C.mint}`,background:C.mintLt,color:C.mintDk,fontSize:12,fontWeight:700}}>🔄 Cambiar</div>
-                              <input type="file" accept="image/*" capture="user" onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=ev=>setAvatarPhoto(ev.target.result);r.readAsDataURL(f);}} style={{display:"none"}}/>
+                              <input type="file" accept="image/*" capture="user" onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=ev=>{
+            setAvatarPhoto(ev.target.result);
+            if(userId){ import("./supabase.js").then(({supabase})=>supabase.from("profiles").update({avatar_photo:ev.target.result}).eq("id",userId)).catch(()=>{}); }
+          };r.readAsDataURL(f);}} style={{display:"none"}}/>
                             </label>
                             <button onClick={()=>setAvatarPhoto(null)} style={{padding:"7px 14px",borderRadius:12,border:`1.5px solid ${C.coral}`,background:C.coralLt,color:C.coral,fontSize:12,fontWeight:700,cursor:"pointer"}}>🗑️ Quitar</button>
                           </div>
@@ -3142,7 +3155,10 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                       <div style={{fontSize:13,color:C.textMed,marginBottom:10}}>Elige un emoji como avatar (si no tienes foto):</div>
                       <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:8,marginBottom:10}}>
                         {["🦁","🦊","🐯","🦋","🐺","🦅","🐲","🦄","🐸","🦈","🐻","🦉","🐺","🐼","🦋","🦎","🚀","⚡","🔥","💎"].map(e=>(
-                          <button key={e} onClick={()=>setAvatarEmoji(e)} style={{height:48,borderRadius:14,border:`2px solid ${avatarEmoji===e?C.mint:C.border}`,background:avatarEmoji===e?C.mintLt:C.card,fontSize:24,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.15s"}}>
+                          <button key={e} onClick={()=>{
+                        setAvatarEmoji(e);
+                        if(userId){ import("./supabase.js").then(({supabase})=>supabase.from("profiles").update({avatar_emoji:e}).eq("id",userId)).catch(()=>{}); }
+                      }} style={{height:48,borderRadius:14,border:`2px solid ${avatarEmoji===e?C.mint:C.border}`,background:avatarEmoji===e?C.mintLt:C.card,fontSize:24,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.15s"}}>
                             {e}
                           </button>
                         ))}
@@ -3161,7 +3177,10 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                         {NATIVE_FRAMES.map(fr=>{
                           const sel = avatarFrame===fr.id;
                           return (
-                            <button key={fr.id} onClick={()=>setAvatarFrame(fr.id)}
+                            <button key={fr.id} onClick={()=>{
+                              setAvatarFrame(fr.id);
+                              if(userId){ import("./supabase.js").then(({supabase})=>supabase.from("profiles").update({frame:fr.id}).eq("id",userId)).catch(()=>{}); }
+                            }}
                               style={{padding:"10px 8px",borderRadius:14,border:`2px solid ${sel?C.mint:C.border}`,background:sel?C.mintLt:C.card,cursor:"pointer",textAlign:"center",transition:"all 0.15s",boxShadow:sel?C.shadowMd:"none"}}>
                               <FramePreview id={fr.id} size={38} emoji={avatarEmoji}/>
                               <div style={{fontSize:10,fontWeight:700,color:sel?C.mintDk:C.text,marginTop:5}}>{fr.label}</div>
@@ -3224,7 +3243,10 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                           {id:"ocean",   label:"Océano",      g:`linear-gradient(135deg,#4AAEE8,#4DC9A0)`},
                           {id:"candy",   label:"Dulce",       g:`linear-gradient(135deg,#FF6B9D,#8B6BE8)`},
                         ].map(bg=>(
-                          <button key={bg.id} onClick={()=>setAvatarBg(bg.id)} style={{height:60,borderRadius:14,border:`3px solid ${avatarBg===bg.id?"white":"transparent"}`,background:bg.g,cursor:"pointer",display:"flex",alignItems:"flex-end",justifyContent:"center",paddingBottom:6,boxShadow:avatarBg===bg.id?`0 0 0 2px ${C.mint}`:"none",transition:"all 0.15s"}}>
+                          <button key={bg.id} onClick={()=>{
+                          setAvatarBg(bg.id);
+                          if(userId){ import("./supabase.js").then(({supabase})=>supabase.from("profiles").update({avatar_bg:bg.id}).eq("id",userId)).catch(()=>{}); }
+                        }} style={{height:60,borderRadius:14,border:`3px solid ${avatarBg===bg.id?"white":"transparent"}`,background:bg.g,cursor:"pointer",display:"flex",alignItems:"flex-end",justifyContent:"center",paddingBottom:6,boxShadow:avatarBg===bg.id?`0 0 0 2px ${C.mint}`:"none",transition:"all 0.15s"}}>
                             <span style={{fontSize:10,fontWeight:800,color:"white",textShadow:"0 1px 3px rgba(0,0,0,0.4)"}}>{bg.label}</span>
                           </button>
                         ))}
@@ -3232,8 +3254,23 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                     </div>
                   )}
 
-                  <BtnMain onClick={()=>setShowAvatarEditor(false)} bg={`linear-gradient(135deg,${C.mint},${C.mintDk})`} style={{width:"100%",marginTop:16}}>
-                    ✓ Guardar perfil
+                  <BtnMain onClick={async()=>{
+                    setShowAvatarEditor(false);
+                    if(userId){
+                      try{
+                        const {supabase} = await import("./supabase.js");
+                        await supabase.from("profiles").update({
+                          avatar_key:   user.avatar    || "a_cub",
+                          frame:        avatarFrame    || "none",
+                          avatar_bg:    avatarBg       || "mint",
+                          avatar_emoji: avatarEmoji    || "🦁",
+                          avatar_photo: avatarPhoto    || null,
+                        }).eq("id", userId);
+                        notify("✅ Perfil guardado","👤");
+                      } catch(e){ notify("Error guardando: "+e.message,"⚠️"); }
+                    }
+                  }} bg={`linear-gradient(135deg,${C.mint},${C.mintDk})`} style={{width:"100%",marginTop:16}}>
+                    💾 Guardar todo
                   </BtnMain>
                 </div>
               </div>
@@ -4067,25 +4104,34 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
               </div>
             ))}
 
-            {/* achievements */}
+            {/* achievements — calculated from real user stats */}
             <div style={{fontWeight:800,fontSize:15,color:C.text,margin:"14px 0 10px"}}>🏆 Logros</div>
-            {[
-              {e:"🔥",t:"Guerrero Constante",d:"15 días de racha",     done:true, c:C.coral},
-              {e:"💰",t:"Primer Ahorro",     d:"Guardaste tu 1ª moneda",done:true, c:C.goldDk},
-              {e:"🏠",t:"Héroe del Hogar",   d:"50 tareas del hogar",  done:false,c:C.mint,p:32},
-              {e:"🤖",t:"IA Aprobó ×20",     d:"20 fotos al 1er intento",done:false,c:C.purple,p:14},
-              {e:"🌍",t:"Corazón Solidario", d:"Proyecto social",      done:false,c:C.sky,p:0},
-            ].map((a,i)=>(
-              <div key={i} style={{background:C.card,borderRadius:14,padding:"11px 13px",marginBottom:7,display:"flex",gap:11,alignItems:"center",boxShadow:C.shadow,border:`1.5px solid ${a.done?a.c+"40":C.border}`,opacity:a.done?1:0.65}}>
-                <div style={{width:40,height:40,borderRadius:12,background:a.c+"18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,filter:a.done?"none":"grayscale(1)"}}>{a.e}</div>
-                <div style={{flex:1}}>
-                  <div style={{fontWeight:800,fontSize:13,color:a.done?a.c:C.text}}>{a.t}</div>
-                  <div style={{fontSize:11,color:C.textMed}}>{a.d}</div>
-                  {!a.done&&a.p!==undefined&&<div style={{marginTop:4,height:4,borderRadius:4,background:C.border,overflow:"hidden"}}><div style={{height:"100%",borderRadius:4,width:`${a.p}%`,background:a.c}}/></div>}
+            {(()=>{
+              const totalTasks = user.total_tasks_done||0;
+              const achList = [
+                {e:"🎮",t:"Primer Paso",      d:"Completa tu primera tarea",      done:totalTasks>=1,   c:C.mint,   p:Math.min(totalTasks/1*100,100)},
+                {e:"🔥",t:"Semana en Llamas", d:"7 días de racha seguidos",        done:user.streak>=7,  c:C.coral,  p:Math.min((user.streak/7)*100,100)},
+                {e:"🔥",t:"Guerrero Constante",d:"15 días de racha",              done:user.streak>=15, c:C.coral,  p:Math.min((user.streak/15)*100,100)},
+                {e:"⭐",t:"Primer Nivel",      d:"Sube al nivel 2",                done:user.level>=2,   c:C.gold,   p:Math.min((user.xp/200)*100,100)},
+                {e:"🏆",t:"Nivel 5",           d:"Llega al nivel 5",              done:user.level>=5,   c:C.gold,   p:Math.min((user.level/5)*100,100)},
+                {e:"💎",t:"Coleccionista",     d:"Abre tu primer cofre",           done:inventory.length>=1,c:C.sky, p:inventory.length>0?100:0},
+                {e:"💰",t:"Ahorrador",         d:"Guarda 10.000 en tu alcancía",   done:(user.savingsGoal?.saved||0)>=10000,c:C.goldDk,p:Math.min(((user.savingsGoal?.saved||0)/10000)*100,100)},
+                {e:"🏠",t:"Héroe del Hogar",   d:"Completa 10 tareas",            done:totalTasks>=10,  c:C.mint,   p:Math.min((totalTasks/10)*100,100)},
+                {e:"🌟",t:"Súper Héroe",       d:"Completa 50 tareas",            done:totalTasks>=50,  c:C.purple, p:Math.min((totalTasks/50)*100,100)},
+                {e:"🤖",t:"Amigo de la IA",   d:"20 fotos aprobadas por IA",      done:totalTasks>=20,  c:C.purple, p:Math.min((totalTasks/20)*100,100)},
+              ];
+              return achList.map((a,i)=>(
+                <div key={i} style={{background:C.card,borderRadius:14,padding:"11px 13px",marginBottom:7,display:"flex",gap:11,alignItems:"center",boxShadow:C.shadow,border:`1.5px solid ${a.done?a.c+"40":C.border}`,opacity:a.done?1:0.65}}>
+                  <div style={{width:40,height:40,borderRadius:12,background:a.c+"18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,filter:a.done?"none":"grayscale(1)"}}>{a.e}</div>
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:800,fontSize:13,color:a.done?a.c:C.text}}>{a.t}</div>
+                    <div style={{fontSize:11,color:C.textMed}}>{a.d}</div>
+                    {!a.done&&<div style={{marginTop:4,height:4,borderRadius:4,background:C.border,overflow:"hidden"}}><div style={{height:"100%",borderRadius:4,width:`${a.p}%`,background:a.c,transition:"width 0.5s"}}/></div>}
+                  </div>
+                  {a.done&&<span className="pop-in" style={{fontSize:20}}>⭐</span>}
                 </div>
-                {a.done&&<span className="pop-in">⭐</span>}
-              </div>
-            ))}
+              ));
+            })()}
           </div>
         )}
 
@@ -4680,6 +4726,28 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                       </div>
                     </div>
                     <div style={{display:"flex",gap:5,flexWrap:"wrap",justifyContent:"flex-end"}}>
+                      {user.isMaster&&(
+                        <button onClick={async()=>{
+                          setSelectedUser(u);
+                          setLoadingLinks(true);
+                          try {
+                            const {supabase}=await import("./supabase.js");
+                            const [{data:parents},{data:children},{data:teachers},{data:students}] = await Promise.all([
+                              supabase.from("parent_child").select("parent_id, profiles!parent_id(id,name,username,avatar_key)").eq("child_id",u.id),
+                              supabase.from("parent_child").select("child_id, profiles!child_id(id,name,username,avatar_key)").eq("parent_id",u.id),
+                              supabase.from("teacher_student").select("teacher_id, profiles!teacher_id(id,name,username,avatar_key)").eq("student_id",u.id),
+                              supabase.from("teacher_student").select("student_id, profiles!student_id(id,name,username,avatar_key)").eq("teacher_id",u.id),
+                            ]);
+                            setUserLinks({
+                              parents:  (parents||[]).map(r=>r.profiles).filter(Boolean),
+                              children: (children||[]).map(r=>r.profiles).filter(Boolean),
+                              teachers: (teachers||[]).map(r=>r.profiles).filter(Boolean),
+                              students: (students||[]).map(r=>r.profiles).filter(Boolean),
+                            });
+                          } catch(e){ console.warn(e); }
+                          setLoadingLinks(false);
+                        }} style={{padding:"5px 9px",borderRadius:9,border:`1.5px solid ${C.purple}`,background:C.purpleLt,color:C.purple,fontSize:10,fontWeight:700,cursor:"pointer"}}>👤</button>
+                      )}
                       <button onClick={()=>{setGiftUser(u);setAdminTab("gifts")}}
                         style={{padding:"5px 9px",borderRadius:9,border:`1.5px solid ${C.gold}`,background:C.goldLt,color:C.goldDk,fontSize:10,fontWeight:700,cursor:"pointer"}}>🎁</button>
                       {user.isMaster&&u.id!==userId&&(
@@ -5174,6 +5242,217 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                 </div>
               );
             })()}
+          </div>
+        </div>
+      )}
+
+
+      {/* ════ ADMIN: USER DETAIL MODAL (master only) ════ */}
+      {selectedUser&&user.isMaster&&(
+        <div className="overlay" style={{zIndex:9998}}>
+          <div className="modal pop-in" style={{maxHeight:"92vh",overflowY:"auto"}}>
+            {/* Header */}
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+              <div style={{fontWeight:900,fontSize:17,color:C.text}}>👤 Perfil completo</div>
+              <button onClick={()=>setSelectedUser(null)} style={{background:C.border,border:"none",borderRadius:9,padding:"5px 10px",cursor:"pointer",color:C.textMed}}>✕</button>
+            </div>
+
+            {/* Avatar + name */}
+            <div style={{display:"flex",gap:14,alignItems:"center",marginBottom:16,padding:"12px 14px",background:C.bg,borderRadius:14}}>
+              <div style={{width:56,height:56,borderRadius:"50%",background:`linear-gradient(135deg,${C.mint},${C.mintDk})`,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0}}>
+                <KQIcon id={selectedUser.avatar_key||"a_cub"} size={50}/>
+              </div>
+              <div>
+                <div style={{fontWeight:900,fontSize:18,color:C.text}}>{selectedUser.name||"Sin nombre"}</div>
+                <div style={{fontSize:12,color:C.textMed}}>@{selectedUser.username||"—"}</div>
+                <div style={{fontSize:11,color:C.textLt,marginTop:2}}>ID: {selectedUser.id?.slice(0,16)}…</div>
+              </div>
+            </div>
+
+            {/* Stats grid */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:14}}>
+              {[
+                {l:"Rol",       v:selectedUser.role==="student"?"🎮 Niño":selectedUser.role==="parent"?"👨‍👩‍👦 Padre":"🏫 Profe"},
+                {l:"Edad",      v:`${selectedUser.age_years||"?"}a ${selectedUser.is_minor?"(menor)":"(adulto)"}`},
+                {l:"Estado",    v:selectedUser.account_status==="active"?"✅ Activo":"⏸ "+selectedUser.account_status},
+                {l:"Nivel",     v:`Nv.${selectedUser.level||1}`},
+                {l:"XP",        v:(selectedUser.xp||0).toLocaleString()},
+                {l:"Racha",     v:`🔥 ${selectedUser.streak||0}d`},
+                {l:"💎 Cristales",v:selectedUser.gems||0},
+                {l:"💰 Monedas", v:selectedUser.coins||0},
+                {l:"🔴 Rubíes",  v:selectedUser.rubies||0},
+              ].map((s,i)=>(
+                <div key={i} style={{background:C.card,borderRadius:11,padding:"8px 10px",textAlign:"center",boxShadow:C.shadow}}>
+                  <div style={{fontWeight:800,fontSize:12,color:C.text}}>{s.v}</div>
+                  <div style={{fontSize:9,color:C.textMed,marginTop:1}}>{s.l}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Connections */}
+            {loadingLinks
+              ? <div style={{textAlign:"center",padding:16,color:C.textMed,fontSize:13}}>Cargando vínculos…</div>
+              : (<div style={{marginBottom:14}}>
+                  <div style={{fontWeight:800,fontSize:14,color:C.text,marginBottom:10}}>🔗 Vínculos</div>
+
+                  {/* Parents */}
+                  {userLinks.parents.length>0&&(
+                    <div style={{marginBottom:10}}>
+                      <div style={{fontSize:11,fontWeight:700,color:C.goldDk,marginBottom:6}}>👨‍👩‍👦 Padres/Tutores ({userLinks.parents.length})</div>
+                      {userLinks.parents.map(p=>(
+                        <div key={p.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:C.goldLt,borderRadius:11,padding:"8px 12px",marginBottom:5}}>
+                          <div>
+                            <div style={{fontWeight:700,fontSize:12,color:C.text}}>{p.name}</div>
+                            <div style={{fontSize:10,color:C.textMed}}>@{p.username||"—"}</div>
+                          </div>
+                          {user.isMaster&&(
+                            <button onClick={async()=>{
+                              if(!confirm(`¿Desvincular a ${p.name} como tutor?`)) return;
+                              const {supabase}=await import("./supabase.js");
+                              await supabase.from("parent_child").delete().eq("parent_id",p.id).eq("child_id",selectedUser.id);
+                              setUserLinks(prev=>({...prev,parents:prev.parents.filter(x=>x.id!==p.id)}));
+                              notify(`${p.name} desvinculado`,"🔗");
+                            }} style={{padding:"4px 10px",borderRadius:8,border:`1.5px solid ${C.coral}`,background:C.coralLt,color:C.coral,fontSize:10,fontWeight:700,cursor:"pointer"}}>
+                              Desvincular
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Children */}
+                  {userLinks.children.length>0&&(
+                    <div style={{marginBottom:10}}>
+                      <div style={{fontSize:11,fontWeight:700,color:C.mint,marginBottom:6}}>🎮 Hijos vinculados ({userLinks.children.length})</div>
+                      {userLinks.children.map(c=>(
+                        <div key={c.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:C.mintLt,borderRadius:11,padding:"8px 12px",marginBottom:5}}>
+                          <div>
+                            <div style={{fontWeight:700,fontSize:12,color:C.text}}>{c.name}</div>
+                            <div style={{fontSize:10,color:C.textMed}}>@{c.username||"—"}</div>
+                          </div>
+                          {user.isMaster&&(
+                            <button onClick={async()=>{
+                              if(!confirm(`¿Desvincular a ${c.name}?`)) return;
+                              const {supabase}=await import("./supabase.js");
+                              await supabase.from("parent_child").delete().eq("parent_id",selectedUser.id).eq("child_id",c.id);
+                              setUserLinks(prev=>({...prev,children:prev.children.filter(x=>x.id!==c.id)}));
+                              notify(`${c.name} desvinculado`,"🔗");
+                            }} style={{padding:"4px 10px",borderRadius:8,border:`1.5px solid ${C.coral}`,background:C.coralLt,color:C.coral,fontSize:10,fontWeight:700,cursor:"pointer"}}>
+                              Desvincular
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Teachers */}
+                  {userLinks.teachers.length>0&&(
+                    <div style={{marginBottom:10}}>
+                      <div style={{fontSize:11,fontWeight:700,color:C.sky,marginBottom:6}}>🏫 Profesores ({userLinks.teachers.length})</div>
+                      {userLinks.teachers.map(t=>(
+                        <div key={t.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:C.skyLt,borderRadius:11,padding:"8px 12px",marginBottom:5}}>
+                          <div>
+                            <div style={{fontWeight:700,fontSize:12,color:C.text}}>{t.name}</div>
+                            <div style={{fontSize:10,color:C.textMed}}>@{t.username||"—"}</div>
+                          </div>
+                          {user.isMaster&&(
+                            <button onClick={async()=>{
+                              if(!confirm(`¿Desvincular al profesor ${t.name}?`)) return;
+                              const {supabase}=await import("./supabase.js");
+                              await supabase.from("teacher_student").delete().eq("teacher_id",t.id).eq("student_id",selectedUser.id);
+                              setUserLinks(prev=>({...prev,teachers:prev.teachers.filter(x=>x.id!==t.id)}));
+                              notify(`${t.name} desvinculado`,"🔗");
+                            }} style={{padding:"4px 10px",borderRadius:8,border:`1.5px solid ${C.coral}`,background:C.coralLt,color:C.coral,fontSize:10,fontWeight:700,cursor:"pointer"}}>
+                              Desvincular
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Students (for teachers) */}
+                  {userLinks.students.length>0&&(
+                    <div style={{marginBottom:10}}>
+                      <div style={{fontSize:11,fontWeight:700,color:C.purple,marginBottom:6}}>🎮 Alumnos ({userLinks.students.length})</div>
+                      {userLinks.students.map(s=>(
+                        <div key={s.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:C.purpleLt,borderRadius:11,padding:"8px 12px",marginBottom:5}}>
+                          <div>
+                            <div style={{fontWeight:700,fontSize:12,color:C.text}}>{s.name}</div>
+                            <div style={{fontSize:10,color:C.textMed}}>@{s.username||"—"}</div>
+                          </div>
+                          {user.isMaster&&(
+                            <button onClick={async()=>{
+                              if(!confirm(`¿Desvincular a ${s.name} del profesor?`)) return;
+                              const {supabase}=await import("./supabase.js");
+                              await supabase.from("teacher_student").delete().eq("teacher_id",selectedUser.id).eq("student_id",s.id);
+                              setUserLinks(prev=>({...prev,students:prev.students.filter(x=>x.id!==s.id)}));
+                              notify(`${s.name} desvinculado`,"🔗");
+                            }} style={{padding:"4px 10px",borderRadius:8,border:`1.5px solid ${C.coral}`,background:C.coralLt,color:C.coral,fontSize:10,fontWeight:700,cursor:"pointer"}}>
+                              Desvincular
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* No links */}
+                  {userLinks.parents.length===0&&userLinks.children.length===0&&userLinks.teachers.length===0&&userLinks.students.length===0&&(
+                    <div style={{textAlign:"center",padding:"12px 0",color:C.textMed,fontSize:12}}>Sin vínculos registrados</div>
+                  )}
+
+                  {/* Assign tutor manually */}
+                  {user.isMaster&&selectedUser.role==="student"&&(
+                    <div style={{background:C.card,borderRadius:13,padding:12,marginTop:8,border:`1.5px solid ${C.border}`}}>
+                      <div style={{fontWeight:700,fontSize:12,color:C.text,marginBottom:8}}>➕ Asignar tutor manualmente</div>
+                      <select id="admin_tutor_select" style={{width:"100%",padding:"9px 12px",borderRadius:10,border:`1.5px solid ${C.border}`,fontSize:12,color:C.text,background:C.card,outline:"none",marginBottom:8}}>
+                        <option value="">Selecciona un padre/tutor…</option>
+                        {adminUsers.filter(u=>u.role==="parent"&&u.id!==selectedUser.id).map(u=>(
+                          <option key={u.id} value={u.id}>{u.name} (@{u.username||"—"})</option>
+                        ))}
+                      </select>
+                      <button onClick={async()=>{
+                        const sel = document.getElementById("admin_tutor_select").value;
+                        if(!sel) return notify("Selecciona un tutor","⚠️");
+                        const tutorName = adminUsers.find(u=>u.id===sel)?.name||"Tutor";
+                        const {supabase}=await import("./supabase.js");
+                        const {error} = await supabase.from("parent_child").insert({parent_id:sel,child_id:selectedUser.id});
+                        if(error&&error.code!=="23505") return notify("Error: "+error.message,"⚠️");
+                        await supabase.from("profiles").update({account_status:"active"}).eq("id",selectedUser.id);
+                        setUserLinks(prev=>({...prev,parents:[...prev.parents,{id:sel,name:tutorName}]}));
+                        setAdminUsers(p=>p.map(u=>u.id===selectedUser.id?{...u,account_status:"active"}:u));
+                        notify(`✅ ${tutorName} asignado como tutor`,"🔗");
+                      }} style={{width:"100%",padding:"9px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${C.mint},${C.mintDk})`,color:"white",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+                        ✅ Asignar tutor
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )
+            }
+
+            {/* Admin actions */}
+            {user.isMaster&&selectedUser.id!==userId&&(
+              <div style={{display:"flex",gap:8,marginTop:4}}>
+                <button onClick={async()=>{
+                  const newStatus=selectedUser.account_status==="active"?"suspended":"active";
+                  const {supabase}=await import("./supabase.js");
+                  await supabase.from("profiles").update({account_status:newStatus}).eq("id",selectedUser.id);
+                  setSelectedUser(s=>({...s,account_status:newStatus}));
+                  setAdminUsers(p=>p.map(u=>u.id===selectedUser.id?{...u,account_status:newStatus}:u));
+                  notify(`Usuario ${newStatus==="active"?"activado":"suspendido"}`,"⚙️");
+                }} style={{flex:1,padding:"10px",borderRadius:12,border:`1.5px solid ${selectedUser.account_status==="active"?C.coral:C.mint}`,background:selectedUser.account_status==="active"?C.coralLt:C.mintLt,color:selectedUser.account_status==="active"?C.coral:C.mintDk,fontWeight:700,fontSize:12,cursor:"pointer"}}>
+                  {selectedUser.account_status==="active"?"🚫 Suspender":"✅ Activar"}
+                </button>
+                <button onClick={()=>{setGiftUser(selectedUser);setSelectedUser(null);setAdminTab("gifts");}}
+                  style={{flex:1,padding:"10px",borderRadius:12,border:`1.5px solid ${C.gold}`,background:C.goldLt,color:C.goldDk,fontWeight:700,fontSize:12,cursor:"pointer"}}>
+                  🎁 Regalar
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
