@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 // DESIGN TOKENS
 // ═══════════════════════════════════════════════════════════
 const T = {
+  // Colors
   mint:"#00C896", mintDk:"#00A07A", mintLt:"#E0FBF2",
   gold:"#FFB300", goldLt:"#FFF5D6", goldDk:"#CC8C00",
   coral:"#FF5252", coralLt:"#FFF0F0",
@@ -11,11 +12,20 @@ const T = {
   purple:"#7C4DFF",purpleLt:"#EDE7FF",
   pink:"#FF4081",  pinkLt:"#FFE8F0",
   orange:"#FF6D00",orangeLt:"#FFF3E0",
+  ruby:"#E53935", rubyLt:"#FFEBEE", rubyDk:"#B71C1C",
   bg:"#F0FBF6", card:"#FFFFFF",
   text:"#0D2318", textMed:"#3D6055", textLt:"#8FB5AA",
-  border:"#C8EDE0", shadow:"0 3px 18px rgba(0,200,150,0.13)",
-  shadowMd:"0 6px 30px rgba(0,200,150,0.20)",
-  shadowHero:"0 8px 40px rgba(0,200,150,0.28)",
+  border:"#C8EDE0",
+  // Layered shadows — Elevation 1-4 (professional-ui spec)
+  shadow:    "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
+  shadowMd:  "0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04)",
+  shadowLg:  "0 8px 32px rgba(0,0,0,0.12), 0 4px 8px rgba(0,0,0,0.06)",
+  shadowHero:"0 16px 48px rgba(0,0,0,0.16), 0 8px 16px rgba(0,0,0,0.08)",
+  // Typography scale (professional-ui spec — modular 1.25 ratio)
+  txt2xs:10, txtXs:12, txtSm:14, txtBase:16,
+  txtLg:18,  txtXl:20, txt2xl:24, txt3xl:30, txt4xl:36,
+  // Border radius tokens
+  rSm:8, rMd:12, rLg:16, rXl:20, rPill:999,
 };
 const DARK = {
   mint:"#00C896", mintDk:"#00A07A", mintLt:"#0a2e22",
@@ -27,9 +37,15 @@ const DARK = {
   orange:"#FF6D00",orangeLt:"#2d1500",
   bg:"#081810",  card:"#0f2218",
   text:"#E0F8EE", textMed:"#7ABFA8", textLt:"#3A7060",
-  border:"#1A3D2E", shadow:"0 3px 18px rgba(0,0,0,0.35)",
-  shadowMd:"0 6px 30px rgba(0,0,0,0.45)",
-  shadowHero:"0 8px 40px rgba(0,0,0,0.55)",
+  border:"#1A3D2E",
+  shadow:    "0 1px 3px rgba(0,0,0,0.20), 0 1px 2px rgba(0,0,0,0.12)",
+  shadowMd:  "0 4px 12px rgba(0,0,0,0.24), 0 2px 4px rgba(0,0,0,0.12)",
+  shadowLg:  "0 8px 32px rgba(0,0,0,0.32), 0 4px 8px rgba(0,0,0,0.16)",
+  shadowHero:"0 16px 48px rgba(0,0,0,0.40), 0 8px 16px rgba(0,0,0,0.20)",
+  ruby:"#EF5350", rubyLt:"#2d0a0a", rubyDk:"#FF8A80",
+  txt2xs:10, txtXs:12, txtSm:14, txtBase:16,
+  txtLg:18,  txtXl:20, txt2xl:24, txt3xl:30, txt4xl:36,
+  rSm:8, rMd:12, rLg:16, rXl:20, rPill:999,
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -56,7 +72,7 @@ function clearAll() {
 const ROLES = { STUDENT:"student", PARENT:"parent", TEACHER:"teacher" };
 
 const MASCOT_MSGS = {
-  welcome:  ["¡Hola! Soy Kiko 🦎 tu guía en KidQuest!", "Voy a enseñarte todo sobre ahorrar y ser responsable 💪", "¡Juntos vamos a subir de nivel y conquistar el mundo!"],
+  welcome:  ["¡Hola! Soy Fin 🦎 tu guía en FinPlay!", "Voy a enseñarte todo sobre ahorrar y ser responsable 💪", "¡Juntos vamos a subir de nivel y conquistar el mundo!"],
   taskDone: ["¡INCREÍBLE! ¡Lo lograste! 🔥", "¡Eso se llama compromiso! ¡Sigue así! ⭐", "¡El clan te necesita! ¡Gran trabajo! 🏆"],
   rejected: ["No te preocupes 😊 la IA es exigente pero justa", "¡Inténtalo de nuevo! Busca mejor iluminación 💡", "¿Quieres que te ayude a tomar una mejor foto? 📸"],
   savings:  ["¿Sabías que si ahorras $500 por semana en 1 año tendrás $26.000? 🤯", "El dinero que guardas hoy es libertad del mañana 💎", "¡Cada peso cuenta! Los pequeños ahorros se vuelven grandes 🐷"],
@@ -81,8 +97,8 @@ const LOOT_ITEMS = [
   { id:"f_circle",   type:"frame",   rarity:"common",   name:"Círculo Simple", svgKey:"f_circle",   desc:"Marco minimalista",              css:{border:"3px dashed #8FA8A2",shadow:"none"} },
   { id:"f_dots",     type:"frame",   rarity:"common",   name:"Puntitos",       svgKey:"f_dots",     desc:"Marco con puntitos suaves",      css:{border:"3px dotted #4DC9A0",shadow:"none"} },
   // ── COMMON stickers ──
-  { id:"s_bolt",     type:"sticker", rarity:"common",   name:"Rayo Verde",     svgKey:"s_bolt",     desc:"Sticker rayo KidQuest" },
-  { id:"s_coin_kq",  type:"sticker", rarity:"common",   name:"Moneda KQ",      svgKey:"s_coin_kq",  desc:"Moneda exclusiva de KidQuest" },
+  { id:"s_bolt",     type:"sticker", rarity:"common",   name:"Rayo Verde",     svgKey:"s_bolt",     desc:"Sticker rayo FinPlay" },
+  { id:"s_coin_kq",  type:"sticker", rarity:"common",   name:"Moneda KQ",      svgKey:"s_coin_kq",  desc:"Moneda exclusiva de FinPlay" },
   { id:"s_check_kq", type:"sticker", rarity:"common",   name:"Check KQ",       svgKey:"s_check_kq", desc:"Sello de misión cumplida" },
   { id:"s_paw",      type:"sticker", rarity:"common",   name:"Huella",         svgKey:"s_paw",      desc:"Huella de guerrero" },
   // ── COMMON avatars ──
@@ -94,12 +110,12 @@ const LOOT_ITEMS = [
   { id:"f_mint_glow",type:"frame",   rarity:"uncommon", name:"Resplandor Jade",svgKey:"f_mint_glow",desc:"Marco jade con brillo suave",   css:{border:"3px solid #4DC9A0",shadow:"0 0 10px #4DC9A060"} },
   { id:"f_gold_thin",type:"frame",   rarity:"uncommon", name:"Filo Dorado",    svgKey:"f_gold_thin",desc:"Marco dorado elegante",         css:{border:"3px solid #F5C518",shadow:"0 0 8px #F5C51855"} },
   // ── UNCOMMON stickers ──
-  { id:"s_shield_kq",type:"sticker", rarity:"uncommon", name:"Escudo KQ",      svgKey:"s_shield_kq",desc:"Escudo oficial de KidQuest" },
+  { id:"s_shield_kq",type:"sticker", rarity:"uncommon", name:"Escudo KQ",      svgKey:"s_shield_kq",desc:"Escudo oficial de FinPlay" },
   { id:"s_star3",    type:"sticker", rarity:"uncommon", name:"3 Estrellas",    svgKey:"s_star3",    desc:"Trio de estrellas plateadas" },
   { id:"s_flame",    type:"sticker", rarity:"uncommon", name:"Llama Racha",    svgKey:"s_flame",    desc:"Llama de racha activa" },
   { id:"s_piggy",    type:"sticker", rarity:"uncommon", name:"Alcancía",       svgKey:"s_piggy",    desc:"Alcancía del ahorro" },
   // ── UNCOMMON avatars ──
-  { id:"a_fox_kq",   type:"avatar",  rarity:"uncommon", name:"Zorro KQ",       svgKey:"a_fox_kq",   desc:"Zorro de KidQuest con bufanda" },
+  { id:"a_fox_kq",   type:"avatar",  rarity:"uncommon", name:"Zorro KQ",       svgKey:"a_fox_kq",   desc:"Zorro de FinPlay con bufanda" },
   { id:"a_bot",      type:"avatar",  rarity:"uncommon", name:"Bot Amigo",      svgKey:"a_bot",      desc:"Robotito amistoso" },
   { id:"a_ninja",    type:"avatar",  rarity:"uncommon", name:"Ninja",          svgKey:"a_ninja",    desc:"Ninja del hogar" },
 
@@ -107,7 +123,7 @@ const LOOT_ITEMS = [
   { id:"f_fire",     type:"frame",   rarity:"rare",     name:"Llamas Vivas",   svgKey:"f_fire",     desc:"Marco de fuego",                css:{border:"3px solid #FF6B6B",shadow:"0 0 14px #FF6B6B90"} },
   { id:"f_ice",      type:"frame",   rarity:"rare",     name:"Cristal Hielo",  svgKey:"f_ice",      desc:"Marco de hielo cristalino",     css:{border:"3px solid #4AAEE8",shadow:"0 0 14px #4AAEE890"} },
   // ── RARE stickers ──
-  { id:"s_crown_kq", type:"sticker", rarity:"rare",     name:"Corona KQ",      svgKey:"s_crown_kq", desc:"Corona exclusiva de KidQuest" },
+  { id:"s_crown_kq", type:"sticker", rarity:"rare",     name:"Corona KQ",      svgKey:"s_crown_kq", desc:"Corona exclusiva de FinPlay" },
   { id:"s_diamond",  type:"sticker", rarity:"rare",     name:"Cristal Raro",   svgKey:"s_diamond",  desc:"Cristal azul raro" },
   { id:"s_comet",    type:"sticker", rarity:"rare",     name:"Cometa",         svgKey:"s_comet",    desc:"Cometa veloz" },
   // ── RARE avatars ──
@@ -135,7 +151,7 @@ const LOOT_ITEMS = [
 ];
 
 // ═══════════════════════════════════════════════════════════
-// SVG ICON LIBRARY  — KidQuest exclusive hand-crafted icons
+// SVG ICON LIBRARY  — FinPlay exclusive hand-crafted icons
 // Each returns a React SVG element. Size prop in px.
 // ═══════════════════════════════════════════════════════════
 function KQIcon({ id, size = 40, animated = false }) {
@@ -844,7 +860,7 @@ async function callAI(messages, maxTokens=400) {
 }
 
 async function analyzePhoto(b64, taskTitle, taskHint) {
-  const prompt = `Eres el verificador de KidQuest, una app educativa para niños.
+  const prompt = `Eres el verificador de FinPlay, una app educativa para niños.
 TAREA: "${taskTitle}" — "${taskHint}"
 Analiza la imagen y responde SOLO JSON sin texto extra:
 {
@@ -868,7 +884,7 @@ Sé justo: el objetivo es motivar, no bloquear al niño.`;
 }
 
 async function appealDecision(taskTitle, originalReason, childExplanation) {
-  const prompt = `Eres el sistema de apelaciones de KidQuest. Un niño apeló una tarea rechazada.
+  const prompt = `Eres el sistema de apelaciones de FinPlay. Un niño apeló una tarea rechazada.
 TAREA: "${taskTitle}"
 RAZÓN DEL RECHAZO: "${originalReason}"
 EXPLICACIÓN DEL NIÑO: "${childExplanation}"
@@ -890,7 +906,7 @@ Sé empático y generoso si la explicación es razonable. El objetivo es educar,
 }
 
 async function getMascotTip(context) {
-  const prompt = `Eres Kiko 🦎, la mascota de KidQuest, app educativa de economía para niños.
+  const prompt = `Eres Kiko 🦎, la mascota de FinPlay, app educativa de economía para niños.
 Contexto: ${context}
 Da UN mensaje corto (max 20 palabras), positivo, en español, para un niño. Solo el texto, sin comillas.`;
   try { return await callAI([{role:"user",content:prompt}], 80); }
@@ -910,7 +926,7 @@ const MIN_CLAN = 1; // Chat unlocked for all levels
 // ═══════════════════════════════════════════════════════════
 // ROOT
 // ═══════════════════════════════════════════════════════════
-export default function KidQuest({ userId=null, userEmail=null, initialProfile=null, onSignOut=null }) {
+export default function FinPlay({ userId=null, userEmail=null, initialProfile=null, onSignOut=null }) {
   // theming
   const [dark, setDark] = useState(false);
   const C = dark ? DARK : T;
@@ -932,10 +948,23 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
     return "panel";
   });
   const [tutStep,   setTutStep]   = useState(0);
-  const [tutDone,   setTutDone]   = useState(()=>{
-    if(initialProfile?.role) return initialProfile.role!=="student";
-    return userId ? true : false; // if logged in, skip tutorial
+  // Tutorial only shown once — tracked in Supabase profiles.tutorial_done
+  const [tutDone, setTutDone] = useState(()=>{
+    if(initialProfile?.tutorial_done) return true;         // already done in DB
+    if(initialProfile?.role && initialProfile.role!=="student") return true; // non-students skip
+    if(userId && !initialProfile)     return true;         // profile loading, skip for now
+    return false;
   });
+
+  const completeTutorial = async () => {
+    completeTutorial();
+    if(userId){
+      try {
+        const {supabase} = await import("./supabase.js");
+        await supabase.from("profiles").update({tutorial_done:true}).eq("id",userId);
+      } catch(e){ console.warn("Tutorial save:",e.message); }
+    }
+  };
 
   // ── USER STATE — loads from Supabase profile if logged in ──
   const defaultUser = {
@@ -969,7 +998,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
       accountStatus: p.account_status || "active",
       savingsGoal:{
         name:   p.savings_goal_name   || "Mi primera meta",
-        target: p.savings_goal_target || 50000,
+        target: p.savings_goal_target || 20000,
         saved:  p.savings_goal_saved  || 0,
         emoji:  p.savings_goal_emoji  || "🎯",
       },
@@ -1068,7 +1097,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
   const [reportSending, setReportSending] = useState(false);
 
   // ── TRUEQUE (DEALS) ──
-  const [deals,          setDeals]          = useState(()=>loadState("deals",[]));
+  const [deals,          setDeals]          = useState([]);
   const [showDealCreate, setShowDealCreate] = useState(false);
   const [dealTitle,      setDealTitle]      = useState("");
   const [dealReward,     setDealReward]     = useState("");
@@ -1076,6 +1105,25 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
   const [dealTaskCount,  setDealTaskCount]  = useState(3);
   const [dealFreq,       setDealFreq]       = useState("semanal");
   const [dealTargetId,   setDealTargetId]   = useState("");
+
+  // ── FIRST LOGIN ONBOARDING ──
+  const [showOnboarding,   setShowOnboarding]   = useState(false);
+  const [onboardStep,      setOnboardStep]      = useState(0);
+  const [onboardName,      setOnboardName]      = useState("");
+  const [onboardUsername,  setOnboardUsername]  = useState("");
+
+  // ── REAL RANKING ──
+  const [realRanking, setRealRanking] = useState([]);
+  const [rankLoaded,  setRankLoaded]  = useState(false);
+  const loadRanking = async()=>{
+    if(rankLoaded) return;
+    try{
+      const {supabase}=await import("./supabase.js");
+      const {data}=await supabase.from("profiles").select("id,name,username,avatar_key,level,xp,streak").eq("role","student").order("xp",{ascending:false}).limit(20);
+      if(data?.length) setRealRanking(data);
+      setRankLoaded(true);
+    }catch(e){}
+  };
 
   // ── RUBY CHEST SYSTEM (parent only) ──
   const [showRubyShop,   setShowRubyShop]   = useState(false);
@@ -1198,9 +1246,9 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
   useEffect(()=>{ saveState("customTasks", customTasks); }, [customTasks]);
   useEffect(()=>{ saveState("ageGroup", ageGroup); }, [ageGroup]);
   useEffect(()=>{ saveState("spendLog", spendLog); }, [spendLog]);
-  useEffect(()=>{ saveState("monthlyHist", monthlyHist); }, [monthlyHist]);
+  // monthlyHist loaded from Supabase
   useEffect(()=>{ saveState("parentControls", parentControls); }, [parentControls]);
-  useEffect(()=>{ saveState("deals", deals); }, [deals]);
+  // deals saved to Supabase challenges table
   useEffect(()=>{ saveState("assignedChallenges", assignedChallenges); }, [assignedChallenges]);
   useEffect(()=>{ saveState("activeStudentChalls", activeStudentChalls); }, [activeStudentChalls]);
   useEffect(()=>{ document.documentElement.style.background = dark?"#081810":"#F0FBF6"; },[dark]);
@@ -1230,6 +1278,15 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
     if(initialProfile.avatar_emoji) setAvatarEmoji(initialProfile.avatar_emoji);
     if(initialProfile.avatar_photo) setAvatarPhoto(initialProfile.avatar_photo);
     if(initialProfile.avatar_photo) setAvatarPhoto(initialProfile.avatar_photo);
+    // Respect tutorial_done from DB
+    if(initialProfile.tutorial_done) setTutDone(true);
+    // Show onboarding if user hasn't set their name yet
+    if(initialProfile.role && !initialProfile.onboarding_done) {
+      setOnboardName(initialProfile.name||"");
+      setOnboardUsername(initialProfile.username||"");
+      setOnboardStep(0);
+      setTimeout(()=>setShowOnboarding(true), 800); // slight delay after app loads
+    }
     // Sync navigation from profile
     if(initialProfile.role) {
       setRole(initialProfile.role);
@@ -1313,6 +1370,16 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
           })));
         }
 
+        // Load monthly summary from spend_log
+        if(initialProfile.role==="student"){
+          const {data:sl2}=await supabase.from("spend_log").select("amount,created_at").eq("user_id",userId).gte("created_at",new Date(Date.now()-90*86400000).toISOString()).catch(()=>({data:null}));
+          if(sl2?.length){
+            const months=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+            const grouped={};
+            sl2.forEach(s=>{const m=months[new Date(s.created_at).getMonth()];grouped[m]=(grouped[m]||0)+s.amount;});
+            setMonthlyHist(Object.entries(grouped).map(([month,amount])=>({month,amount})));
+          }
+        }
         // Linked children/students (for parent/teacher)
         if(initialProfile.role==="parent"||initialProfile.role==="teacher"){
           const tbl = initialProfile.role==="parent"?"parent_child":"teacher_student";
@@ -1755,11 +1822,11 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
     <Shell C={C}>
       <style>{css}</style>
       <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:28,background:`radial-gradient(ellipse at 30% 20%,${C.mint}20,transparent 60%),radial-gradient(ellipse at 70% 80%,${C.purple}15,transparent 60%),${C.bg}`}}>
-        <div className="float" style={{width:96,height:96,borderRadius:28,background:`linear-gradient(135deg,${C.mint},${C.gold})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:52,boxShadow:`0 8px 32px ${C.mint}60`,marginBottom:18}}>🏆</div>
-        <div style={{fontWeight:900,fontSize:40,color:C.text,letterSpacing:-1,fontFamily:"'Nunito',sans-serif"}}>KidQuest</div>
-        <div style={{fontSize:14,color:C.textMed,marginTop:4,marginBottom:12,fontWeight:600}}>Aprende · Ahorra · Conquista</div>
+        <div className="float" style={{width:96,height:96,borderRadius:24,background:`linear-gradient(135deg,${C.mint},${C.gold})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:48,boxShadow:`0 8px 32px ${C.mint}60`,marginBottom:16}}>🏆</div>
+        <div style={{fontWeight:900,fontSize:36,color:C.text,letterSpacing:-1,fontFamily:"'Nunito',sans-serif"}}>FinPlay</div>
+        <div style={{fontSize:14,color:C.textMed,marginTop:4,marginBottom:12,fontWeight:600}}>Aprende · Juega · Crece</div>
         {/* mascot intro */}
-        <div style={{background:C.card,borderRadius:20,padding:"14px 18px",marginBottom:32,maxWidth:280,border:`1.5px solid ${C.border}`,boxShadow:C.shadow,display:"flex",gap:12,alignItems:"center"}}>
+        <div style={{background:C.card,borderRadius:20,padding:"16px 16px",marginBottom:32,maxWidth:280,border:`1.5px solid ${C.border}`,boxShadow:C.shadow,display:"flex",gap:12,alignItems:"center"}}>
           <div style={{fontSize:36,flexShrink:0}}>🦎</div>
           <div style={{fontSize:13,color:C.textMed,fontWeight:600,lineHeight:1.4}}>¡Hola! Soy <b style={{color:C.mint}}>Kiko</b>, tu guía. Te enseñaré a ahorrar y ser responsable 💚</div>
         </div>
@@ -1776,7 +1843,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
     <Shell C={C}>
       <style>{css}</style>
       <div style={{padding:"40px 20px 24px",background:`radial-gradient(ellipse at 50% 0%,${C.mint}18,transparent 60%),${C.bg}`,minHeight:"100vh"}}>
-        <div style={{fontWeight:900,fontSize:26,color:C.text,marginBottom:4}}>¿Quién eres?</div>
+        <div style={{fontWeight:900,fontSize:24,color:C.text,marginBottom:4}}>¿Quién eres?</div>
         <div style={{fontSize:14,color:C.textMed,marginBottom:28}}>Cada rol tiene su propio espacio</div>
         {[
           {r:ROLES.STUDENT,nk:"me",       l:"Soy Estudiante",   s:"Completa misiones y sube de nivel",  bg:C.mintLt,  bc:C.mint,   ac:C.mint},
@@ -1784,10 +1851,10 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
           {r:ROLES.TEACHER,nk:"panel",    l:"Soy Profesor",     s:"Gestiona tu clase y rankings",        bg:C.skyLt,   bc:C.sky,    ac:C.sky},
         ].map(opt=>(
           <button key={opt.r} onClick={()=>{setRole(opt.r);setTab(opt.r===ROLES.STUDENT?"home":opt.r===ROLES.PARENT?"validate":"panel");setTutDone(opt.r!==ROLES.STUDENT);setScreen("app");}}
-            style={{width:"100%",marginBottom:14,padding:"18px 20px",borderRadius:20,border:`2px solid ${opt.bc}`,background:opt.bg,cursor:"pointer",display:"flex",alignItems:"center",gap:16,transition:"all 0.18s"}}>
+            style={{width:"100%",marginBottom:16,padding:"18px 20px",borderRadius:20,border:`2px solid ${opt.bc}`,background:opt.bg,cursor:"pointer",display:"flex",alignItems:"center",gap:16,transition:"all 0.18s"}}>
             <div style={{width:52,height:52,borderRadius:16,background:opt.bc+"22",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{NAV[opt.nk]?.(true,{...C,mint:opt.bc,gold:opt.bc,sky:opt.bc})}</div>
             <div style={{flex:1,textAlign:"left"}}>
-              <div style={{fontWeight:800,fontSize:17,color:C.text}}>{opt.l}</div>
+              <div style={{fontWeight:800,fontSize:18,color:C.text}}>{opt.l}</div>
               <div style={{fontSize:12,color:C.textMed,marginTop:2}}>{opt.s}</div>
             </div>
             <div style={{color:opt.ac,fontSize:22,fontWeight:700}}>›</div>
@@ -1814,11 +1881,11 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
 
       {/* MASCOT BUBBLE */}
       {showMascot&&(
-        <div className="pop-in" style={{position:"fixed",bottom:90,left:16,right:16,zIndex:500,background:C.card,borderRadius:20,padding:"12px 16px",border:`2px solid ${C.mint}`,boxShadow:C.shadowMd,display:"flex",gap:10,alignItems:"center",maxWidth:398,margin:"0 auto"}}>
-          <div style={{fontSize:32,flexShrink:0}} className="float">🦎</div>
+        <div className="pop-in" style={{position:"fixed",bottom:90,left:16,right:16,zIndex:500,background:C.card,borderRadius:20,padding:"12px 16px",border:`2px solid ${C.mint}`,boxShadow:C.shadowMd,display:"flex",gap:8,alignItems:"center",maxWidth:398,margin:"0 auto"}}>
+          <div style={{fontSize:30,flexShrink:0}} className="float">🦎</div>
           <div style={{flex:1}}>
             {mascotLoading
-              ?<div style={{display:"flex",gap:6,alignItems:"center"}}><div className="spin-icon" style={{fontSize:16}}>🦎</div><span style={{fontSize:12,color:C.textMed}}>Kiko está pensando…</span></div>
+              ?<div style={{display:"flex",gap:8,alignItems:"center"}}><div className="spin-icon" style={{fontSize:16}}>🦎</div><span style={{fontSize:12,color:C.textMed}}>Kiko está pensando…</span></div>
               :<div style={{fontSize:13,color:C.textMed,fontWeight:600,lineHeight:1.4}}>{mascotMsg}</div>
             }
           </div>
@@ -1830,10 +1897,10 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
       {activeLesson&&(
         <div className="overlay">
           <div className="modal pop-in" style={{textAlign:"center"}}>
-            <div style={{fontSize:52,marginBottom:12}}>{activeLesson.emoji}</div>
+            <div style={{fontSize:48,marginBottom:12}}>{activeLesson.emoji}</div>
             <div style={{fontWeight:900,fontSize:20,color:C.text,marginBottom:8}}>{activeLesson.title}</div>
             <div style={{background:C.mintLt,borderRadius:16,padding:16,fontSize:14,color:C.textMed,lineHeight:1.7,textAlign:"left",marginBottom:16}}>{activeLesson.content}</div>
-            <div style={{background:C.goldLt,borderRadius:14,padding:"10px 14px",fontSize:13,color:C.goldDk,fontWeight:700,marginBottom:16}}>
+            <div style={{background:C.goldLt,borderRadius:14,padding:"8px 16px",fontSize:13,color:C.goldDk,fontWeight:700,marginBottom:16}}>
               🎯 Misión: Reflexiona — ¿Cómo puedes aplicar esto hoy?
             </div>
             <BtnMain onClick={()=>{
@@ -1855,7 +1922,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
 
       {/* ════ ADMIN ROLE SWITCHER ════ */}
       {user.isAdmin&&(
-        <div style={{background:`linear-gradient(90deg,${C.purple}18,${C.sky}08)`,borderBottom:`1.5px solid ${C.purple}25`,padding:"7px 14px",display:"flex",gap:6,alignItems:"center",overflowX:"auto",flexShrink:0}}>
+        <div style={{background:`linear-gradient(90deg,${C.purple}18,${C.sky}08)`,borderBottom:`1.5px solid ${C.purple}25`,padding:"8px 16px",display:"flex",gap:8,alignItems:"center",overflowX:"auto",flexShrink:0}}>
           <span style={{fontSize:10,fontWeight:800,color:C.purple,flexShrink:0}}>⚙️</span>
           {[
             {id:"admin",   l:"Admin",    color:C.purple},
@@ -1869,7 +1936,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
               if(v.id==="student") { setRole("student"); setTab("home"); }
               if(v.id==="parent")  { setRole("parent");  setTab("validate"); }
               if(v.id==="teacher") { setRole("teacher"); setTab("panel"); }
-            }} style={{flexShrink:0,padding:"5px 12px",borderRadius:11,border:`1.5px solid ${adminView===v.id?v.color:C.border}`,background:adminView===v.id?v.color+"22":C.card,color:adminView===v.id?v.color:C.textMed,fontSize:11,fontWeight:800,cursor:"pointer",whiteSpace:"nowrap",transition:"all 0.15s"}}>
+            }} style={{flexShrink:0,padding:"5px 12px",borderRadius:12,border:`1.5px solid ${adminView===v.id?v.color:C.border}`,background:adminView===v.id?v.color+"22":C.card,color:adminView===v.id?v.color:C.textMed,fontSize:11,fontWeight:800,cursor:"pointer",whiteSpace:"nowrap",transition:"all 0.15s"}}>
               {v.l}
             </button>
           ))}
@@ -1877,52 +1944,91 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
         </div>
       )}
 
-      {/* TUTORIAL OVERLAY */}
-      {!tutDone&&role===ROLES.STUDENT&&(
+      {/* ════ ROLE TUTORIAL (only once, DB-tracked) ════ */}
+      {!tutDone&&(
         <div className="overlay" style={{zIndex:8000}}>
-          <div className="modal pop-in">
-            {tutStep===0&&(
-              <div style={{textAlign:"center"}}>
-                <div style={{fontSize:56,marginBottom:10}} className="float">🦎</div>
-                <div style={{fontWeight:900,fontSize:22,color:C.text,marginBottom:6}}>¡Hola! Soy Kiko</div>
-                <div style={{fontSize:14,color:C.textMed,lineHeight:1.6,marginBottom:20}}>Soy tu guía en KidQuest. Te voy a enseñar cómo funciona todo en 3 pasos rápidos 😊</div>
-                <BtnMain onClick={()=>setTutStep(1)} bg={`linear-gradient(135deg,${C.mint},${C.mintDk})`} style={{width:"100%"}}>¡Vamos! →</BtnMain>
-              </div>
-            )}
-            {tutStep===1&&(
-              <div style={{textAlign:"center"}}>
-                <div style={{fontSize:52,marginBottom:10}}>✅</div>
-                <div style={{fontWeight:900,fontSize:20,color:C.text,marginBottom:6}}>¿Cómo completo tareas?</div>
-                <div style={{textAlign:"left",marginBottom:16}}>
+          <div className="modal pop-in" style={{textAlign:"center"}}>
+
+            {/* ── STUDENT ── */}
+            {role===ROLES.STUDENT&&(
+              <>
+                {tutStep===0&&(<div>
+                  <div style={{fontSize:56,marginBottom:8}} className="float">🚀</div>
+                  <div style={{fontWeight:900,fontSize:22,color:C.text,marginBottom:8}}>¡Hola, {user.name.split(" ")[0]}!</div>
+                  <div style={{fontSize:14,color:C.textMed,lineHeight:1.6,marginBottom:20}}>Bienvenido a <b>FinPlay</b>. Completa misiones, gana recompensas y sube de nivel. Tu tutor revisa y aprueba todo.</div>
+                  <BtnMain onClick={()=>setTutStep(1)} bg={`linear-gradient(135deg,${C.mint},${C.mintDk})`} style={{width:"100%"}}>¿Cómo funciona? →</BtnMain>
+                </div>)}
+                {tutStep===1&&(<div>
+                  <div style={{fontSize:48,marginBottom:8}}>📋</div>
+                  <div style={{fontWeight:900,fontSize:18,color:C.text,marginBottom:8}}>Completa tus tareas</div>
                   {[
-                    {i:"📸",t:"Toma una foto de lo que hiciste"},
-                    {i:"🤖",t:"La IA revisa si está bien hecho"},
-                    {i:"💡",t:"Si la foto falla, hay otras opciones"},
-                    {i:"🎡",t:"¡Gana recompensas y sube de nivel!"},
-                  ].map((x,i)=>(
-                    <div key={i} style={{display:"flex",gap:10,alignItems:"center",marginBottom:10,background:C.mintLt,borderRadius:12,padding:"10px 12px"}}>
-                      <span style={{fontSize:24}}>{x.i}</span>
+                    {i:"📸",t:"Toma una foto de evidencia"},
+                    {i:"🤖",t:"La IA la revisa automáticamente"},
+                    {i:"✅",t:"Tu tutor aprueba y ganas recompensas"},
+                    {i:"🎡",t:"¡Gira la ruleta y sube de nivel!"},
+                  ].map((x,j)=>(
+                    <div key={j} style={{display:"flex",gap:8,alignItems:"center",marginBottom:8,background:C.mintLt,borderRadius:12,padding:"8px 12px",textAlign:"left"}}>
+                      <span style={{fontSize:22}}>{x.i}</span>
                       <span style={{fontSize:13,color:C.textMed,fontWeight:600}}>{x.t}</span>
                     </div>
                   ))}
+                  <BtnMain onClick={()=>setTutStep(2)} bg={`linear-gradient(135deg,${C.mint},${C.mintDk})`} style={{width:"100%",marginTop:8}}>Siguiente →</BtnMain>
+                </div>)}
+                {tutStep===2&&(<div>
+                  <div style={{fontSize:48,marginBottom:8}}>💰</div>
+                  <div style={{fontWeight:900,fontSize:18,color:C.text,marginBottom:8}}>Ahorra con metas reales</div>
+                  <div style={{background:C.goldLt,borderRadius:14,padding:14,fontSize:13,color:C.goldDk,lineHeight:1.7,marginBottom:16,textAlign:"left"}}>
+                    Si guardas <b>$2.000 por semana</b>, en 3 meses tendrás <b>$24.000</b>. Pon una meta concreta — zapatillas, videojuego, lo que quieras — y FinPlay te ayuda a llegar. 🎯
+                  </div>
+                  <BtnMain onClick={()=>completeTutorial()} bg={`linear-gradient(135deg,${C.gold},${C.goldDk})`} style={{width:"100%"}}>🚀 ¡Empezar!</BtnMain>
+                </div>)}
+                <div style={{display:"flex",justifyContent:"center",gap:8,marginTop:14}}>
+                  {[0,1,2].map(i=><div key={i} style={{width:8,height:8,borderRadius:"50%",background:tutStep===i?C.mint:C.border}}/>)}
                 </div>
-                <BtnMain onClick={()=>setTutStep(2)} bg={`linear-gradient(135deg,${C.mint},${C.mintDk})`} style={{width:"100%"}}>Siguiente →</BtnMain>
-              </div>
+              </>
             )}
-            {tutStep===2&&(
-              <div style={{textAlign:"center"}}>
-                <div style={{fontSize:52,marginBottom:10}}>🐷</div>
-                <div style={{fontWeight:900,fontSize:20,color:C.text,marginBottom:6}}>¿Por qué ahorrar?</div>
-                <div style={{background:C.goldLt,borderRadius:16,padding:14,fontSize:13,color:C.goldDk,lineHeight:1.6,marginBottom:16,textAlign:"left"}}>
-                  Si guardas <b>$500 por semana</b>, en 1 año tendrás <b>$26.000</b>. ¡Con eso puedes comprar una bicicleta o lo que siempre quisiste! 🚲<br/><br/>
-                  KidQuest te ayuda a crear ese hábito jugando. ¡Cada tarea que completas es un paso más hacia tus metas!
+
+            {/* ── PARENT ── */}
+            {role===ROLES.PARENT&&(
+              <>
+                {tutStep===0&&(<div>
+                  <div style={{fontSize:56,marginBottom:8}} className="float">👨‍👩‍👦</div>
+                  <div style={{fontWeight:900,fontSize:22,color:C.text,marginBottom:8}}>¡Hola, {user.name.split(" ")[0]}!</div>
+                  <div style={{fontSize:14,color:C.textMed,lineHeight:1.6,marginBottom:20}}>En <b>FinPlay</b> eres el tutor. Vinculas a tus hijos, apruebas sus tareas y ganas <b>Rubíes</b> exclusivos.</div>
+                  <BtnMain onClick={()=>setTutStep(1)} bg={`linear-gradient(135deg,${C.gold},${C.goldDk})`} style={{width:"100%"}}>Ver cómo funciona →</BtnMain>
+                </div>)}
+                {tutStep===1&&(<div>
+                  <div style={{fontSize:48,marginBottom:8}}>🔗</div>
+                  <div style={{fontWeight:900,fontSize:18,color:C.text,marginBottom:8}}>Conecta a tus hijos</div>
+                  {[
+                    {i:"1️⃣",t:'Ve a "Mi QR" y genera un código'},
+                    {i:"2️⃣",t:"Envíalo por WhatsApp a tu hijo"},
+                    {i:"3️⃣",t:"Quedan vinculados automáticamente"},
+                  ].map((x,j)=>(
+                    <div key={j} style={{display:"flex",gap:8,alignItems:"flex-start",marginBottom:8,textAlign:"left"}}>
+                      <span style={{fontSize:20,flexShrink:0}}>{x.i}</span>
+                      <span style={{fontSize:13,color:C.textMed,lineHeight:1.5}}>{x.t}</span>
+                    </div>
+                  ))}
+                  <BtnMain onClick={()=>completeTutorial()} bg={`linear-gradient(135deg,${C.gold},${C.goldDk})`} style={{width:"100%",marginTop:8}}>👨‍👩‍👦 ¡Entendido!</BtnMain>
+                </div>)}
+                <div style={{display:"flex",justifyContent:"center",gap:8,marginTop:14}}>
+                  {[0,1].map(i=><div key={i} style={{width:8,height:8,borderRadius:"50%",background:tutStep===i?C.gold:C.border}}/>)}
                 </div>
-                <BtnMain onClick={()=>setTutDone(true)} bg={`linear-gradient(135deg,${C.gold},${C.goldDk})`} style={{width:"100%"}}>¡Entendido! Empezar →</BtnMain>
-              </div>
+              </>
             )}
-            <div style={{display:"flex",justifyContent:"center",gap:6,marginTop:16}}>
-              {[0,1,2].map(i=><div key={i} style={{width:8,height:8,borderRadius:"50%",background:tutStep===i?C.mint:C.border}}/>)}
-            </div>
+
+            {/* ── TEACHER ── */}
+            {role===ROLES.TEACHER&&(
+              <>
+                {tutStep===0&&(<div>
+                  <div style={{fontSize:56,marginBottom:8}} className="float">🏫</div>
+                  <div style={{fontWeight:900,fontSize:22,color:C.text,marginBottom:8}}>¡Hola, Profe!</div>
+                  <div style={{fontSize:14,color:C.textMed,lineHeight:1.6,marginBottom:20}}>En <b>FinPlay</b> gestionas tu clase. Conecta alumnos, asigna misiones y sigue su progreso en el ranking.</div>
+                  <BtnMain onClick={()=>completeTutorial()} bg={`linear-gradient(135deg,${C.sky},#1565C0)`} style={{width:"100%"}}>🏫 ¡Ir a mi panel!</BtnMain>
+                </div>)}
+              </>
+            )}
           </div>
         </div>
       )}
@@ -1941,17 +2047,17 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                   <Chip label={`⏳ 24h para completar`} bg={C.goldLt} color={C.goldDk}/>
                 </div>
               </div>
-              <button onClick={()=>setVerifyTask(null)} style={{background:C.border,border:"none",borderRadius:10,padding:"5px 9px",color:C.textMed,cursor:"pointer",fontSize:15,lineHeight:1,flexShrink:0}}>✕</button>
+              <button onClick={()=>setVerifyTask(null)} style={{background:C.border,border:"none",borderRadius:10,padding:"4px 8px",color:C.textMed,cursor:"pointer",fontSize:15,lineHeight:1,flexShrink:0}}>✕</button>
             </div>
 
             {/* reward */}
-            <div style={{background:C.goldLt,border:`1px solid ${C.gold}60`,borderRadius:14,padding:"9px 14px",marginBottom:16,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div style={{background:C.goldLt,border:`1px solid ${C.gold}60`,borderRadius:14,padding:"8px 16px",marginBottom:16,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <span style={{fontSize:12,color:C.textMed,fontWeight:600}}>Al aprobar:</span>
               <span style={{fontWeight:800,color:C.goldDk,fontSize:12}}>+{verifyTask.xp} XP · +{verifyTask.coins}💰 · 🎡</span>
             </div>
 
             {/* METHOD TABS */}
-            <div style={{display:"flex",gap:6,marginBottom:16,overflowX:"auto",paddingBottom:4}}>
+            <div style={{display:"flex",gap:8,marginBottom:16,overflowX:"auto",paddingBottom:4}}>
               {[
                 {id:"photo",label:"Foto"},
                 {id:"qr",   label:"Código"},
@@ -1959,7 +2065,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                 {id:"self", label:"Texto"},
               ].map(m=>(
                 <button key={m.id} onClick={()=>setVerifyMode(m.id)}
-                  style={{padding:"6px 12px",borderRadius:20,border:`1.5px solid ${verifyMode===m.id?C.mint:C.border}`,background:verifyMode===m.id?C.mint:"white",color:verifyMode===m.id?"white":C.textMed,fontWeight:700,fontSize:11,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,transition:"all 0.15s"}}>
+                  style={{padding:"8px 12px",borderRadius:20,border:`1.5px solid ${verifyMode===m.id?C.mint:C.border}`,background:verifyMode===m.id?C.mint:"white",color:verifyMode===m.id?"white":C.textMed,fontWeight:700,fontSize:11,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,transition:"all 0.15s"}}>
                   {m.label}
                 </button>
               ))}
@@ -1971,7 +2077,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                 {!photoThumb?(
                   <label style={{display:"block",cursor:"pointer"}}>
                     <div className="upload-zone">
-                      <div style={{fontSize:36,marginBottom:6}}>📷</div>
+                      <div style={{fontSize:36,marginBottom:8}}>📷</div>
                       <div style={{fontWeight:700,fontSize:14,color:C.text}}>Subir foto de evidencia</div>
                       <div style={{fontSize:12,color:C.textMed,marginTop:3}}>La IA analiza si está bien hecho • Flexible con mala luz</div>
                     </div>
@@ -1979,7 +2085,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                   </label>
                 ):(
                   <div>
-                    <div style={{position:"relative",borderRadius:14,overflow:"hidden",marginBottom:10,border:`2px solid ${C.border}`}}>
+                    <div style={{position:"relative",borderRadius:14,overflow:"hidden",marginBottom:8,border:`2px solid ${C.border}`}}>
                       <img src={photoThumb} alt="ev" style={{width:"100%",height:160,objectFit:"cover",display:"block"}}/>
                       {aiLoading&&(
                         <div style={{position:"absolute",inset:0,background:dark?"rgba(15,26,22,0.85)":"rgba(255,255,255,0.88)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8}}>
@@ -1992,8 +2098,8 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
 
                     {aiResult&&!aiLoading&&(
                       <div>
-                        <div style={{background:aiResult.approved?C.mintLt:C.coralLt,border:`1.5px solid ${aiResult.approved?C.mint:C.coral}`,borderRadius:14,padding:14,marginBottom:10}}>
-                          <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:6}}>
+                        <div style={{background:aiResult.approved?C.mintLt:C.coralLt,border:`1.5px solid ${aiResult.approved?C.mint:C.coral}`,borderRadius:14,padding:14,marginBottom:8}}>
+                          <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:8}}>
                             <span style={{fontSize:22}}>{aiResult.approved?"✅":"⚠️"}</span>
                             <div style={{flex:1}}>
                               <div style={{fontWeight:800,color:aiResult.approved?C.mintDk:C.coral,fontSize:14}}>
@@ -2003,7 +2109,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                             </div>
                             <div style={{background:aiResult.approved?C.mint:C.coral,color:"white",borderRadius:20,padding:"3px 10px",fontSize:11,fontWeight:800}}>{aiResult.confidence}%</div>
                           </div>
-                          <div style={{fontSize:13,color:C.text,marginBottom:6}}>{aiResult.reason}</div>
+                          <div style={{fontSize:13,color:C.text,marginBottom:8}}>{aiResult.reason}</div>
                           {aiResult.detected?.length>0&&<div style={{fontSize:11,color:C.textMed}}>🔍 {aiResult.detected.join(", ")}</div>}
 
                           {/* Lighting warning + alternatives */}
@@ -2016,16 +2122,16 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
 
                           {!aiResult.approved&&(
                             <div style={{marginTop:10}}>
-                              <div style={{fontSize:12,color:C.textMed,fontWeight:700,marginBottom:6}}>¿Qué puedo hacer?</div>
-                              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                              <div style={{fontSize:12,color:C.textMed,fontWeight:700,marginBottom:8}}>¿Qué puedo hacer?</div>
+                              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                                 {(aiResult.alternativeOptions||[]).map((opt,i)=>(
                                   <button key={i} onClick={()=>setVerifyMode(i===0?"qr":"self")}
-                                    style={{padding:"5px 10px",borderRadius:12,border:`1.5px solid ${C.sky}`,background:C.skyLt,color:C.sky,fontSize:11,fontWeight:700,cursor:"pointer"}}>
+                                    style={{padding:"4px 8px",borderRadius:12,border:`1.5px solid ${C.sky}`,background:C.skyLt,color:C.sky,fontSize:11,fontWeight:700,cursor:"pointer"}}>
                                     {opt}
                                   </button>
                                 ))}
                                 <button onClick={()=>setVerifyMode("appeal")}
-                                  style={{padding:"5px 10px",borderRadius:12,border:`1.5px solid ${C.purple}`,background:C.purpleLt,color:C.purple,fontSize:11,fontWeight:700,cursor:"pointer"}}>
+                                  style={{padding:"4px 8px",borderRadius:12,border:`1.5px solid ${C.purple}`,background:C.purpleLt,color:C.purple,fontSize:11,fontWeight:700,cursor:"pointer"}}>
                                   ⚖️ Apelar decisión
                                 </button>
                               </div>
@@ -2051,7 +2157,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                 {!qrOk?(
                   qrTimer>0?(
                     <div style={{background:C.goldLt,border:`1.5px solid ${C.gold}`,borderRadius:16,padding:16,textAlign:"center"}}>
-                      <div style={{background:"white",borderRadius:12,padding:14,width:90,margin:"0 auto 10px",boxShadow:C.shadow}}><div style={{fontSize:50}}>🔲</div></div>
+                      <div style={{background:"white",borderRadius:12,padding:14,width:90,margin:"0 auto 10px",boxShadow:C.shadow}}><div style={{fontSize:48}}>🔲</div></div>
                       <div style={{fontWeight:900,fontSize:28,color:C.goldDk}}>{qrTimer}</div>
                       <div style={{fontSize:12,color:C.textMed}}>Esperando que tu tutor escanee…</div>
                     </div>
@@ -2078,10 +2184,10 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             {/* SELF DESCRIPTION MODE */}
             {verifyMode==="self"&&(
               <div>
-                <div style={{fontSize:13,color:C.textMed,marginBottom:10,lineHeight:1.5}}>Describe con tus palabras qué hiciste exactamente. Tu tutor lo revisará en las próximas 24 horas:</div>
+                <div style={{fontSize:13,color:C.textMed,marginBottom:8,lineHeight:1.5}}>Describe con tus palabras qué hiciste exactamente. Tu tutor lo revisará en las próximas 24 horas:</div>
                 <textarea value={selfDesc} onChange={e=>setSelfDesc(e.target.value.slice(0,300))}
                   placeholder="Ejemplo: Tendí mi cama, acomodé las almohadas y doblé la frazada. La hice sola sin que me lo pidieran..."
-                  style={{width:"100%",height:100,borderRadius:14,border:`1.5px solid ${C.border}`,padding:"10px 14px",fontSize:13,color:C.text,background:C.card,fontFamily:"'Nunito',sans-serif",resize:"none",outline:"none",marginBottom:10,lineHeight:1.5}}/>
+                  style={{width:"100%",height:100,borderRadius:14,border:`1.5px solid ${C.border}`,padding:"8px 16px",fontSize:13,color:C.text,background:C.card,fontFamily:"'Nunito',sans-serif",resize:"none",outline:"none",marginBottom:8,lineHeight:1.5}}/>
                 <div style={{fontSize:11,color:C.textLt,marginBottom:12,textAlign:"right"}}>{selfDesc.length}/300 — mín 20 caracteres</div>
                 <div style={{background:C.skyLt,border:`1px solid ${C.sky}30`,borderRadius:12,padding:"8px 12px",fontSize:11,color:C.sky,marginBottom:12}}>
                   ℹ️ Con este método recibirás <b>50% de los puntos</b> de forma inmediata. El resto al confirmar tu tutor.
@@ -2093,23 +2199,23 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             {verifyMode==="appeal"&&(
               <div>
                 <div style={{fontWeight:800,fontSize:15,color:C.text,marginBottom:8}}>⚖️ Apelar decisión de la IA</div>
-                <div style={{fontSize:13,color:C.textMed,marginBottom:10,lineHeight:1.5}}>¿La IA fue injusta? Explica por qué crees que deberías ser aprobado:</div>
+                <div style={{fontSize:13,color:C.textMed,marginBottom:8,lineHeight:1.5}}>¿La IA fue injusta? Explica por qué crees que deberías ser aprobado:</div>
                 {!appealRes?(
                   <>
                     <textarea value={appealText} onChange={e=>setAppealText(e.target.value.slice(0,250))}
                       placeholder="Ejemplo: Sí tendí mi cama pero la foto salió oscura porque era de noche. La cama está bien hecha, puedo mostrársela a mi mamá..."
-                      style={{width:"100%",height:90,borderRadius:14,border:`1.5px solid ${C.border}`,padding:"10px 14px",fontSize:13,color:C.text,background:C.card,fontFamily:"'Nunito',sans-serif",resize:"none",outline:"none",marginBottom:10,lineHeight:1.5}}/>
+                      style={{width:"100%",height:90,borderRadius:14,border:`1.5px solid ${C.border}`,padding:"8px 16px",fontSize:13,color:C.text,background:C.card,fontFamily:"'Nunito',sans-serif",resize:"none",outline:"none",marginBottom:8,lineHeight:1.5}}/>
                     <BtnMain onClick={submitAppeal} bg={`linear-gradient(135deg,${C.purple},#6d53c4)`} style={{width:"100%"}} disabled={appealLoading||appealText.trim().length<15}>
                       {appealLoading?<span><span className="spin-icon">⚖️</span> Revisando apelación…</span>:"⚖️ Enviar apelación"}
                     </BtnMain>
                   </>
                 ):(
                   <div style={{background:appealRes.appeal_approved?C.mintLt:C.coralLt,border:`1.5px solid ${appealRes.appeal_approved?C.mint:C.coral}`,borderRadius:14,padding:14}}>
-                    <div style={{fontWeight:800,fontSize:15,color:appealRes.appeal_approved?C.mintDk:C.coral,marginBottom:6}}>
+                    <div style={{fontWeight:800,fontSize:15,color:appealRes.appeal_approved?C.mintDk:C.coral,marginBottom:8}}>
                       {appealRes.appeal_approved?"✅ Apelación aceptada":"❌ Apelación rechazada"}
                     </div>
                     <div style={{fontSize:13,color:C.text,marginBottom:8}}>{appealRes.response}</div>
-                    {appealRes.appeal_approved&&<div style={{background:C.goldLt,borderRadius:10,padding:"6px 10px",fontSize:12,color:C.goldDk,fontWeight:700,marginBottom:8}}>🎁 Crédito parcial: {appealRes.partial_credit}% de los puntos</div>}
+                    {appealRes.appeal_approved&&<div style={{background:C.goldLt,borderRadius:10,padding:"8px 8px",fontSize:12,color:C.goldDk,fontWeight:700,marginBottom:8}}>🎁 Crédito parcial: {appealRes.partial_credit}% de los puntos</div>}
                     <div style={{fontSize:11,color:C.textMed}}>💡 {appealRes.tip_for_next_time}</div>
                   </div>
                 )}
@@ -2142,8 +2248,8 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
       {showWheel&&(
         <div className="overlay">
           <div className="modal pop-in" style={{textAlign:"center"}}>
-            <div style={{fontWeight:900,fontSize:26,color:C.text,marginBottom:2}}>🎡 ¡Ruleta!</div>
-            <div style={{fontSize:13,color:C.textMed,marginBottom:18}}>Misión completada — gira tu recompensa</div>
+            <div style={{fontWeight:900,fontSize:24,color:C.text,marginBottom:2}}>🎡 ¡Ruleta!</div>
+            <div style={{fontSize:13,color:C.textMed,marginBottom:16}}>Misión completada — gira tu recompensa</div>
             <div style={{position:"relative",width:230,height:230,margin:"0 auto 18px"}}>
               <svg viewBox="0 0 220 220" style={{transform:`rotate(${wheelAngle}deg)`,transition:isSpinning?"transform 3.8s cubic-bezier(0.17,0.67,0.1,0.99)":"none",filter:isSpinning?`drop-shadow(0 0 16px ${C.mint}80)`:"none"}}>
                 {WHEEL_PRIZES.map((r,i)=>{
@@ -2165,7 +2271,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             </div>
             {wheelRes?(
               <div className="pop-in" style={{marginBottom:16}}>
-                <div style={{fontSize:52}}>{wheelRes.emoji}</div>
+                <div style={{fontSize:48}}>{wheelRes.emoji}</div>
                 <div style={{fontWeight:900,fontSize:22,color:C.text}}>{wheelRes.label}</div>
                 <Chip label={wheelRes.rarity} bg={wheelRes.rc+"20"} color={wheelRes.rc}/>
               </div>
@@ -2184,10 +2290,10 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
         <div className="overlay" style={{zIndex:9992}}>
           <div className="modal pop-in">
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-              <div style={{fontWeight:800,fontSize:17,color:C.text}}>
+              <div style={{fontWeight:800,fontSize:18,color:C.text}}>
                 {role===ROLES.STUDENT?"🔗 Vincular Tutor":"👨‍👩‍👦 Vincular Estudiante"}
               </div>
-              <button onClick={()=>{setShowLinkTutor(false);setLinkStep("scan");}} style={{background:C.border,border:"none",borderRadius:10,padding:"5px 9px",color:C.textMed,cursor:"pointer",fontSize:15}}>✕</button>
+              <button onClick={()=>{setShowLinkTutor(false);setLinkStep("scan");}} style={{background:C.border,border:"none",borderRadius:10,padding:"4px 8px",color:C.textMed,cursor:"pointer",fontSize:15}}>✕</button>
             </div>
 
             {/* STUDENT FLOW */}
@@ -2195,10 +2301,10 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
               <>
                 {linkStep==="scan"&&(
                   <div style={{textAlign:"center"}}>
-                    <div style={{fontSize:48,marginBottom:10}}>📱</div>
-                    <div style={{fontWeight:800,fontSize:16,color:C.text,marginBottom:6}}>Muestra este código a tu tutor</div>
+                    <div style={{fontSize:48,marginBottom:8}}>📱</div>
+                    <div style={{fontWeight:800,fontSize:16,color:C.text,marginBottom:8}}>Muestra este código a tu tutor</div>
                     <div style={{fontSize:13,color:C.textMed,marginBottom:20,lineHeight:1.5}}>
-                      Tu papá, mamá o tutor debe abrir KidQuest, ir a <b>Vincular Estudiante</b> y escanear este código.
+                      Tu papá, mamá o tutor debe abrir FinPlay, ir a <b>Vincular Estudiante</b> y escanear este código.
                     </div>
                     {/* Big QR code */}
                     <div style={{background:"white",borderRadius:20,padding:20,width:170,margin:"0 auto 16px",boxShadow:C.shadowMd,border:`2px solid ${C.mint}40`}}>
@@ -2222,7 +2328,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                       </svg>
                       <div style={{fontSize:10,color:C.textMed,fontWeight:700,marginTop:6}}>MATEO-{Math.random().toString(36).slice(2,6).toUpperCase()}</div>
                     </div>
-                    <div style={{background:C.goldLt,border:`1.5px solid ${C.gold}60`,borderRadius:14,padding:"10px 16px",marginBottom:16,display:"flex",gap:10,alignItems:"center"}}>
+                    <div style={{background:C.goldLt,border:`1.5px solid ${C.gold}60`,borderRadius:14,padding:"8px 16px",marginBottom:16,display:"flex",gap:8,alignItems:"center"}}>
                       <span style={{fontSize:24}}>💎</span>
                       <div style={{textAlign:"left"}}>
                         <div style={{fontWeight:800,fontSize:13,color:C.goldDk}}>¡Gana {BOND_REWARD_GEMS} cristales!</div>
@@ -2230,8 +2336,8 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                       </div>
                     </div>
                     {linkedTutors.length>0&&(
-                      <div style={{background:C.mintLt,borderRadius:14,padding:"10px 14px",marginBottom:12}}>
-                        <div style={{fontSize:12,fontWeight:700,color:C.mintDk,marginBottom:6}}>✅ Tutores vinculados ({linkedTutors.length})</div>
+                      <div style={{background:C.mintLt,borderRadius:14,padding:"8px 16px",marginBottom:12}}>
+                        <div style={{fontSize:12,fontWeight:700,color:C.mintDk,marginBottom:8}}>✅ Tutores vinculados ({linkedTutors.length})</div>
                         {linkedTutors.map((t,i)=>(
                           <div key={i} style={{fontSize:12,color:C.textMed}}>👩 {t}</div>
                         ))}
@@ -2245,20 +2351,27 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                 )}
                 {linkStep==="confirm"&&(
                   <div style={{textAlign:"center"}}>
-                    <div style={{fontSize:56,marginBottom:10}} className="float">🎉</div>
-                    <div style={{fontWeight:900,fontSize:20,color:C.text,marginBottom:6}}>¡Vinculación exitosa!</div>
-                    <div style={{fontSize:13,color:C.textMed,marginBottom:16}}>Mamá Laura ahora es tu tutora en KidQuest</div>
+                    <div style={{fontSize:56,marginBottom:8}} className="float">🎉</div>
+                    <div style={{fontWeight:900,fontSize:20,color:C.text,marginBottom:8}}>¡Vinculación exitosa!</div>
+                    <div style={{fontSize:13,color:C.textMed,marginBottom:16}}>Mamá Laura ahora es tu tutora en FinPlay</div>
                     <div style={{background:`linear-gradient(135deg,${C.gold},${C.goldDk})`,borderRadius:16,padding:"16px",marginBottom:16,color:"white"}}>
                       <div style={{fontWeight:900,fontSize:28}}>+{BOND_REWARD_GEMS} 💎</div>
                       <div style={{fontSize:13,opacity:0.9}}>¡Cristales añadidos a tu cuenta!</div>
                     </div>
-                    <BtnMain onClick={()=>{
-                      setLinkedTutors(p=>[...p,"Papá Carlos"]);
-                      setUser(p=>({...p,gems:p.gems+BOND_REWARD_GEMS}));
+                    <BtnMain onClick={async()=>{
+                      const newGems = (user.gems||0)+BOND_REWARD_GEMS;
+                      setUser(p=>({...p,gems:newGems}));
                       boom();
                       setLinkStep("scan");
                       setShowLinkTutor(false);
-                      notify(`+${BOND_REWARD_GEMS} 💎 por vincular tutor!`,"🔗");
+                      notify(`+${BOND_REWARD_GEMS} 💎 ¡Tutor vinculado!`,"🔗");
+                      // Save — bond reward only once ever
+                      if(userId){
+                        const {supabase}=await import("./supabase.js");
+                        await supabase.from("profiles").update({
+                          gems:newGems, bond_reward_claimed:true
+                        }).eq("id",userId);
+                      }
                     }} bg={`linear-gradient(135deg,${C.gold},${C.goldDk})`} style={{width:"100%"}}>
                       🎁 Reclamar {BOND_REWARD_GEMS} cristales
                     </BtnMain>
@@ -2273,13 +2386,13 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                 {linkStep==="scan"&&(
                   <div>
                     <div style={{fontSize:13,color:C.textMed,marginBottom:16,lineHeight:1.5}}>
-                      Pídele a tu {role===ROLES.PARENT?"hijo/a":"alumno/a"} que abra KidQuest → <b>Vincular Tutor</b> y muestre su código QR.
+                      Pídele a tu {role===ROLES.PARENT?"hijo/a":"alumno/a"} que abra FinPlay → <b>Vincular Tutor</b> y muestre su código QR.
                     </div>
                     {/* Simulated camera view */}
-                    <div style={{background:"#1a1a1a",borderRadius:16,height:170,marginBottom:14,display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden",border:`2px solid ${C.mint}`}}>
+                    <div style={{background:"#1a1a1a",borderRadius:16,height:170,marginBottom:16,display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden",border:`2px solid ${C.mint}`}}>
                       <div style={{position:"absolute",inset:0,background:"linear-gradient(135deg,#1a2e28,#0d1a16)",opacity:0.9}}/>
                       <div style={{position:"relative",textAlign:"center"}}>
-                        <div style={{fontSize:36,marginBottom:6}}>📷</div>
+                        <div style={{fontSize:36,marginBottom:8}}>📷</div>
                         <div style={{fontSize:12,color:"rgba(255,255,255,0.7)"}}>Apunta la cámara al QR del estudiante</div>
                         <div style={{width:100,height:100,border:"2px solid #4DC9A0",borderRadius:8,margin:"10px auto 0",position:"relative"}}>
                           <div style={{position:"absolute",top:0,left:0,width:16,height:16,borderTop:`3px solid ${C.mint}`,borderLeft:`3px solid ${C.mint}`}}/>
@@ -2290,12 +2403,12 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                       </div>
                     </div>
                     {/* Linked students list */}
-                    <div style={{background:C.mintLt,borderRadius:14,padding:"10px 14px",marginBottom:14}}>
+                    <div style={{background:C.mintLt,borderRadius:14,padding:"8px 16px",marginBottom:16}}>
                       <div style={{fontSize:12,fontWeight:700,color:C.mintDk,marginBottom:8}}>
                         {role===ROLES.PARENT?"👨‍👩‍👦":"👦"} {role===ROLES.PARENT?"Hijos/as vinculados":"Alumnos vinculados"} ({linkedStudents.length})
                       </div>
                       {linkedStudents.map((s,i)=>(
-                        <div key={i} style={{display:"flex",alignItems:"center",gap:10,marginBottom:6,padding:"6px 8px",background:C.card,borderRadius:10}}>
+                        <div key={i} style={{display:"flex",alignItems:"center",gap:8,marginBottom:8,padding:"6px 8px",background:C.card,borderRadius:10}}>
                           <div style={{width:30,height:30,borderRadius:"50%",background:C.border,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
                             <KQIcon id={s.avatar} size={26}/>
                           </div>
@@ -2315,17 +2428,17 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                 )}
                 {linkStep==="confirm"&&pendingStudent&&(
                   <div style={{textAlign:"center"}}>
-                    <div style={{marginBottom:10,display:"flex",justifyContent:"center"}}>
+                    <div style={{marginBottom:8,display:"flex",justifyContent:"center"}}>
                       <div style={{width:70,height:70,borderRadius:"50%",background:C.mintLt,border:`3px solid ${C.mint}`,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
                         <KQIcon id={pendingStudent.avatar} size={62}/>
                       </div>
                     </div>
                     <div style={{fontWeight:800,fontSize:16,color:C.text,marginBottom:4}}>¿Vincular a {pendingStudent.name}?</div>
                     <div style={{fontSize:12,color:C.textMed,marginBottom:16}}>Podrás validar sus tareas y ver su progreso</div>
-                    <div style={{background:C.goldLt,border:`1.5px solid ${C.gold}60`,borderRadius:14,padding:"10px 14px",marginBottom:16,fontSize:12,color:C.goldDk,fontWeight:600}}>
+                    <div style={{background:C.goldLt,border:`1.5px solid ${C.gold}60`,borderRadius:14,padding:"8px 16px",marginBottom:16,fontSize:12,color:C.goldDk,fontWeight:600}}>
                       💎 {pendingStudent.name} recibirá {BOND_REWARD_GEMS} cristales al aceptar
                     </div>
-                    <div style={{display:"flex",gap:10}}>
+                    <div style={{display:"flex",gap:8}}>
                       <button onClick={()=>setLinkStep("scan")} style={{flex:1,padding:"12px",borderRadius:14,border:`1.5px solid ${C.border}`,background:C.card,color:C.textMed,cursor:"pointer",fontWeight:800,fontSize:13}}>Cancelar</button>
                       <BtnMain onClick={()=>{
                         setLinkedStudents(p=>[...p,{...pendingStudent,gem_reward_claimed:false}]);
@@ -2357,8 +2470,8 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             </div>
             {Object.values(AGE_PROFILES).map(ap=>(
               <button key={ap.id} onClick={()=>{setAgeGroup(ap.id);setUser(p=>({...p,ageGroup:ap.id}));setShowAgePick(false);notify(`Perfil ${ap.label} activado`,ap.icon);}}
-                style={{width:"100%",marginBottom:10,padding:"16px 18px",borderRadius:16,border:`2px solid ${ageGroup===ap.id?C.mint:C.border}`,background:ageGroup===ap.id?C.mintLt:C.card,cursor:"pointer",display:"flex",gap:14,alignItems:"center",textAlign:"left"}}>
-                <div style={{fontSize:32,flexShrink:0}}>{ap.icon}</div>
+                style={{width:"100%",marginBottom:8,padding:"16px 18px",borderRadius:16,border:`2px solid ${ageGroup===ap.id?C.mint:C.border}`,background:ageGroup===ap.id?C.mintLt:C.card,cursor:"pointer",display:"flex",gap:16,alignItems:"center",textAlign:"left"}}>
+                <div style={{fontSize:30,flexShrink:0}}>{ap.icon}</div>
                 <div>
                   <div style={{fontWeight:800,fontSize:16,color:C.text}}>{ap.label}</div>
                   <div style={{fontSize:12,color:C.textMed}}>{ap.desc}</div>
@@ -2378,17 +2491,17 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
               const q=quizLesson.quiz[quizStep];
               return(
                 <div>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
                     <div style={{fontWeight:800,fontSize:15,color:C.text}}>{quizLesson.title}</div>
                     <div style={{fontSize:12,color:C.textMed}}>{quizStep+1}/{quizLesson.quiz.length}</div>
                   </div>
-                  <div style={{height:4,borderRadius:4,background:C.border,marginBottom:16,overflow:"hidden"}}>
+                  <div style={{height:4,borderRadius:8,background:C.border,marginBottom:16,overflow:"hidden"}}>
                     <div style={{height:"100%",width:`${((quizStep+1)/quizLesson.quiz.length)*100}%`,background:`linear-gradient(90deg,${C.mint},${C.gold})`,transition:"width 0.4s"}}/>
                   </div>
-                  <div style={{background:C.mintLt,borderRadius:14,padding:"14px 16px",marginBottom:18}}>
+                  <div style={{background:C.mintLt,borderRadius:14,padding:"14px 16px",marginBottom:16}}>
                     <div style={{fontWeight:700,fontSize:14,color:C.text,lineHeight:1.5}}>{q.q}</div>
                   </div>
-                  <div style={{display:"flex",flexDirection:"column",gap:9}}>
+                  <div style={{display:"flex",flexDirection:"column",gap:8}}>
                     {q.opts.map((opt,i)=>{
                       const selected=quizAnswers[quizStep]===i;
                       return(
@@ -2399,7 +2512,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                           } else {
                             setTimeout(()=>setQuizDone(true),400);
                           }
-                        }} style={{padding:"12px 16px",borderRadius:13,border:`2px solid ${selected?C.mint:C.border}`,background:selected?C.mintLt:C.card,cursor:"pointer",textAlign:"left",fontSize:14,fontWeight:600,color:C.text,transition:"all 0.18s"}}>
+                        }} style={{padding:"12px 16px",borderRadius:16,border:`2px solid ${selected?C.mint:C.border}`,background:selected?C.mintLt:C.card,cursor:"pointer",textAlign:"left",fontSize:14,fontWeight:600,color:C.text,transition:"all 0.18s"}}>
                           <span style={{color:C.textMed,marginRight:8}}>{["A","B","C","D"][i]}.</span>{opt}
                         </button>
                       );
@@ -2451,29 +2564,29 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
         <div className="overlay">
           <div className="modal pop-in">
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-              <div style={{fontWeight:800,fontSize:17,color:C.text}}>Registrar gasto</div>
-              <button onClick={()=>setShowSpend(false)} style={{background:C.border,border:"none",borderRadius:9,padding:"5px 10px",cursor:"pointer",color:C.textMed}}>✕</button>
+              <div style={{fontWeight:800,fontSize:18,color:C.text}}>Registrar gasto</div>
+              <button onClick={()=>setShowSpend(false)} style={{background:C.border,border:"none",borderRadius:9,padding:"4px 8px",cursor:"pointer",color:C.textMed}}>✕</button>
             </div>
             <div style={{marginBottom:12}}>
-              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:6}}>¿Cuánto gastaste?</div>
+              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:8}}>¿Cuánto gastaste?</div>
               <input type="number" value={spendAmt} onChange={e=>setSpendAmt(e.target.value)} placeholder="Ej: 2500"
                 style={{width:"100%",padding:"12px 14px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:16,fontWeight:700,color:C.text,background:C.card,outline:"none"}}/>
             </div>
             <div style={{marginBottom:12}}>
-              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:6}}>¿Era una necesidad o deseo?</div>
+              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:8}}>¿Era una necesidad o deseo?</div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                 {EXPENSE_CATS.map(cat=>(
                   <button key={cat.id} onClick={()=>setSpendCat(cat.id)}
-                    style={{padding:"10px 8px",borderRadius:12,border:`2px solid ${spendCat===cat.id?cat.color:C.border}`,background:spendCat===cat.id?cat.color+"18":C.card,cursor:"pointer",fontWeight:700,fontSize:12,color:spendCat===cat.id?cat.color:C.textMed,display:"flex",gap:6,alignItems:"center",justifyContent:"center"}}>
+                    style={{padding:"10px 8px",borderRadius:12,border:`2px solid ${spendCat===cat.id?cat.color:C.border}`,background:spendCat===cat.id?cat.color+"18":C.card,cursor:"pointer",fontWeight:700,fontSize:12,color:spendCat===cat.id?cat.color:C.textMed,display:"flex",gap:8,alignItems:"center",justifyContent:"center"}}>
                     <span>{cat.icon}</span>{cat.label}
                   </button>
                 ))}
               </div>
             </div>
             <div style={{marginBottom:16}}>
-              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:6}}>¿En qué lo gastaste? (opcional)</div>
+              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:8}}>¿En qué lo gastaste? (opcional)</div>
               <input value={spendNote} onChange={e=>setSpendNote(e.target.value)} placeholder="Ej: Helado, chips, útiles..."
-                style={{width:"100%",padding:"11px 14px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:13,color:C.text,background:C.card,outline:"none"}}/>
+                style={{width:"100%",padding:"8px 16px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:13,color:C.text,background:C.card,outline:"none"}}/>
             </div>
             <BtnMain onClick={()=>{
               if(!spendAmt||isNaN(Number(spendAmt)))return;
@@ -2502,21 +2615,21 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
         <div className="overlay">
           <div className="modal pop-in">
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-              <div style={{fontWeight:800,fontSize:17,color:C.text}}>Mi meta de ahorro</div>
-              <button onClick={()=>setShowGoalEditor(false)} style={{background:C.border,border:"none",borderRadius:9,padding:"5px 10px",cursor:"pointer",color:C.textMed}}>✕</button>
+              <div style={{fontWeight:800,fontSize:18,color:C.text}}>Mi meta de ahorro</div>
+              <button onClick={()=>setShowGoalEditor(false)} style={{background:C.border,border:"none",borderRadius:9,padding:"4px 8px",cursor:"pointer",color:C.textMed}}>✕</button>
             </div>
             <div style={{marginBottom:12}}>
-              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:6}}>¿Para qué estás ahorrando?</div>
+              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:8}}>¿Para qué estás ahorrando?</div>
               <input value={goalName} onChange={e=>setGoalName(e.target.value)} placeholder="Ej: Bicicleta, zapatillas, videojuego..."
                 style={{width:"100%",padding:"12px 14px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:14,color:C.text,background:C.card,outline:"none"}}/>
             </div>
             <div style={{marginBottom:12}}>
-              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:6}}>¿Cuánto cuesta?</div>
+              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:8}}>¿Cuánto cuesta?</div>
               <input type="number" value={goalTarget} onChange={e=>setGoalTarget(e.target.value)} placeholder="Ej: 50000"
                 style={{width:"100%",padding:"12px 14px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:16,fontWeight:700,color:C.text,background:C.card,outline:"none"}}/>
             </div>
             <div style={{marginBottom:16}}>
-              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:6}}>Elige un emoji</div>
+              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:8}}>Elige un emoji</div>
               <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                 {["🚲","👟","🎮","📱","🎒","✈️","🎸","📚","🏋️","🎯"].map(e=>(
                   <button key={e} onClick={()=>setGoalEmoji(e)} style={{fontSize:24,background:goalEmoji===e?C.mintLt:"none",border:`2px solid ${goalEmoji===e?C.mint:"transparent"}`,borderRadius:10,padding:6,cursor:"pointer"}}>{e}</button>
@@ -2524,7 +2637,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
               </div>
             </div>
             {goalName&&goalTarget&&(
-              <div style={{background:C.goldLt,borderRadius:12,padding:"10px 14px",marginBottom:14,fontSize:12,color:C.goldDk}}>
+              <div style={{background:C.goldLt,borderRadius:12,padding:"8px 16px",marginBottom:16,fontSize:12,color:C.goldDk}}>
                 💡 Para alcanzar tu meta en <b>12 semanas</b> deberías ahorrar <b>${Math.ceil(Number(goalTarget)/12).toLocaleString()}/semana</b>
               </div>
             )}
@@ -2544,38 +2657,38 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
         <div className="overlay">
           <div className="modal pop-in">
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-              <div style={{fontWeight:800,fontSize:17,color:C.text}}>Nueva misión personalizada</div>
-              <button onClick={()=>setShowTaskCreator(false)} style={{background:C.border,border:"none",borderRadius:9,padding:"5px 10px",cursor:"pointer",color:C.textMed}}>✕</button>
+              <div style={{fontWeight:800,fontSize:18,color:C.text}}>Nueva misión personalizada</div>
+              <button onClick={()=>setShowTaskCreator(false)} style={{background:C.border,border:"none",borderRadius:9,padding:"4px 8px",cursor:"pointer",color:C.textMed}}>✕</button>
             </div>
             <div style={{marginBottom:11}}>
-              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:5}}>Título de la misión</div>
+              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:8}}>Título de la misión</div>
               <input value={newTaskTitle} onChange={e=>setNewTaskTitle(e.target.value)} placeholder="Ej: Cortar el pasto, Hacer el mercado..."
-                style={{width:"100%",padding:"11px 14px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:13,color:C.text,background:C.card,outline:"none"}}/>
+                style={{width:"100%",padding:"8px 16px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:13,color:C.text,background:C.card,outline:"none"}}/>
             </div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:11}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:11}}>
               <div>
-                <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:5}}>Frecuencia</div>
+                <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:8}}>Frecuencia</div>
                 <select value={newTaskFreq} onChange={e=>setNewTaskFreq(e.target.value)}
-                  style={{width:"100%",padding:"10px 12px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:13,color:C.text,background:C.card,outline:"none"}}>
+                  style={{width:"100%",padding:"8px 12px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:13,color:C.text,background:C.card,outline:"none"}}>
                   <option value="diaria">Diaria</option>
                   <option value="semanal">Semanal</option>
                   <option value="mensual">Mensual</option>
                 </select>
               </div>
               <div>
-                <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:5}}>XP a dar</div>
+                <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:8}}>XP a dar</div>
                 <input type="number" value={newTaskXp} onChange={e=>setNewTaskXp(Number(e.target.value))} min="10" max="500"
-                  style={{width:"100%",padding:"10px 12px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:13,color:C.text,background:C.card,outline:"none"}}/>
+                  style={{width:"100%",padding:"8px 12px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:13,color:C.text,background:C.card,outline:"none"}}/>
               </div>
             </div>
             <div style={{marginBottom:11}}>
-              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:5}}>Pista para el niño (¿qué debe fotografiar?)</div>
+              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:8}}>Pista para el niño (¿qué debe fotografiar?)</div>
               <input value={newTaskHint} onChange={e=>setNewTaskHint(e.target.value)} placeholder="Ej: Foto del pasto cortado, foto del recibo..."
-                style={{width:"100%",padding:"11px 14px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:13,color:C.text,background:C.card,outline:"none"}}/>
+                style={{width:"100%",padding:"8px 16px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:13,color:C.text,background:C.card,outline:"none"}}/>
             </div>
             <div style={{marginBottom:16}}>
-              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:6}}>Ícono</div>
-              <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
+              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:8}}>Ícono</div>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                 {["⭐","🌱","🔧","🧺","🍳","🏡","📐","🌿","💡","🤝","🛒","🐾"].map(e=>(
                   <button key={e} onClick={()=>setNewTaskEmoji(e)} style={{fontSize:22,background:newTaskEmoji===e?C.mintLt:"none",border:`2px solid ${newTaskEmoji===e?C.mint:"transparent"}`,borderRadius:9,padding:5,cursor:"pointer"}}>{e}</button>
                 ))}
@@ -2601,15 +2714,15 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
         <div className="overlay">
           <div className="modal pop-in">
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-              <div style={{fontWeight:800,fontSize:17,color:C.text}}>🔒 Control parental</div>
-              <button onClick={()=>setShowControls(false)} style={{background:C.border,border:"none",borderRadius:9,padding:"5px 10px",cursor:"pointer",color:C.textMed}}>✕</button>
+              <div style={{fontWeight:800,fontSize:18,color:C.text}}>🔒 Control parental</div>
+              <button onClick={()=>setShowControls(false)} style={{background:C.border,border:"none",borderRadius:9,padding:"4px 8px",cursor:"pointer",color:C.textMed}}>✕</button>
             </div>
             {[
               {label:"Máx. cofres por día",key:"maxChestsPerDay",type:"range",min:0,max:10,step:1},
               {label:"Chat se bloquea a las (hora)",key:"chatLockHour",type:"range",min:18,max:24,step:1},
             ].map(ctrl=>(
               <div key={ctrl.key} style={{marginBottom:16}}>
-                <div style={{display:"flex",justifyContent:"space-between",fontSize:13,fontWeight:700,color:C.text,marginBottom:6}}>
+                <div style={{display:"flex",justifyContent:"space-between",fontSize:13,fontWeight:700,color:C.text,marginBottom:8}}>
                   <span>{ctrl.label}</span>
                   <span style={{color:C.mint}}>{parentControls[ctrl.key]}{ctrl.key==="chatLockHour"?"h":""}</span>
                 </div>
@@ -2623,14 +2736,14 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
               {label:"Requerir mi aprobación para tareas",key:"requireApproval"},
               {label:"Permitir ruleta de premios",key:"allowWheel"},
             ].map(ctrl=>(
-              <div key={ctrl.key} style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,padding:"10px 14px",background:C.card,borderRadius:12,border:`1.5px solid ${C.border}`}}>
+              <div key={ctrl.key} style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,padding:"8px 16px",background:C.card,borderRadius:12,border:`1.5px solid ${C.border}`}}>
                 <span style={{fontSize:13,fontWeight:600,color:C.text}}>{ctrl.label}</span>
                 <button onClick={()=>setParentControls(p=>({...p,[ctrl.key]:!p[ctrl.key]}))}
                   style={{width:44,height:24,borderRadius:12,border:"none",cursor:"pointer",
                     background:parentControls[ctrl.key]?C.mint:C.border,
                     position:"relative",transition:"background 0.2s"}}>
                   <div style={{width:18,height:18,borderRadius:"50%",background:"white",position:"absolute",top:3,
-                    left:parentControls[ctrl.key]?23:3,transition:"left 0.2s",boxShadow:"0 1px 4px rgba(0,0,0,0.2)"}}/>
+                    left:parentControls[ctrl.key]?23:3,transition:"left 0.2s",boxShadow:C.shadow}}/>
                 </button>
               </div>
             ))}
@@ -2648,19 +2761,19 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
         <div className="overlay" style={{zIndex:10000}}>
           <div className="modal login-pop" style={{textAlign:"center",background:`linear-gradient(160deg,${C.card} 60%,${C.mintLt})`,border:`2px solid ${C.mint}50`}}>
             {/* Confetti-like decoration */}
-            <div style={{position:"absolute",inset:0,borderRadius:26,overflow:"hidden",pointerEvents:"none"}}>
+            <div style={{position:"absolute",inset:0,borderRadius:24,overflow:"hidden",pointerEvents:"none"}}>
               {["🌟","💫","✨","🎉","⭐","💎"].map((e,i)=>(
                 <div key={i} style={{position:"absolute",fontSize:20,opacity:0.25,
                   top:`${10+i*14}%`,left:`${5+i*15}%`,transform:`rotate(${i*45}deg)`}}>{e}</div>
               ))}
             </div>
             <div style={{position:"relative"}}>
-              <div style={{fontSize:72,marginBottom:6,lineHeight:1}} className="bounce">💎</div>
-              <div style={{fontWeight:900,fontSize:26,color:C.text,marginBottom:4}}>¡Bienvenido!</div>
+              <div style={{fontSize:64,marginBottom:8,lineHeight:1}} className="bounce">💎</div>
+              <div style={{fontWeight:900,fontSize:24,color:C.text,marginBottom:4}}>¡Bienvenido!</div>
               <div style={{fontSize:14,color:C.textMed,marginBottom:20}}>Entraste hoy — aquí tu recompensa diaria</div>
               <div style={{background:`linear-gradient(135deg,${C.sky},${C.purple})`,borderRadius:20,padding:"18px 24px",marginBottom:20,color:"white",boxShadow:`0 8px 24px ${C.purple}50`}}>
                 <div style={{fontWeight:900,fontSize:48,lineHeight:1}}>+{loginBonusAmt}</div>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,marginTop:4}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginTop:4}}>
                   <svg width="22" height="22" viewBox="0 0 18 18" fill="none">
                     <defs><linearGradient id="gem_login" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#7CE0FF"/><stop offset="1" stopColor="#3BA8E8"/></linearGradient></defs>
                     <polygon points="9,1 15,6.5 9,17 3,6.5" fill="url(#gem_login)"/>
@@ -2669,7 +2782,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                   <span style={{fontWeight:800,fontSize:18}}>cristales de bienvenida</span>
                 </div>
               </div>
-              <div style={{fontSize:12,color:C.textMed,marginBottom:18,background:C.goldLt,borderRadius:12,padding:"8px 14px"}}>
+              <div style={{fontSize:12,color:C.textMed,marginBottom:16,background:C.goldLt,borderRadius:12,padding:"8px 14px"}}>
                 🔄 Vuelve mañana para ganar <b>{loginBonusAmt} más</b>
               </div>
               <BtnMain onClick={async()=>{
@@ -2704,7 +2817,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
               <div style={{fontWeight:900,fontSize:18,color:C.text}}>
                 {assignStep==="pick"?"🎯 Asignar desafío":assignStep==="targets"?(role===ROLES.TEACHER?"👥 Seleccionar alumnos":"👦 Seleccionar hijo"):"✅ ¡Desafío asignado!"}
               </div>
-              <button onClick={()=>{setShowChallengeAssign(false);setAssignStep("pick");setSelectedChallenge(null);setSelectedStudents([]);}} style={{background:C.border,border:"none",borderRadius:9,padding:"5px 10px",cursor:"pointer",color:C.textMed,fontSize:14}}>✕</button>
+              <button onClick={()=>{setShowChallengeAssign(false);setAssignStep("pick");setSelectedChallenge(null);setSelectedStudents([]);}} style={{background:C.border,border:"none",borderRadius:9,padding:"4px 8px",cursor:"pointer",color:C.textMed,fontSize:14}}>✕</button>
             </div>
 
             {/* Step 1: Pick challenge */}
@@ -2715,13 +2828,13 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                 </div>
                 {CHALLENGE_TEMPLATES.map(ch=>(
                   <button key={ch.id} onClick={()=>{setSelectedChallenge(ch);setAssignStep("targets");}}
-                    style={{width:"100%",marginBottom:9,padding:"12px 14px",borderRadius:15,border:`2px solid ${selectedChallenge?.id===ch.id?C.mint:C.border}`,background:selectedChallenge?.id===ch.id?C.mintLt:C.card,cursor:"pointer",textAlign:"left",transition:"all 0.15s"}}>
-                    <div style={{display:"flex",gap:10,alignItems:"center"}}>
-                      <span style={{fontSize:26,flexShrink:0}}>{ch.emoji}</span>
+                    style={{width:"100%",marginBottom:9,padding:"12px 14px",borderRadius:16,border:`2px solid ${selectedChallenge?.id===ch.id?C.mint:C.border}`,background:selectedChallenge?.id===ch.id?C.mintLt:C.card,cursor:"pointer",textAlign:"left",transition:"all 0.15s"}}>
+                    <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                      <span style={{fontSize:24,flexShrink:0}}>{ch.emoji}</span>
                       <div style={{flex:1}}>
                         <div style={{fontWeight:800,fontSize:13,color:C.text}}>{ch.title}</div>
                         <div style={{fontSize:11,color:C.textMed,marginTop:2}}>{ch.desc}</div>
-                        <div style={{display:"flex",gap:6,marginTop:5}}>
+                        <div style={{display:"flex",gap:8,marginTop:5}}>
                           <span style={{background:C.goldLt,color:C.goldDk,borderRadius:8,padding:"2px 7px",fontSize:10,fontWeight:700}}>⭐ {ch.xp} XP</span>
                           <span style={{background:C.mintLt,color:C.mintDk,borderRadius:8,padding:"2px 7px",fontSize:10,fontWeight:700}}>{ch.freq}</span>
                         </div>
@@ -2737,7 +2850,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             {assignStep==="targets"&&selectedChallenge&&(
               <div>
                 {/* Selected challenge summary */}
-                <div style={{background:C.mintLt,border:`1.5px solid ${C.mint}40`,borderRadius:13,padding:"10px 13px",marginBottom:14,display:"flex",gap:10,alignItems:"center"}}>
+                <div style={{background:C.mintLt,border:`1.5px solid ${C.mint}40`,borderRadius:16,padding:"10px 13px",marginBottom:16,display:"flex",gap:8,alignItems:"center"}}>
                   <span style={{fontSize:24}}>{selectedChallenge.emoji}</span>
                   <div>
                     <div style={{fontWeight:800,fontSize:13,color:C.text}}>{selectedChallenge.title}</div>
@@ -2748,7 +2861,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
 
                 {role===ROLES.TEACHER?(
                   <div>
-                    <div style={{fontSize:13,color:C.textMed,marginBottom:10}}>
+                    <div style={{fontSize:13,color:C.textMed,marginBottom:8}}>
                       Selecciona alumnos (o <b>todos</b>):
                     </div>
                     <button onClick={()=>{
@@ -2766,7 +2879,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                       const sel=selectedStudents.includes(s.id);
                       return(
                         <button key={s.id} onClick={()=>setSelectedStudents(p=>sel?p.filter(x=>x!==s.id):[...p,s.id])}
-                          style={{width:"100%",marginBottom:7,padding:"10px 13px",borderRadius:13,border:`2px solid ${sel?C.mint:C.border}`,background:sel?C.mintLt:C.card,cursor:"pointer",display:"flex",alignItems:"center",gap:10,transition:"all 0.15s"}}>
+                          style={{width:"100%",marginBottom:8,padding:"10px 13px",borderRadius:16,border:`2px solid ${sel?C.mint:C.border}`,background:sel?C.mintLt:C.card,cursor:"pointer",display:"flex",alignItems:"center",gap:8,transition:"all 0.15s"}}>
                           <div style={{width:34,height:34,borderRadius:"50%",background:sel?C.mint:C.border,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0}}>
                             <KQIcon id={s.avatar||s.svgKey||"a_cub"} size={30}/>
                           </div>
@@ -2783,7 +2896,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                   </div>
                 ):(
                   <div>
-                    <div style={{fontSize:13,color:C.textMed,marginBottom:10}}>Asignar a:</div>
+                    <div style={{fontSize:13,color:C.textMed,marginBottom:8}}>Asignar a:</div>
                     {linkedStudents.length===0?(
                       <div style={{textAlign:"center",padding:"20px 0",color:C.textMed,fontSize:13}}>
                         No tienes hijos vinculados aún.<br/>
@@ -2795,7 +2908,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                       const sel=selectedStudents.includes(s.id);
                       return(
                         <button key={s.id} onClick={()=>setSelectedStudents(p=>sel?p.filter(x=>x!==s.id):[...p,s.id])}
-                          style={{width:"100%",marginBottom:8,padding:"11px 13px",borderRadius:13,border:`2px solid ${sel?C.mint:C.border}`,background:sel?C.mintLt:C.card,cursor:"pointer",display:"flex",alignItems:"center",gap:10,transition:"all 0.15s"}}>
+                          style={{width:"100%",marginBottom:8,padding:"11px 13px",borderRadius:16,border:`2px solid ${sel?C.mint:C.border}`,background:sel?C.mintLt:C.card,cursor:"pointer",display:"flex",alignItems:"center",gap:8,transition:"all 0.15s"}}>
                           <div style={{width:36,height:36,borderRadius:"50%",background:C.mintLt,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0,border:`2px solid ${sel?C.mint:C.border}`}}>
                             <KQIcon id={s.avatar||"a_cub"} size={30}/>
                           </div>
@@ -2857,13 +2970,13 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             {/* Step 3: Done */}
             {assignStep==="done"&&(
               <div style={{textAlign:"center",paddingTop:8}}>
-                <div style={{fontSize:68,marginBottom:10}} className="bounce">{selectedChallenge?.emoji}</div>
-                <div style={{fontWeight:900,fontSize:22,color:C.text,marginBottom:6}}>¡Desafío asignado!</div>
+                <div style={{fontSize:64,marginBottom:8}} className="bounce">{selectedChallenge?.emoji}</div>
+                <div style={{fontWeight:900,fontSize:22,color:C.text,marginBottom:8}}>¡Desafío asignado!</div>
                 <div style={{fontSize:13,color:C.textMed,marginBottom:16}}>
                   <b>{selectedChallenge?.title}</b><br/>
                   asignado a <b>{selectedStudents.length} {selectedStudents.length===1?"alumno":"alumnos"}</b>
                 </div>
-                <div style={{background:C.goldLt,borderRadius:13,padding:"10px 14px",marginBottom:18,fontSize:12,color:C.goldDk,fontWeight:600}}>
+                <div style={{background:C.goldLt,borderRadius:16,padding:"8px 16px",marginBottom:16,fontSize:12,color:C.goldDk,fontWeight:600}}>
                   📲 Los alumnos verán el desafío en su pantalla de Tareas
                 </div>
                 <BtnMain onClick={()=>{setShowChallengeAssign(false);setAssignStep("pick");setSelectedChallenge(null);setSelectedStudents([]);notify(`Desafío asignado a ${selectedStudents.length} alumno(s)`,"🎯");}}
@@ -2883,19 +2996,19 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
           <div className="modal pop-in">
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
               <div style={{fontWeight:900,fontSize:18,color:C.text}}>🚨 Reportar conducta</div>
-              <button onClick={()=>setShowReport(false)} style={{background:C.border,border:"none",borderRadius:9,padding:"5px 10px",cursor:"pointer",color:C.textMed}}>✕</button>
+              <button onClick={()=>setShowReport(false)} style={{background:C.border,border:"none",borderRadius:9,padding:"4px 8px",cursor:"pointer",color:C.textMed}}>✕</button>
             </div>
-            <div style={{background:C.coralLt,border:`1.5px solid ${C.coral}30`,borderRadius:12,padding:"10px 14px",marginBottom:14,fontSize:12,color:C.coral}}>
-              🔒 Tu reporte es anónimo. El equipo de KidQuest lo revisará en menos de 24 horas.
+            <div style={{background:C.coralLt,border:`1.5px solid ${C.coral}30`,borderRadius:12,padding:"8px 16px",marginBottom:16,fontSize:12,color:C.coral}}>
+              🔒 Tu reporte es anónimo. El equipo de FinPlay lo revisará en menos de 24 horas.
             </div>
             <div style={{marginBottom:11}}>
-              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:6}}>Nombre de usuario reportado</div>
+              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:8}}>Nombre de usuario reportado</div>
               <input value={reportUser} onChange={e=>setReportUser(e.target.value)} placeholder="@usuario o nombre del usuario"
-                style={{width:"100%",padding:"11px 14px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:13,color:C.text,background:C.card,outline:"none"}}/>
+                style={{width:"100%",padding:"8px 16px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:13,color:C.text,background:C.card,outline:"none"}}/>
             </div>
             <div style={{marginBottom:11}}>
-              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:6}}>Tipo de conducta</div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7}}>
+              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:8}}>Tipo de conducta</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                 {[
                   {id:"bullying",      l:"Acoso / Bullying",    icon:"😡"},
                   {id:"inappropriate_content", l:"Contenido inapropiado", icon:"🚫"},
@@ -2905,7 +3018,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                   {id:"grooming",      l:"Comportamiento peligroso", icon:"⚠️"},
                 ].map(t=>(
                   <button key={t.id} onClick={()=>setReportType(t.id)}
-                    style={{padding:"9px 8px",borderRadius:11,border:`2px solid ${reportType===t.id?C.coral:C.border}`,
+                    style={{padding:"9px 8px",borderRadius:12,border:`2px solid ${reportType===t.id?C.coral:C.border}`,
                       background:reportType===t.id?C.coralLt:C.card,cursor:"pointer",fontSize:11,fontWeight:700,
                       color:reportType===t.id?C.coral:C.textMed,textAlign:"center"}}>
                     <div style={{fontSize:18,marginBottom:3}}>{t.icon}</div>{t.l}
@@ -2914,10 +3027,10 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
               </div>
             </div>
             <div style={{marginBottom:16}}>
-              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:6}}>Descripción (opcional)</div>
+              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:8}}>Descripción (opcional)</div>
               <textarea value={reportDesc} onChange={e=>setReportDesc(e.target.value)}
                 placeholder="Describe lo que pasó con el mayor detalle posible..."
-                style={{width:"100%",padding:"11px 14px",borderRadius:12,border:`1.5px solid ${C.border}`,
+                style={{width:"100%",padding:"8px 16px",borderRadius:12,border:`1.5px solid ${C.border}`,
                   fontSize:13,color:C.text,background:C.card,outline:"none",minHeight:80,resize:"vertical",fontFamily:"'Nunito',sans-serif"}}/>
             </div>
             <BtnMain onClick={async()=>{
@@ -2946,24 +3059,24 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
       {showProfileEdit&&(
         <div className="overlay">
           <div className="modal pop-in">
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
               <div style={{fontWeight:900,fontSize:18,color:C.text}}>✏️ Editar perfil</div>
-              <button onClick={()=>setShowProfileEdit(false)} style={{background:C.border,border:"none",borderRadius:9,padding:"5px 10px",cursor:"pointer",color:C.textMed}}>✕</button>
+              <button onClick={()=>setShowProfileEdit(false)} style={{background:C.border,border:"none",borderRadius:9,padding:"4px 8px",cursor:"pointer",color:C.textMed}}>✕</button>
             </div>
             <div style={{marginBottom:12}}>
-              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:6}}>Nombre para mostrar</div>
+              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:8}}>Nombre para mostrar</div>
               <input value={editDisplayName} onChange={e=>setEditDisplayName(e.target.value)}
                 placeholder="Tu nombre real o apodo"
-                style={{width:"100%",padding:"12px 14px",borderRadius:13,border:`1.5px solid ${C.border}`,fontSize:15,fontWeight:600,color:C.text,background:C.card,outline:"none"}}/>
+                style={{width:"100%",padding:"12px 14px",borderRadius:16,border:`1.5px solid ${C.border}`,fontSize:15,fontWeight:600,color:C.text,background:C.card,outline:"none"}}/>
               <div style={{fontSize:11,color:C.textMed,marginTop:4}}>Este nombre aparece en el chat y el ranking</div>
             </div>
             <div style={{marginBottom:20}}>
-              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:6}}>Nombre de usuario</div>
-              <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:8}}>Nombre de usuario</div>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
                 <span style={{fontSize:16,color:C.textMed}}>@</span>
                 <input value={editUsername} onChange={e=>setEditUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g,""))}
                   placeholder="tu_usuario"
-                  style={{flex:1,padding:"12px 14px",borderRadius:13,border:`1.5px solid ${C.border}`,fontSize:15,fontWeight:600,color:C.text,background:C.card,outline:"none",letterSpacing:1}}/>
+                  style={{flex:1,padding:"12px 14px",borderRadius:16,border:`1.5px solid ${C.border}`,fontSize:15,fontWeight:600,color:C.text,background:C.card,outline:"none",letterSpacing:1}}/>
               </div>
               <div style={{fontSize:11,color:C.textMed,marginTop:4}}>Solo letras, números y guión bajo. Sin espacios.</div>
             </div>
@@ -2997,26 +3110,26 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
           <div className="modal pop-in">
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
               <div style={{fontWeight:900,fontSize:18,color:C.text}}>🤝 Crear Trueque</div>
-              <button onClick={()=>setShowDealCreate(false)} style={{background:C.border,border:"none",borderRadius:9,padding:"5px 10px",cursor:"pointer",color:C.textMed}}>✕</button>
+              <button onClick={()=>setShowDealCreate(false)} style={{background:C.border,border:"none",borderRadius:9,padding:"4px 8px",cursor:"pointer",color:C.textMed}}>✕</button>
             </div>
-            <div style={{background:C.mintLt,border:`1.5px solid ${C.mint}30`,borderRadius:12,padding:"10px 14px",marginBottom:14,fontSize:12,color:C.mintDk}}>
+            <div style={{background:C.mintLt,border:`1.5px solid ${C.mint}30`,borderRadius:12,padding:"8px 16px",marginBottom:16,fontSize:12,color:C.mintDk}}>
               💡 Un trueque es un acuerdo: el niño completa tareas y a cambio recibe un premio especial tuyo.
             </div>
             <div style={{marginBottom:11}}>
-              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:5}}>¿Qué debe hacer? (descripción)</div>
+              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:8}}>¿Qué debe hacer? (descripción)</div>
               <input value={dealTitle} onChange={e=>setDealTitle(e.target.value)} placeholder="Ej: Completar 5 tareas del hogar esta semana"
-                style={{width:"100%",padding:"11px 14px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:13,color:C.text,background:C.card,outline:"none"}}/>
+                style={{width:"100%",padding:"8px 16px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:13,color:C.text,background:C.card,outline:"none"}}/>
             </div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:11}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:11}}>
               <div>
-                <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:5}}>N° de tareas</div>
+                <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:8}}>N° de tareas</div>
                 <input type="number" min="1" max="20" value={dealTaskCount} onChange={e=>setDealTaskCount(Number(e.target.value))}
-                  style={{width:"100%",padding:"10px 12px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:15,fontWeight:700,color:C.text,background:C.card,outline:"none"}}/>
+                  style={{width:"100%",padding:"8px 12px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:15,fontWeight:700,color:C.text,background:C.card,outline:"none"}}/>
               </div>
               <div>
-                <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:5}}>Plazo</div>
+                <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:8}}>Plazo</div>
                 <select value={dealFreq} onChange={e=>setDealFreq(e.target.value)}
-                  style={{width:"100%",padding:"10px 12px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:13,color:C.text,background:C.card,outline:"none"}}>
+                  style={{width:"100%",padding:"8px 12px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:13,color:C.text,background:C.card,outline:"none"}}>
                   <option value="diaria">Hoy</option>
                   <option value="semanal">Esta semana</option>
                   <option value="mensual">Este mes</option>
@@ -3025,22 +3138,22 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
               </div>
             </div>
             <div style={{marginBottom:11}}>
-              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:6}}>¿Qué gana el niño? (premio)</div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:8}}>
+              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:8}}>¿Qué gana el niño? (premio)</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
                 {TRUEQUE_REWARDS.map(r=>(
                   <button key={r.id} onClick={()=>{setDealReward(r.label);setDealRewardEmoji(r.emoji);}}
-                    style={{padding:"8px 10px",borderRadius:11,border:`2px solid ${dealReward===r.label?C.mint:C.border}`,background:dealReward===r.label?C.mintLt:C.card,cursor:"pointer",fontSize:11,fontWeight:600,color:C.text,textAlign:"left",display:"flex",gap:6,alignItems:"center"}}>
+                    style={{padding:"8px 10px",borderRadius:12,border:`2px solid ${dealReward===r.label?C.mint:C.border}`,background:dealReward===r.label?C.mintLt:C.card,cursor:"pointer",fontSize:11,fontWeight:600,color:C.text,textAlign:"left",display:"flex",gap:8,alignItems:"center"}}>
                     <span>{r.emoji}</span><span style={{flex:1}}>{r.label}</span>
                   </button>
                 ))}
               </div>
               <input value={dealReward} onChange={e=>setDealReward(e.target.value)} placeholder="O escribe un premio personalizado..."
-                style={{width:"100%",padding:"10px 14px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:13,color:C.text,background:C.card,outline:"none"}}/>
+                style={{width:"100%",padding:"8px 16px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:13,color:C.text,background:C.card,outline:"none"}}/>
             </div>
             <div style={{marginBottom:16}}>
-              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:5}}>Para quién</div>
+              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:8}}>Para quién</div>
               <select value={dealTargetId} onChange={e=>setDealTargetId(e.target.value)}
-                style={{width:"100%",padding:"11px 14px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:13,color:C.text,background:C.card,outline:"none"}}>
+                style={{width:"100%",padding:"8px 16px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:13,color:C.text,background:C.card,outline:"none"}}>
                 <option value="">Todos mis hijos/alumnos</option>
                 {linkedStudents.map(s=>(
                   <option key={s.id} value={s.id}>{s.name}</option>
@@ -3095,8 +3208,8 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
               <div className="overlay" style={{zIndex:9995}}>
                 <div className="modal pop-in" style={{maxHeight:"90vh",overflowY:"auto"}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-                    <div style={{fontWeight:800,fontSize:17,color:C.text}}>✏️ Editar Perfil</div>
-                    <button onClick={()=>setShowAvatarEditor(false)} style={{background:C.border,border:"none",borderRadius:10,padding:"5px 9px",color:C.textMed,cursor:"pointer",fontSize:15}}>✕</button>
+                    <div style={{fontWeight:800,fontSize:18,color:C.text}}>✏️ Editar Perfil</div>
+                    <button onClick={()=>setShowAvatarEditor(false)} style={{background:C.border,border:"none",borderRadius:10,padding:"4px 8px",color:C.textMed,cursor:"pointer",fontSize:15}}>✕</button>
                   </div>
 
                   {/* live preview */}
@@ -3107,9 +3220,9 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                   </div>
 
                   {/* edit tabs */}
-                  <div style={{display:"flex",gap:6,marginBottom:14,overflowX:"auto",paddingBottom:4}}>
+                  <div style={{display:"flex",gap:8,marginBottom:16,overflowX:"auto",paddingBottom:4}}>
                     {[{id:"photo",l:"📸 Foto"},{id:"emoji",l:"😀 Emoji"},{id:"frame",l:"🖼️ Marco"},{id:"color",l:"🎨 Color"}].map(t=>(
-                      <button key={t.id} onClick={()=>setEditTab(t.id)} style={{padding:"6px 12px",borderRadius:20,border:`1.5px solid ${editTab===t.id?C.mint:C.border}`,background:editTab===t.id?C.mint:C.card,color:editTab===t.id?"white":C.textMed,fontWeight:700,fontSize:11,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,transition:"all 0.15s"}}>
+                      <button key={t.id} onClick={()=>setEditTab(t.id)} style={{padding:"8px 12px",borderRadius:20,border:`1.5px solid ${editTab===t.id?C.mint:C.border}`,background:editTab===t.id?C.mint:C.card,color:editTab===t.id?"white":C.textMed,fontWeight:700,fontSize:11,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,transition:"all 0.15s"}}>
                         {t.l}
                       </button>
                     ))}
@@ -3118,25 +3231,25 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                   {/* PHOTO TAB */}
                   {editTab==="photo"&&(
                     <div>
-                      <div style={{fontSize:13,color:C.textMed,marginBottom:10,lineHeight:1.5}}>Sube una foto tuya para tu avatar. Solo tú y tu clan la verán.</div>
+                      <div style={{fontSize:13,color:C.textMed,marginBottom:8,lineHeight:1.5}}>Sube una foto tuya para tu avatar. Solo tú y tu clan la verán.</div>
                       {avatarPhoto?(
                         <div style={{textAlign:"center",marginBottom:12}}>
                           <img src={avatarPhoto} alt="avatar" style={{width:100,height:100,borderRadius:"50%",objectFit:"cover",border:`3px solid ${C.mint}`,boxShadow:C.shadowMd}}/>
                           <div style={{marginTop:8,display:"flex",gap:8,justifyContent:"center"}}>
                             <label style={{cursor:"pointer"}}>
-                              <div style={{padding:"7px 14px",borderRadius:12,border:`1.5px solid ${C.mint}`,background:C.mintLt,color:C.mintDk,fontSize:12,fontWeight:700}}>🔄 Cambiar</div>
+                              <div style={{padding:"8px 16px",borderRadius:12,border:`1.5px solid ${C.mint}`,background:C.mintLt,color:C.mintDk,fontSize:12,fontWeight:700}}>🔄 Cambiar</div>
                               <input type="file" accept="image/*" capture="user" onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=ev=>{
             setAvatarPhoto(ev.target.result);
             if(userId){ import("./supabase.js").then(({supabase})=>supabase.from("profiles").update({avatar_photo:ev.target.result}).eq("id",userId)).catch(()=>{}); }
           };r.readAsDataURL(f);}} style={{display:"none"}}/>
                             </label>
-                            <button onClick={()=>setAvatarPhoto(null)} style={{padding:"7px 14px",borderRadius:12,border:`1.5px solid ${C.coral}`,background:C.coralLt,color:C.coral,fontSize:12,fontWeight:700,cursor:"pointer"}}>🗑️ Quitar</button>
+                            <button onClick={()=>setAvatarPhoto(null)} style={{padding:"8px 16px",borderRadius:12,border:`1.5px solid ${C.coral}`,background:C.coralLt,color:C.coral,fontSize:12,fontWeight:700,cursor:"pointer"}}>🗑️ Quitar</button>
                           </div>
                         </div>
                       ):(
                         <label style={{display:"block",cursor:"pointer"}}>
                           <div className="upload-zone" style={{padding:24}}>
-                            <div style={{fontSize:40,marginBottom:8}}>🤳</div>
+                            <div style={{fontSize:36,marginBottom:8}}>🤳</div>
                             <div style={{fontWeight:700,fontSize:14,color:C.text}}>Subir foto de perfil</div>
                             <div style={{fontSize:12,color:C.textMed,marginTop:4}}>Selfie, foto escolar, lo que quieras 😊</div>
                           </div>
@@ -3152,8 +3265,8 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                   {/* EMOJI TAB */}
                   {editTab==="emoji"&&(
                     <div>
-                      <div style={{fontSize:13,color:C.textMed,marginBottom:10}}>Elige un emoji como avatar (si no tienes foto):</div>
-                      <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:8,marginBottom:10}}>
+                      <div style={{fontSize:13,color:C.textMed,marginBottom:8}}>Elige un emoji como avatar (si no tienes foto):</div>
+                      <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:8,marginBottom:8}}>
                         {["🦁","🦊","🐯","🦋","🐺","🦅","🐲","🦄","🐸","🦈","🐻","🦉","🐺","🐼","🦋","🦎","🚀","⚡","🔥","💎"].map(e=>(
                           <button key={e} onClick={()=>{
                         setAvatarEmoji(e);
@@ -3170,10 +3283,10 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                   {editTab==="frame"&&(
                     <div>
                       {/* ── NATIVE FRAMES (always free) ── */}
-                      <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:8,display:"flex",alignItems:"center",gap:6}}>
+                      <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:8,display:"flex",alignItems:"center",gap:8}}>
                         <span>🎁</span> Marcos gratuitos
                       </div>
-                      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:16}}>
+                      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:16}}>
                         {NATIVE_FRAMES.map(fr=>{
                           const sel = avatarFrame===fr.id;
                           return (
@@ -3184,7 +3297,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                               style={{padding:"10px 8px",borderRadius:14,border:`2px solid ${sel?C.mint:C.border}`,background:sel?C.mintLt:C.card,cursor:"pointer",textAlign:"center",transition:"all 0.15s",boxShadow:sel?C.shadowMd:"none"}}>
                               <FramePreview id={fr.id} size={38} emoji={avatarEmoji}/>
                               <div style={{fontSize:10,fontWeight:700,color:sel?C.mintDk:C.text,marginTop:5}}>{fr.label}</div>
-                              <div style={{fontSize:9,color:C.textLt,marginTop:1}}>{fr.desc}</div>
+                              <div style={{fontSize:10,color:C.textLt,marginTop:1}}>{fr.desc}</div>
                             </button>
                           );
                         })}
@@ -3195,27 +3308,27 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                         const unlockedLootFrames = inventory.filter(i=>i.type==="frame");
                         return (
                           <>
-                            <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:8,display:"flex",alignItems:"center",gap:6}}>
+                            <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:8,display:"flex",alignItems:"center",gap:8}}>
                               Marcos de cofre ({unlockedLootFrames.length})
                             </div>
                             {unlockedLootFrames.length===0?(
                               <div style={{background:C.border,borderRadius:14,padding:"14px",textAlign:"center"}}>
-                                <div style={{fontSize:28,marginBottom:6}}>📦</div>
+                                <div style={{fontSize:28,marginBottom:8}}>📦</div>
                                 <div style={{fontSize:12,color:C.textMed,fontWeight:600}}>Aún no tienes marcos de cofre</div>
                                 <div style={{fontSize:11,color:C.textLt,marginTop:3}}>¡Abre cofres en la tienda para desbloquearlos!</div>
                               </div>
                             ):(
-                              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
+                              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
                                 {unlockedLootFrames.map((fr,i)=>{
                                   const r=RARITIES[fr.rarity];
                                   const sel=avatarFrame===fr.id;
                                   return (
                                     <button key={i} onClick={()=>setAvatarFrame(fr.id)}
                                       style={{padding:"10px 8px",borderRadius:14,border:`2px solid ${sel?r.color:r.color+"40"}`,background:sel?r.bg:C.card,cursor:"pointer",textAlign:"center",transition:"all 0.15s",position:"relative",boxShadow:sel?`0 0 12px ${r.glow}`:"none"}}>
-                                      <div style={{position:"absolute",top:3,left:3,fontSize:8}}><RarDot r={item.rarity}/></div>
+                                      <div style={{position:"absolute",top:3,left:3,fontSize:10}}><RarDot r={item.rarity}/></div>
                                       <FramePreview id={fr.id} size={38} emoji={avatarEmoji}/>
                                       <div style={{fontSize:10,fontWeight:700,color:sel?r.color:C.text,marginTop:5}}>{fr.name}</div>
-                                      <div style={{fontSize:9,color:r.color,fontWeight:700}}>{r.label}</div>
+                                      <div style={{fontSize:10,color:r.color,fontWeight:700}}>{r.label}</div>
                                     </button>
                                   );
                                 })}
@@ -3230,7 +3343,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                   {/* COLOR TAB */}
                   {editTab==="color"&&(
                     <div>
-                      <div style={{fontSize:13,color:C.textMed,marginBottom:10}}>Elige el fondo de tu tarjeta de perfil:</div>
+                      <div style={{fontSize:13,color:C.textMed,marginBottom:8}}>Elige el fondo de tu tarjeta de perfil:</div>
                       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
                         {[
                           {id:"mint",    label:"Verde Jade",  g:`linear-gradient(135deg,#4DC9A0,#2FA87A)`},
@@ -3276,17 +3389,119 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
               </div>
             )}
 
+
+      {/* ════ FIRST LOGIN ONBOARDING MODAL ════ */}
+      {showOnboarding&&(
+        <div className="overlay" style={{zIndex:9999}}>
+          <div className="modal pop-in" style={{textAlign:"center"}}>
+            {onboardStep===0&&(
+              <>
+                <div style={{fontSize:56,marginBottom:12}} className="float">🦎</div>
+                <div style={{fontWeight:900,fontSize:22,color:C.text,marginBottom:8}}>¡Bienvenido a FinPlay!</div>
+                <div style={{fontSize:14,color:C.textMed,marginBottom:20,lineHeight:1.6}}>
+                  Antes de empezar, personaliza tu perfil.<br/>Solo te tomará 1 minuto.
+                </div>
+                <BtnMain onClick={()=>setOnboardStep(1)} bg={`linear-gradient(135deg,${C.mint},${C.mintDk})`} style={{width:"100%"}}>
+                  ¡Vamos! →
+                </BtnMain>
+              </>
+            )}
+            {onboardStep===1&&(
+              <>
+                <div style={{fontWeight:900,fontSize:20,color:C.text,marginBottom:4}}>¿Cómo te llamas?</div>
+                <div style={{fontSize:13,color:C.textMed,marginBottom:16}}>Este nombre aparecerá en el ranking y el chat</div>
+                <input
+                  value={onboardName}
+                  onChange={e=>setOnboardName(e.target.value)}
+                  placeholder="Tu nombre o apodo"
+                  style={{width:"100%",padding:"16px 16px",borderRadius:14,border:`2px solid ${C.border}`,
+                    fontSize:16,fontWeight:600,color:C.text,background:C.card,outline:"none",
+                    marginBottom:8,boxSizing:"border-box",textAlign:"center"}}
+                  autoFocus
+                />
+                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:20}}>
+                  <span style={{color:C.textMed,fontSize:15,flexShrink:0}}>@</span>
+                  <input
+                    value={onboardUsername}
+                    onChange={e=>setOnboardUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g,""))}
+                    placeholder="nombre_usuario"
+                    style={{flex:1,padding:"8px 16px",borderRadius:16,border:`2px solid ${C.border}`,
+                      fontSize:14,fontWeight:600,color:C.text,background:C.card,outline:"none",
+                      letterSpacing:1}}
+                  />
+                </div>
+                <BtnMain onClick={async()=>{
+                  if(!onboardName.trim()) return notify("Escribe tu nombre","⚠️");
+                  setUser(p=>({...p,name:onboardName.trim(),username:onboardUsername}));
+                  if(userId){
+                    const {supabase} = await import("./supabase.js");
+                    await supabase.from("profiles").update({
+                      name:     onboardName.trim(),
+                      username: onboardUsername||null,
+                    }).eq("id",userId);
+                  }
+                  setOnboardStep(2);
+                }} bg={`linear-gradient(135deg,${C.mint},${C.mintDk})`} style={{width:"100%"}}>
+                  Siguiente →
+                </BtnMain>
+              </>
+            )}
+            {onboardStep===2&&(
+              <>
+                <div style={{fontWeight:900,fontSize:20,color:C.text,marginBottom:4}}>Elige tu avatar</div>
+                <div style={{fontSize:13,color:C.textMed,marginBottom:16}}>Puedes cambiarlo cuando quieras desde tu perfil</div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:20}}>
+                  {["a_cub","a_fox","a_ninja","a_dino","a_mage","a_wolf_kq","a_panda","a_buddy"].map(av=>(
+                    <button key={av} onClick={()=>setUser(p=>({...p,avatar:av}))}
+                      style={{padding:8,borderRadius:14,border:`2.5px solid ${user.avatar===av?C.mint:C.border}`,
+                        background:user.avatar===av?C.mintLt:C.card,cursor:"pointer",
+                        display:"flex",alignItems:"center",justifyContent:"center",aspectRatio:"1"}}>
+                      <KQIcon id={av} size={44}/>
+                    </button>
+                  ))}
+                </div>
+                <BtnMain onClick={async()=>{
+                  if(userId){
+                    const {supabase} = await import("./supabase.js");
+                    await supabase.from("profiles").update({
+                      avatar_key:      user.avatar||"a_cub",
+                      onboarding_done: true,
+                    }).eq("id",userId);
+                  }
+                  setShowOnboarding(false);
+                  notify(`¡Listo ${user.name}! Bienvenido a FinPlay 🎉`,"🦎");
+                }} bg={`linear-gradient(135deg,${C.gold},${C.goldDk})`} style={{width:"100%"}}>
+                  🎉 ¡Empezar FinPlay!
+                </BtnMain>
+              </>
+            )}
+            {/* Skip option */}
+            {onboardStep>0&&(
+              <button onClick={async()=>{
+                if(userId){
+                  const {supabase} = await import("./supabase.js");
+                  await supabase.from("profiles").update({onboarding_done:true}).eq("id",userId);
+                }
+                setShowOnboarding(false);
+              }} style={{marginTop:12,background:"none",border:"none",color:C.textLt,cursor:"pointer",fontSize:12}}>
+                Configurar después
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ════ HEADER ════ */}
-      <div style={{background:C.card,borderBottom:`2px solid ${C.border}`,padding:"12px 16px 10px",position:"sticky",top:0,zIndex:100,boxShadow:`0 2px 10px ${C.mint}10`}}>
+      <div style={{background:C.card,borderBottom:`2px solid ${C.border}`,padding:"12px 16px 10px",position:"sticky",top:0,zIndex:100,boxShadow:C.shadow}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <button onClick={()=>{setScreen("roleSelect");setRole(null);}} style={{background:"none",border:"none",color:C.textLt,cursor:"pointer",fontSize:18,lineHeight:1}}>←</button>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            {!userId&&<button onClick={()=>{setScreen("roleSelect");setRole(null);}} style={{background:"none",border:"none",color:C.textLt,cursor:"pointer",fontSize:18,lineHeight:1}}>←</button>}
             {role===ROLES.STUDENT&&(
               <>
                 <div className="float" style={{flexShrink:0}}><AvatarDisplay photo={avatarPhoto} emoji={avatarEmoji} frame={avatarFrame} bg={avatarBg} size={38} C={C} white/></div>
                 <div>
                   <div style={{fontWeight:800,fontSize:15,color:C.text,lineHeight:1.2}}>{user.name}</div>
-                  <div style={{display:"flex",gap:5,alignItems:"center",marginTop:2,flexWrap:"wrap"}}>
+                  <div style={{display:"flex",gap:8,alignItems:"center",marginTop:2,flexWrap:"wrap"}}>
                     <Chip label={`Nv.${user.level} ${curLvl.name}`} bg={C.mintLt} color={C.mintDk}/>
                     <span style={{fontSize:11,color:C.coral,fontWeight:700}}>🔥{user.streak}</span>
                     {user.streakShields>0&&<span style={{fontSize:11,color:C.purple,fontWeight:700}}>🛡️{user.streakShields}</span>}
@@ -3318,8 +3533,8 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:C.textLt,marginBottom:3}}>
               <span>{fmtN(user.xp)} XP</span><span>{nextLvl?`→ ${nextLvl.name}`:"¡Nivel máximo!"}</span>
             </div>
-            <div style={{height:5,borderRadius:5,background:C.border,overflow:"hidden"}}>
-              <div style={{height:"100%",borderRadius:5,width:`${xpPct}%`,background:`linear-gradient(90deg,${C.mint},${C.gold})`,transition:"width 0.6s"}}/>
+            <div style={{height:5,borderRadius:8,background:C.border,overflow:"hidden"}}>
+              <div style={{height:"100%",borderRadius:8,width:`${xpPct}%`,background:`linear-gradient(90deg,${C.mint},${C.gold})`,transition:"width 0.6s"}}/>
             </div>
           </div>
         )}
@@ -3332,34 +3547,34 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
         {role===ROLES.STUDENT&&tab==="home"&&(
           <div style={{padding:"16px 14px 0"}}>
             {/* season banner */}
-            <div style={{background:`linear-gradient(135deg,${C.mint},${C.purple})`,borderRadius:20,padding:"14px 16px",marginBottom:14,color:"white",position:"relative",overflow:"hidden",boxShadow:`0 6px 22px ${C.mint}45`}}>
-              <div style={{position:"absolute",right:-8,top:-8,fontSize:70,opacity:0.15}}>🌱</div>
-              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+            <div style={{background:`linear-gradient(135deg,${C.mint},${C.purple})`,borderRadius:20,padding:"14px 16px",marginBottom:16,color:"white",position:"relative",overflow:"hidden",boxShadow:`0 4px 16px ${C.mint}40`}}>
+              <div style={{position:"absolute",right:-8,top:-8,fontSize:64,opacity:0.15}}>🌱</div>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
                 <span style={{fontSize:22}}>🌱</span>
                 <div>
                   <div style={{fontWeight:800,fontSize:14}}>Temporada del Ahorro · Termina {SEASONS[0].endDate}</div>
                   <div style={{fontSize:11,opacity:0.8}}>Premio: {SEASONS[0].prize}</div>
                 </div>
               </div>
-              <div style={{height:7,borderRadius:7,background:"rgba(255,255,255,0.25)",overflow:"hidden"}}>
-                <div style={{height:"100%",borderRadius:7,width:`${SEASONS[0].progress}%`,background:"white"}}/>
+              <div style={{height:7,borderRadius:8,background:"rgba(255,255,255,0.25)",overflow:"hidden"}}>
+                <div style={{height:"100%",borderRadius:8,width:`${SEASONS[0].progress}%`,background:"white"}}/>
               </div>
               <div style={{fontSize:10,opacity:0.7,marginTop:4,textAlign:"right"}}>{SEASONS[0].progress}% completado</div>
             </div>
 
             {/* active TRUEQUES from tutor */}
             {deals.filter(d=>d.status==="active"&&(d.targetId==="all"||d.targetId===userId)).map(deal=>(
-              <div key={deal.id} style={{background:`linear-gradient(135deg,${C.mint}12,${C.purple}08)`,border:`2px solid ${C.mint}40`,borderRadius:18,padding:"12px 15px",marginBottom:10,position:"relative",overflow:"hidden"}}>
+              <div key={deal.id} style={{background:`linear-gradient(135deg,${C.mint}12,${C.purple}08)`,border:`2px solid ${C.mint}40`,borderRadius:16,padding:"12px 15px",marginBottom:8,position:"relative",overflow:"hidden"}}>
                 <div style={{position:"absolute",right:-4,top:-4,fontSize:48,opacity:0.06}}>🤝</div>
-                <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+                <div style={{display:"flex",gap:8,alignItems:"flex-start"}}>
                   <span style={{fontSize:28,flexShrink:0}}>{deal.rewardEmoji||"🤝"}</span>
                   <div style={{flex:1}}>
                     <div style={{fontSize:10,fontWeight:700,color:C.mint,textTransform:"uppercase",letterSpacing:0.8,marginBottom:2}}>🤝 Trueque de {deal.creatorName}</div>
                     <div style={{fontWeight:800,fontSize:13,color:C.text,marginBottom:3}}>{deal.title}</div>
                     <div style={{fontSize:12,color:C.mintDk,fontWeight:700}}>Premio: {deal.reward}</div>
                     <div style={{marginTop:6}}>
-                      <div style={{height:6,borderRadius:6,background:C.border,overflow:"hidden"}}>
-                        <div style={{height:"100%",width:`${Math.min((deal.tasksCompleted/deal.taskCount)*100,100)}%`,background:`linear-gradient(90deg,${C.mint},${C.gold})`,borderRadius:6,transition:"width 0.5s"}}/>
+                      <div style={{height:6,borderRadius:8,background:C.border,overflow:"hidden"}}>
+                        <div style={{height:"100%",width:`${Math.min((deal.tasksCompleted/deal.taskCount)*100,100)}%`,background:`linear-gradient(90deg,${C.mint},${C.gold})`,borderRadius:8,transition:"width 0.5s"}}/>
                       </div>
                       <div style={{fontSize:10,color:C.textMed,marginTop:3}}>{deal.tasksCompleted}/{deal.taskCount} tareas completadas</div>
                     </div>
@@ -3370,13 +3585,13 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
 
             {/* active challenges from tutor/teacher */}
             {activeStudentChalls.filter(c=>c.status==="pending").slice(0,2).map(ch=>(
-              <div key={ch.id} style={{background:`linear-gradient(135deg,${C.gold}15,${C.coral}08)`,border:`2px solid ${C.gold}50`,borderRadius:18,padding:"12px 15px",marginBottom:12,display:"flex",gap:12,alignItems:"center",position:"relative",overflow:"hidden"}}>
+              <div key={ch.id} style={{background:`linear-gradient(135deg,${C.gold}15,${C.coral}08)`,border:`2px solid ${C.gold}50`,borderRadius:16,padding:"12px 15px",marginBottom:12,display:"flex",gap:12,alignItems:"center",position:"relative",overflow:"hidden"}}>
                 <div style={{position:"absolute",right:-4,top:-4,fontSize:48,opacity:0.07}}>🎯</div>
                 <span style={{fontSize:30,flexShrink:0}}>{ch.challenge.emoji}</span>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontSize:10,fontWeight:700,color:C.gold,textTransform:"uppercase",letterSpacing:0.8,marginBottom:2}}>⚡ Desafío de {ch.assignedBy}</div>
                   <div style={{fontWeight:800,fontSize:13,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ch.challenge.title}</div>
-                  <div style={{display:"flex",gap:5,marginTop:4}}>
+                  <div style={{display:"flex",gap:8,marginTop:4}}>
                     <span style={{background:C.goldLt,color:C.goldDk,borderRadius:8,padding:"2px 7px",fontSize:10,fontWeight:700}}>+{ch.challenge.xp} XP</span>
                     <span style={{background:C.mintLt,color:C.mintDk,borderRadius:8,padding:"2px 7px",fontSize:10,fontWeight:700}}>{ch.challenge.freq}</span>
                   </div>
@@ -3386,7 +3601,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                   setUser(p=>({...p,xp:p.xp+ch.challenge.xp,coins:p.coins+ch.challenge.coins}));
                   notify(`¡Desafío completado! +${ch.challenge.xp} XP`,"🎯");
                   if(userId){ import("./supabase.js").then(({supabase})=>supabase.from("challenges").update({status:"completed",completed_at:new Date().toISOString()}).eq("id",ch.id)).catch(()=>{}); }
-                }} style={{background:`linear-gradient(135deg,${C.gold},${C.goldDk})`,border:"none",borderRadius:11,padding:"8px 11px",color:"white",fontSize:10,fontWeight:800,cursor:"pointer",flexShrink:0}}>
+                }} style={{background:`linear-gradient(135deg,${C.gold},${C.goldDk})`,border:"none",borderRadius:12,padding:"8px 11px",color:"white",fontSize:10,fontWeight:800,cursor:"pointer",flexShrink:0}}>
                   ¡Hecho!
                 </button>
               </div>
@@ -3394,7 +3609,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
 
             {/* link tutor nudge */}
             {linkedTutors.length===0&&(
-              <button onClick={()=>setShowLinkTutor(true)} style={{width:"100%",background:`linear-gradient(135deg,${C.gold},${C.goldDk})`,border:"none",borderRadius:16,padding:"12px 16px",marginBottom:12,color:"white",display:"flex",gap:10,alignItems:"center",cursor:"pointer"}}>
+              <button onClick={()=>setShowLinkTutor(true)} style={{width:"100%",background:`linear-gradient(135deg,${C.gold},${C.goldDk})`,border:"none",borderRadius:16,padding:"12px 16px",marginBottom:12,color:"white",display:"flex",gap:8,alignItems:"center",cursor:"pointer"}}>
                 <span style={{fontSize:24}}>🔗</span>
                 <div style={{textAlign:"left",flex:1}}>
                   <div style={{fontWeight:800,fontSize:14}}>Vincular tutor → gana {BOND_REWARD_GEMS} 💎</div>
@@ -3404,7 +3619,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
               </button>
             )}
             {linkedTutors.length>0&&(
-              <button onClick={()=>setShowLinkTutor(true)} style={{width:"100%",background:C.card,border:`1.5px solid ${C.mint}`,borderRadius:14,padding:"9px 14px",marginBottom:12,display:"flex",gap:8,alignItems:"center",cursor:"pointer",boxShadow:C.shadow}}>
+              <button onClick={()=>setShowLinkTutor(true)} style={{width:"100%",background:C.card,border:`1.5px solid ${C.mint}`,borderRadius:14,padding:"8px 16px",marginBottom:12,display:"flex",gap:8,alignItems:"center",cursor:"pointer",boxShadow:C.shadow}}>
                 <span style={{fontSize:18}}>🔗</span>
                 <span style={{fontSize:12,color:C.mintDk,fontWeight:700}}>Tutores: {linkedTutors.join(", ")}</span>
                 <span style={{marginLeft:"auto",fontSize:11,color:C.textLt}}>+ Agregar</span>
@@ -3412,7 +3627,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             )}
 
             {/* greet + ring */}
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
               <div>
                 <div style={{fontWeight:900,fontSize:22,color:C.text}}>¡Hola, {user.name.split(" ")[0]}! 👋</div>
                 <div style={{fontSize:12,color:C.textMed}}>{new Date().toLocaleDateString("es",{weekday:"long",day:"numeric",month:"long"})}</div>
@@ -3421,9 +3636,9 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             </div>
 
             {/* savings goal card */}
-            <div style={{background:C.card,borderRadius:18,padding:16,marginBottom:14,boxShadow:C.shadow}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                <div style={{display:"flex",gap:10,alignItems:"center"}}>
+            <div style={{background:C.card,borderRadius:16,padding:16,marginBottom:16,boxShadow:C.shadow}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                <div style={{display:"flex",gap:8,alignItems:"center"}}>
                   <div style={{fontSize:28}}>{user.savingsGoal.emoji}</div>
                   <div>
                     <div style={{fontWeight:800,fontSize:14,color:C.text}}>{user.savingsGoal.name}</div>
@@ -3435,7 +3650,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                   <div style={{fontSize:10,color:C.textMed}}>de ${fmtN(user.savingsGoal.target)}</div>
                 </div>
               </div>
-              <div style={{height:8,borderRadius:8,background:C.border,overflow:"hidden",marginBottom:6}}>
+              <div style={{height:8,borderRadius:8,background:C.border,overflow:"hidden",marginBottom:8}}>
                 <div style={{height:"100%",borderRadius:8,width:`${savingsPct}%`,background:`linear-gradient(90deg,${C.mint},${C.gold})`,transition:"width 0.6s"}}/>
               </div>
               <div style={{display:"flex",justifyContent:"space-between",fontSize:11}}>
@@ -3445,19 +3660,19 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             </div>
 
             {/* weekly bar chart */}
-            <div style={{background:C.card,borderRadius:18,padding:16,marginBottom:14,boxShadow:C.shadow}}>
+            <div style={{background:C.card,borderRadius:16,padding:16,marginBottom:16,boxShadow:C.shadow}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
                 <div style={{fontWeight:800,fontSize:14,color:C.text}}>Puntos esta semana</div>
                 <Chip label="7 días" bg={C.mintLt} color={C.mintDk}/>
               </div>
-              <div style={{display:"flex",alignItems:"flex-end",gap:6,height:75}}>
+              <div style={{display:"flex",alignItems:"flex-end",gap:8,height:75}}>
                 {WEEK_DATA.map((d,i)=>{
                   const pct=d.pts/Math.max(MAX_BAR,1), isToday=i===1;
                   return (
                     <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
-                      {d.pts>0&&<div style={{fontSize:9,fontWeight:800,color:isToday?C.mint:C.textLt}}>{d.pts}</div>}
+                      {d.pts>0&&<div style={{fontSize:10,fontWeight:800,color:isToday?C.mint:C.textLt}}>{d.pts}</div>}
                       <div style={{width:"100%",height:Math.max(pct*62,4),background:isToday?`linear-gradient(to top,${C.mintDk},${C.mint})`:`${C.gold}70`,borderRadius:"5px 5px 0 0",transition:"height 0.5s"}}/>
-                      <div style={{fontSize:9,color:isToday?C.mint:C.textMed,fontWeight:isToday?800:600}}>{d.day}</div>
+                      <div style={{fontSize:10,color:isToday?C.mint:C.textMed,fontWeight:isToday?800:600}}>{d.day}</div>
                     </div>
                   );
                 })}
@@ -3466,7 +3681,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
 
             {/* economy lesson nudge */}
             {lessons.find(l=>!l.done)&&(
-              <div style={{background:`linear-gradient(135deg,${C.goldLt},${C.skyLt})`,border:`1.5px solid ${C.gold}60`,borderRadius:18,padding:14,marginBottom:14,cursor:"pointer"}} onClick={()=>setActiveLesson(lessons.find(l=>!l.done))}>
+              <div style={{background:`linear-gradient(135deg,${C.goldLt},${C.skyLt})`,border:`1.5px solid ${C.gold}60`,borderRadius:16,padding:14,marginBottom:16,cursor:"pointer"}} onClick={()=>setActiveLesson(lessons.find(l=>!l.done))}>
                 <div style={{display:"flex",gap:12,alignItems:"center"}}>
                   <div style={{fontSize:30}}>{lessons.find(l=>!l.done)?.emoji}</div>
                   <div style={{flex:1}}>
@@ -3479,21 +3694,21 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             )}
 
             {/* quick actions */}
-            <div style={{display:"flex",gap:8,marginBottom:14}}>
+            <div style={{display:"flex",gap:8,marginBottom:16}}>
               {[
                 {icon:"📝",label:"Gasto",action:()=>setShowSpend(true)},
                 {icon:"🎯",label:"Meta",  action:()=>{setGoalName(user.savingsGoal.name);setGoalTarget(String(user.savingsGoal.target));setGoalEmoji(user.savingsGoal.emoji||"🎯");setShowGoalEditor(true);}},
                 {icon:AGE_PROFILES[ageGroup]?.icon||"🌱",label:AGE_PROFILES[ageGroup]?.label.split(" ")[0]||"Edad",action:()=>setShowAgePick(true)},
               ].map((q,i)=>(
-                <button key={i} onClick={q.action} style={{flex:1,background:C.card,border:`1.5px solid ${C.border}`,borderRadius:13,padding:"10px 6px",display:"flex",flexDirection:"column",alignItems:"center",gap:4,cursor:"pointer",boxShadow:C.shadow}}>
+                <button key={i} onClick={q.action} style={{flex:1,background:C.card,border:`1.5px solid ${C.border}`,borderRadius:16,padding:"10px 6px",display:"flex",flexDirection:"column",alignItems:"center",gap:4,cursor:"pointer",boxShadow:C.shadow}}>
                   <span style={{fontSize:20}}>{q.icon}</span>
-                  <span style={{fontSize:9,fontWeight:700,color:C.textMed}}>{q.label}</span>
+                  <span style={{fontSize:10,fontWeight:700,color:C.textMed}}>{q.label}</span>
                 </button>
               ))}
             </div>
 
             {/* daily tasks */}
-            <div style={{fontWeight:800,fontSize:16,color:C.text,marginBottom:10}}>Tareas de hoy</div>
+            <div style={{fontWeight:800,fontSize:16,color:C.text,marginBottom:8}}>Tareas de hoy</div>
             {tasks.filter(t=>t.freq==="diaria").map(t=><TCard key={t.id} task={t} C={C} onVerify={()=>openVerify(t)}/>)}
           </div>
         )}
@@ -3501,18 +3716,18 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
         {/* ── STUDENT: TASKS ── */}
         {role===ROLES.STUDENT&&tab==="tasks"&&(
           <div style={{padding:"16px 14px 0"}}>
-            <div style={{fontWeight:800,fontSize:20,color:C.text,marginBottom:14}}>Mis Misiones</div>
-            <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:8,marginBottom:8}}>
+            <div style={{fontWeight:800,fontSize:20,color:C.text,marginBottom:16}}>Mis Misiones</div>
+            <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:8,marginBottom:8}}>
               {["todas","diaria","semanal","mensual","semestral","anual"].map(f=>(
-                <button key={f} onClick={()=>setFilterFreq(f)} style={{padding:"6px 14px",borderRadius:20,border:`1.5px solid ${filterFreq===f?C.mint:C.border}`,background:filterFreq===f?C.mint:C.card,color:filterFreq===f?"white":C.textMed,fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,transition:"all 0.15s"}}>
+                <button key={f} onClick={()=>setFilterFreq(f)} style={{padding:"8px 16px",borderRadius:20,border:`1.5px solid ${filterFreq===f?C.mint:C.border}`,background:filterFreq===f?C.mint:C.card,color:filterFreq===f?"white":C.textMed,fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,transition:"all 0.15s"}}>
                   {f.charAt(0).toUpperCase()+f.slice(1)}
                 </button>
               ))}
             </div>
             {/* Verification system explainer */}
-            <div style={{background:C.purpleLt,border:`1.5px solid ${C.purple}30`,borderRadius:14,padding:"10px 14px",marginBottom:14}}>
+            <div style={{background:C.purpleLt,border:`1.5px solid ${C.purple}30`,borderRadius:14,padding:"8px 16px",marginBottom:16}}>
               <div style={{fontWeight:700,fontSize:12,color:C.purple,marginBottom:4}}>🛡️ Verificación flexible — ¡sin bloqueos!</div>
-              <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                 {[{i:"📸",t:"Foto (IA)"},{i:"🔑",t:"QR tutor"},{i:"📍",t:"GPS"},{i:"📝",t:"Texto"},{i:"⚖️",t:"Apelación"}].map((x,i)=>(
                   <div key={i} style={{display:"flex",gap:4,alignItems:"center",fontSize:11,color:C.purple}}><span>{x.i}</span><span>{x.t}</span></div>
                 ))}
@@ -3522,7 +3737,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
               <div key={t.id} style={{position:"relative"}}>
                 <TCard task={t} C={C} full onVerify={()=>openVerify(t)}/>
                 {t.isCustom&&<button onClick={()=>setCustomTasks(p=>p.filter(x=>x.id!==t.id))} title="Eliminar misión"
-                  style={{position:"absolute",top:10,right:10,background:C.coralLt,border:`1px solid ${C.coral}30`,borderRadius:8,padding:"3px 7px",fontSize:10,color:C.coral,cursor:"pointer",fontWeight:700}}>✕</button>}
+                  style={{position:"absolute",top:10,right:10,background:C.coralLt,border:`1px solid ${C.coral}30`,borderRadius:8,padding:"4px 8px",fontSize:10,color:C.coral,cursor:"pointer",fontWeight:700}}>✕</button>}
               </div>
             ))}
           </div>
@@ -3540,7 +3755,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                     <>
                       <div style={{fontSize:14,color:C.textMed,marginBottom:8}}>Abriendo...</div>
                       <div style={{marginBottom:16,display:"flex",justifyContent:"center"}} className="float"><ChestSVG id={openingChest.id} size={84}/></div>
-                      <div style={{fontWeight:900,fontSize:22,color:C.text,marginBottom:6}}>{openingChest.name}</div>
+                      <div style={{fontWeight:900,fontSize:22,color:C.text,marginBottom:8}}>{openingChest.name}</div>
                       <div style={{fontSize:13,color:C.textMed,marginBottom:20}}>{openingChest.desc}</div>
                       <BtnMain onClick={()=>{
                         setChestPhase("shaking");
@@ -3565,7 +3780,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                     <div style={{padding:"40px 0"}}>
                       <div className="chest-shake" style={{display:"flex",justifyContent:"center"}}><ChestSVG id={openingChest.id} size={84}/></div>
                       <div style={{fontWeight:800,fontSize:16,color:C.text,marginTop:16}}>Abriendo...</div>
-                      <div style={{display:"flex",justifyContent:"center",gap:6,marginTop:12}}>
+                      <div style={{display:"flex",justifyContent:"center",gap:8,marginTop:12}}>
                         {[0,1,2].map(i=><div key={i} style={{width:8,height:8,borderRadius:"50%",background:openingChest.color,animation:`dotPulse 0.6s ${i*0.2}s ease-in-out infinite`}}/>)}
                       </div>
                     </div>
@@ -3585,17 +3800,17 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                               ? <FramePreview id={chestWin.id} size={80} emoji="🦁"/>
                               : chestWin.svgKey
                               ? <KQIcon id={chestWin.svgKey} size={72} animated={chestWin.rarity==="legendary"}/>
-                              : <span style={{fontSize:52}}>{chestWin.preview||"?"}</span>
+                              : <span style={{fontSize:48}}>{chestWin.preview||"?"}</span>
                             }
                           </div>
                         </div>
                         <div style={{fontWeight:900,fontSize:22,color:C.text,marginBottom:4}}>{chestWin.name}</div>
                         <div style={{fontSize:12,color:C.textMed,marginBottom:4}}>{chestWin.desc}</div>
-                        <div style={{marginBottom:6}}>
+                        <div style={{marginBottom:8}}>
                           <Chip label={{frame:"Marco",sticker:"Sticker",avatar:"Avatar"}[chestWin.type]||""} bg={r.bg} color={r.color}/>
                         </div>
                         {/* Rarity bar */}
-                        <div style={{background:C.border,borderRadius:20,padding:"6px 14px",marginBottom:16,fontSize:11,color:r.color,fontWeight:700}}>
+                        <div style={{background:C.border,borderRadius:20,padding:"8px 16px",marginBottom:16,fontSize:11,color:r.color,fontWeight:700}}>
                           Probabilidad de salida: {RARITIES[chestWin.rarity].pct}%
                         </div>
                         <BtnMain onClick={()=>{
@@ -3615,14 +3830,14 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             {showLootTable&&(
               <div className="overlay" style={{zIndex:9994}}>
                 <div className="modal pop-in" style={{maxHeight:"90vh",overflowY:"auto"}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-                    <div style={{fontWeight:800,fontSize:17,color:C.text}}>📋 Tabla de premios</div>
-                    <button onClick={()=>setShowLootTable(false)} style={{background:C.border,border:"none",borderRadius:10,padding:"5px 9px",color:C.textMed,cursor:"pointer",fontSize:15}}>✕</button>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+                    <div style={{fontWeight:800,fontSize:18,color:C.text}}>📋 Tabla de premios</div>
+                    <button onClick={()=>setShowLootTable(false)} style={{background:C.border,border:"none",borderRadius:10,padding:"4px 8px",color:C.textMed,cursor:"pointer",fontSize:15}}>✕</button>
                   </div>
                   {/* chest selector */}
-                  <div style={{display:"flex",gap:6,marginBottom:16,overflowX:"auto",paddingBottom:4}}>
+                  <div style={{display:"flex",gap:8,marginBottom:16,overflowX:"auto",paddingBottom:4}}>
                     {CHESTS.map(ch=>(
-                      <button key={ch.id} onClick={()=>setLootTableChest(ch.id)} style={{padding:"6px 12px",borderRadius:20,border:`1.5px solid ${lootTableChest===ch.id?ch.color:C.border}`,background:lootTableChest===ch.id?ch.color:"transparent",color:lootTableChest===ch.id?"white":C.textMed,fontWeight:700,fontSize:11,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,transition:"all 0.15s"}}>
+                      <button key={ch.id} onClick={()=>setLootTableChest(ch.id)} style={{padding:"8px 12px",borderRadius:20,border:`1.5px solid ${lootTableChest===ch.id?ch.color:C.border}`,background:lootTableChest===ch.id?ch.color:"transparent",color:lootTableChest===ch.id?"white":C.textMed,fontWeight:700,fontSize:11,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,transition:"all 0.15s"}}>
                         <span style={{display:'inline-flex',alignItems:'center',gap:4}}><ChestSVG id={ch.id} size={18}/>{ch.name.replace('Cofre ','')}</span>
                       </button>
                     ))}
@@ -3632,8 +3847,8 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                     const ch = CHESTS.find(c=>c.id===lootTableChest);
                     return (
                       <div>
-                        <div style={{background:ch.gradient,borderRadius:14,padding:"12px 16px",marginBottom:14,color:"white"}}>
-                          <div style={{fontWeight:800,fontSize:15,marginBottom:6,display:"flex",gap:8,alignItems:"center"}}><ChestSVG id={ch.id} size={26}/>{ch.name}</div>
+                        <div style={{background:ch.gradient,borderRadius:14,padding:"12px 16px",marginBottom:16,color:"white"}}>
+                          <div style={{fontWeight:800,fontSize:15,marginBottom:8,display:"flex",gap:8,alignItems:"center"}}><ChestSVG id={ch.id} size={26}/>{ch.name}</div>
                           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                             {Object.entries(ch.rates).filter(([,v])=>v>0).map(([k,v])=>{
                               const r=RARITIES[k];
@@ -3648,7 +3863,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                           const r = RARITIES[rarityId];
                           const items = LOOT_ITEMS.filter(i=>i.rarity===rarityId);
                           return (
-                            <div key={rarityId} style={{marginBottom:14}}>
+                            <div key={rarityId} style={{marginBottom:16}}>
                               {/* rarity header */}
                               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8,padding:"8px 12px",borderRadius:12,background:r.bg,border:`1.5px solid ${r.color}30`}}>
                                 <span style={{fontSize:18}}>{r.star}</span>
@@ -3659,9 +3874,9 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                                 <div style={{fontWeight:900,fontSize:16,color:r.color}}>{items.length} items</div>
                               </div>
                               {/* item grid */}
-                              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7}}>
+                              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                                 {items.map(item=>(
-                                  <div key={item.id} style={{background:C.card,borderRadius:12,padding:"10px 10px",border:`1.5px solid ${r.color}30`,display:"flex",gap:8,alignItems:"center",boxShadow:rarityId==="legendary"||rarityId==="epic"?`0 2px 12px ${r.glow}40`:C.shadow}}>
+                                  <div key={item.id} style={{background:C.card,borderRadius:12,padding:"8px 8px",border:`1.5px solid ${r.color}30`,display:"flex",gap:8,alignItems:"center",boxShadow:rarityId==="legendary"||rarityId==="epic"?`0 2px 12px ${r.glow}40`:C.shadow}}>
                                     <div style={{width:36,height:36,borderRadius:10,background:r.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0,boxShadow:rarityId==="legendary"?`0 0 8px ${r.glow}`:"none",overflow:"visible"}}>
                                       {item.type==="frame"
                                         ? <FramePreview id={item.id} size={30} emoji="🦁"/>
@@ -3671,7 +3886,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                                     </div>
                                     <div style={{minWidth:0}}>
                                       <div style={{fontWeight:700,fontSize:11,color:C.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{item.name}</div>
-                                      <div style={{fontSize:9,color:r.color,fontWeight:700,textTransform:"uppercase"}}>{({frame:"Marco",sticker:"Sticker",emoji:"Emoji"})[item.type]}</div>
+                                      <div style={{fontSize:10,color:r.color,fontWeight:700,textTransform:"uppercase"}}>{({frame:"Marco",sticker:"Sticker",emoji:"Emoji"})[item.type]}</div>
                                     </div>
                                   </div>
                                 ))}
@@ -3690,13 +3905,13 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             {showInventory&&(
               <div className="overlay" style={{zIndex:9993}}>
                 <div className="modal pop-in" style={{maxHeight:"90vh",overflowY:"auto"}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-                    <div style={{fontWeight:800,fontSize:17,color:C.text}}>🎒 Mi colección</div>
-                    <button onClick={()=>setShowInventory(false)} style={{background:C.border,border:"none",borderRadius:10,padding:"5px 9px",color:C.textMed,cursor:"pointer",fontSize:15}}>✕</button>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+                    <div style={{fontWeight:800,fontSize:18,color:C.text}}>🎒 Mi colección</div>
+                    <button onClick={()=>setShowInventory(false)} style={{background:C.border,border:"none",borderRadius:10,padding:"4px 8px",color:C.textMed,cursor:"pointer",fontSize:15}}>✕</button>
                   </div>
                   {inventory.length===0?(
                     <div style={{textAlign:"center",padding:"32px 0"}}>
-                      <div style={{fontSize:48,marginBottom:10}}>📦</div>
+                      <div style={{fontSize:48,marginBottom:8}}>📦</div>
                       <div style={{fontWeight:700,fontSize:15,color:C.text}}>Aún no tienes items</div>
                       <div style={{fontSize:12,color:C.textMed,marginTop:4}}>¡Abre cofres para coleccionar!</div>
                     </div>
@@ -3709,10 +3924,10 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                             <div style={{marginBottom:4,display:"flex",justifyContent:"center",alignItems:"center",height:36}}>
                               {item.type==="frame"
                                 ? <FramePreview id={item.id} size={34} emoji="🦁"/>
-                                : <span style={{fontSize:26}}>{item.preview}</span>}
+                                : <span style={{fontSize:24}}>{item.preview}</span>}
                             </div>
-                            <div style={{fontSize:9,fontWeight:800,color:r.color,textTransform:"uppercase",lineHeight:1.3}}>{item.name}</div>
-                            <div style={{position:"absolute",top:4,right:4,fontSize:8}}><RarDot r={item.rarity}/></div>
+                            <div style={{fontSize:10,fontWeight:800,color:r.color,textTransform:"uppercase",lineHeight:1.3}}>{item.name}</div>
+                            <div style={{position:"absolute",top:4,right:4,fontSize:10}}><RarDot r={item.rarity}/></div>
                           </div>
                         );
                       })}
@@ -3723,19 +3938,19 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             )}
 
             {/* ── PAGE HEADER ── */}
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
               <div>
                 <div style={{fontWeight:900,fontSize:22,color:C.text}}>Cofres de Premio</div>
                 <div style={{fontSize:12,color:C.textMed}}>Gasta cristales 💎 y obtén items exclusivos</div>
               </div>
-              <div style={{display:"flex",gap:6}}>
-                <button onClick={()=>setShowInventory(true)} style={{background:C.purpleLt,border:`1.5px solid ${C.purple}40`,borderRadius:12,padding:"7px 10px",fontSize:12,color:C.purple,fontWeight:700,cursor:"pointer"}}>🎒 {inventory.length}</button>
-                <button onClick={()=>setShowLootTable(true)} style={{background:C.goldLt,border:`1.5px solid ${C.gold}40`,borderRadius:12,padding:"7px 10px",fontSize:12,color:C.goldDk,fontWeight:700,cursor:"pointer"}}>📋 Tabla</button>
+              <div style={{display:"flex",gap:8}}>
+                <button onClick={()=>setShowInventory(true)} style={{background:C.purpleLt,border:`1.5px solid ${C.purple}40`,borderRadius:12,padding:"8px 8px",fontSize:12,color:C.purple,fontWeight:700,cursor:"pointer"}}>🎒 {inventory.length}</button>
+                <button onClick={()=>setShowLootTable(true)} style={{background:C.goldLt,border:`1.5px solid ${C.gold}40`,borderRadius:12,padding:"8px 8px",fontSize:12,color:C.goldDk,fontWeight:700,cursor:"pointer"}}>📋 Tabla</button>
               </div>
             </div>
 
             {/* Crystal balance */}
-            <div style={{background:`linear-gradient(135deg,${C.sky},#2d8fd4)`,borderRadius:16,padding:"11px 16px",marginBottom:16,display:"flex",alignItems:"center",gap:12,color:"white"}}>
+            <div style={{background:`linear-gradient(135deg,${C.sky},#2d8fd4)`,borderRadius:16,padding:"8px 16px",marginBottom:16,display:"flex",alignItems:"center",gap:12,color:"white"}}>
               <span style={{fontSize:28}}>💎</span>
               <div style={{flex:1}}>
                 <div style={{fontWeight:900,fontSize:20}}>{user.gems} cristales</div>
@@ -3744,14 +3959,14 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             </div>
 
             {/* Rarity legend */}
-            <div style={{background:C.card,borderRadius:16,padding:"12px 14px",marginBottom:14,boxShadow:C.shadow}}>
+            <div style={{background:C.card,borderRadius:16,padding:"12px 14px",marginBottom:16,boxShadow:C.shadow}}>
               <div style={{fontWeight:700,fontSize:12,color:C.textMed,marginBottom:8}}>Rarezas disponibles</div>
-              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                 {Object.values(RARITIES).map(r=>(
                   <div key={r.id} style={{display:"flex",alignItems:"center",gap:4,background:r.bg,borderRadius:20,padding:"3px 8px",border:`1px solid ${r.color}40`}}>
                     <span style={{fontSize:10}}>{r.star}</span>
                     <span style={{fontSize:10,fontWeight:700,color:r.color}}>{r.label}</span>
-                    <span style={{fontSize:9,color:C.textMed}}>{r.pct}%</span>
+                    <span style={{fontSize:10,color:C.textMed}}>{r.pct}%</span>
                   </div>
                 ))}
               </div>
@@ -3759,11 +3974,11 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
 
             {/* Chest cards */}
             {CHESTS.map(ch=>(
-              <div key={ch.id} style={{background:C.card,borderRadius:20,marginBottom:14,boxShadow:ch.id==="legendary"?`0 4px 24px ${ch.glow}`:C.shadow,border:`2px solid ${ch.color}30`,overflow:"hidden"}}>
+              <div key={ch.id} style={{background:C.card,borderRadius:20,marginBottom:16,boxShadow:ch.id==="legendary"?`0 4px 24px ${ch.glow}`:C.shadow,border:`2px solid ${ch.color}30`,overflow:"hidden"}}>
                 {/* chest header gradient */}
                 <div style={{background:ch.gradient,padding:"18px 18px 14px",color:"white",position:"relative",overflow:"hidden"}}>
                   <div style={{position:"absolute",right:-8,top:-8,opacity:0.1}}><ChestSVG id={ch.id} size={80}/></div>
-                  <div style={{display:"flex",alignItems:"center",gap:14}}>
+                  <div style={{display:"flex",alignItems:"center",gap:16}}>
                     <div style={{flexShrink:0,filter:`drop-shadow(0 4px 14px ${ch.glow})`}} className={ch.id==="legendary"?"float":""}><ChestSVG id={ch.id} size={58}/></div>
                     <div>
                       <div style={{fontWeight:900,fontSize:20}}>{ch.name}</div>
@@ -3771,7 +3986,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                     </div>
                   </div>
                   {/* rate pills */}
-                  <div style={{display:"flex",gap:5,marginTop:10,flexWrap:"wrap"}}>
+                  <div style={{display:"flex",gap:8,marginTop:10,flexWrap:"wrap"}}>
                     {Object.entries(ch.rates).filter(([,v])=>v>0).map(([k,v])=>{
                       const r=RARITIES[k];
                       return (
@@ -3785,7 +4000,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                 {/* chest footer */}
                 <div style={{padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                   <div>
-                    <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+                    <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                       {/* item type icons */}
                       {["frame","sticker","emoji"].map(t=>{
                         const cnt = LOOT_ITEMS.filter(i=>Object.entries(ch.rates).some(([k,v])=>v>0&&i.rarity===k) && i.type===t).length;
@@ -3804,7 +4019,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                     setOpeningChest(ch); setChestPhase("idle"); setChestWin(null);
                     // Sync gems to Supabase
                     if(userId){ import("./supabase.js").then(({supabase})=>supabase.from("profiles").update({gems:newGems}).eq("id",userId)).catch(()=>{}); }
-                  }} style={{background:ch.gradient,border:"none",borderRadius:14,padding:"10px 18px",color:"white",fontWeight:800,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",gap:6,flexShrink:0,boxShadow:`0 4px 12px ${ch.glow}`}}>
+                  }} style={{background:ch.gradient,border:"none",borderRadius:14,padding:"10px 18px",color:"white",fontWeight:800,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",gap:8,flexShrink:0,boxShadow:`0 4px 12px ${ch.glow}`}}>
                     💎 {ch.gems}
                   </button>
                 </div>
@@ -3820,8 +4035,8 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                 {e:"⬆️",t:"Subir de nivel",               v:"+10 💎"},
                 {e:"🎡",t:"Ruleta de recompensas",         v:"Posible 💎"},
               ].map((x,i)=>(
-                <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6,fontSize:12}}>
-                  <div style={{display:"flex",gap:6,alignItems:"center",color:C.textMed}}><span>{x.e}</span>{x.t}</div>
+                <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,fontSize:12}}>
+                  <div style={{display:"flex",gap:8,alignItems:"center",color:C.textMed}}><span>{x.e}</span>{x.t}</div>
                   <span style={{fontWeight:700,color:C.sky}}>{x.v}</span>
                 </div>
               ))}
@@ -3834,38 +4049,38 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
           <div style={{padding:"16px 14px 0"}}>
             {!canClan?(
               <div style={{background:C.card,borderRadius:20,padding:28,textAlign:"center",boxShadow:C.shadow}}>
-                <div style={{fontSize:48,marginBottom:10}}>🔒</div>
+                <div style={{fontSize:48,marginBottom:8}}>🔒</div>
                 <div style={{fontWeight:800,fontSize:18,color:C.text}}>Clan bloqueado</div>
                 <div style={{fontSize:13,color:C.textMed,marginTop:6}}>Necesitas <b style={{color:C.mint}}>Nivel {MIN_CLAN}</b> para unirte</div>
               </div>
             ):(
               <>
-                <div style={{background:`linear-gradient(135deg,${C.mint},${C.mintDk})`,borderRadius:22,padding:20,marginBottom:14,color:"white",position:"relative",overflow:"hidden"}}>
-                  <div style={{position:"absolute",right:-10,top:-10,fontSize:90,opacity:0.1}}>🐉</div>
-                  <div style={{display:"flex",gap:14,alignItems:"center",marginBottom:12}}>
-                    <div style={{fontSize:46}} className="float">🐉</div>
+                <div style={{background:`linear-gradient(135deg,${C.mint},${C.mintDk})`,borderRadius:20,padding:20,marginBottom:16,color:"white",position:"relative",overflow:"hidden"}}>
+                  <div style={{position:"absolute",right:-10,top:-10,fontSize:100,opacity:0.1}}>🐉</div>
+                  <div style={{display:"flex",gap:16,alignItems:"center",marginBottom:12}}>
+                    <div style={{fontSize:48}} className="float">🐉</div>
                     <div><div style={{fontWeight:900,fontSize:22}}>{CLAN.name}</div><div style={{fontSize:12,opacity:0.8}}>Nivel {CLAN.level} · {CLAN.members.length} miembros</div></div>
                   </div>
-                  <div style={{height:7,borderRadius:7,background:"rgba(255,255,255,0.25)",overflow:"hidden",marginBottom:4}}>
-                    <div style={{height:"100%",borderRadius:7,width:`${CLAN.levelXP}%`,background:"white"}}/>
+                  <div style={{height:7,borderRadius:8,background:"rgba(255,255,255,0.25)",overflow:"hidden",marginBottom:4}}>
+                    <div style={{height:"100%",borderRadius:8,width:`${CLAN.levelXP}%`,background:"white"}}/>
                   </div>
                   <div style={{fontSize:10,opacity:0.7,textAlign:"right"}}>Nivel {CLAN.level+1} en {100-CLAN.levelXP}% más · ¡Completa tareas!</div>
                 </div>
                 {/* clan mission */}
-                <div style={{background:C.card,borderRadius:16,padding:14,marginBottom:14,boxShadow:C.shadow}}>
+                <div style={{background:C.card,borderRadius:16,padding:14,marginBottom:16,boxShadow:C.shadow}}>
                   <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
                     <div style={{fontWeight:800,fontSize:13,color:C.text}}>🎯 Misión semanal del clan</div>
                     <span style={{fontWeight:900,color:C.purple}}>12/20</span>
                   </div>
-                  <div style={{height:7,borderRadius:7,background:C.border,overflow:"hidden",marginBottom:6}}>
-                    <div style={{height:"100%",borderRadius:7,width:"60%",background:`linear-gradient(90deg,${C.purple},#b39dfc)`}}/>
+                  <div style={{height:7,borderRadius:8,background:C.border,overflow:"hidden",marginBottom:8}}>
+                    <div style={{height:"100%",borderRadius:8,width:"60%",background:`linear-gradient(90deg,${C.purple},#b39dfc)`}}/>
                   </div>
                   <div style={{fontSize:11,color:C.textMed}}>Completar 20 tareas · Recompensa: +200 XP clan</div>
                 </div>
                 {/* ranking */}
-                <div style={{fontWeight:800,fontSize:16,color:C.text,marginBottom:10}}>🏆 Ranking</div>
+                <div style={{fontWeight:800,fontSize:16,color:C.text,marginBottom:8}}>🏆 Ranking</div>
                 {CLAN.members.map((m,i)=>(
-                  <div key={i} style={{background:C.card,borderRadius:16,padding:"12px 14px",marginBottom:8,display:"flex",alignItems:"center",gap:10,boxShadow:i===0?C.shadowMd:C.shadow,border:`1.5px solid ${i===0?C.gold+"60":C.border}`}}>
+                  <div key={i} style={{background:C.card,borderRadius:16,padding:"12px 14px",marginBottom:8,display:"flex",alignItems:"center",gap:8,boxShadow:i===0?C.shadowMd:C.shadow,border:`1.5px solid ${i===0?C.gold+"60":C.border}`}}>
                     <div style={{fontWeight:900,fontSize:18,color:["#F5C518","#B0B0B0","#CD7F32","#CBD5E0","#CBD5E0"][i],minWidth:22}}>{["🥇","🥈","🥉",`#4`,`#5`][i]}</div>
                     <div style={{width:34,height:34,borderRadius:"50%",background:C.mintLt,border:`2px solid ${C.mint}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>{m.avatar}</div>
                     <div style={{flex:1}}>
@@ -3912,8 +4127,8 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                 candy:`linear-gradient(135deg,#FF6B9D,#8B6BE8)`,
               };
               return (
-                <div style={{background:BG_MAP[avatarBg]||BG_MAP.mint,borderRadius:22,padding:22,textAlign:"center",color:"white",marginBottom:14,position:"relative",overflow:"hidden"}}>
-                  <div style={{position:"absolute",right:-10,bottom:-10,fontSize:80,opacity:0.08}}>🏆</div>
+                <div style={{background:BG_MAP[avatarBg]||BG_MAP.mint,borderRadius:20,padding:22,textAlign:"center",color:"white",marginBottom:16,position:"relative",overflow:"hidden"}}>
+                  <div style={{position:"absolute",right:-10,bottom:-10,fontSize:100,opacity:0.08}}>🏆</div>
                   {/* avatar with frame */}
                   <div style={{position:"relative",width:80,height:80,margin:"0 auto 10px"}}>
                     <AvatarDisplay photo={avatarPhoto} emoji={avatarEmoji} frame={avatarFrame} bg={avatarBg} size={80} C={C} white/>
@@ -3941,8 +4156,8 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             {/* sign out */}
             {onSignOut&&(
               <button onClick={()=>onSignOut()}
-                style={{width:"100%",background:C.coralLt,border:`1.5px solid ${C.coral}30`,borderRadius:14,padding:"11px 16px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}}>
-                <div style={{display:"flex",gap:10,alignItems:"center"}}>
+                style={{width:"100%",background:C.coralLt,border:`1.5px solid ${C.coral}30`,borderRadius:14,padding:"8px 16px",marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}}>
+                <div style={{display:"flex",gap:8,alignItems:"center"}}>
                   <span style={{fontSize:20}}>🚪</span>
                   <div style={{fontWeight:700,fontSize:13,color:C.coral}}>Cerrar sesión</div>
                 </div>
@@ -3951,12 +4166,12 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
 
             {/* report button */}
             <button onClick={()=>setShowReport(true)}
-              style={{width:"100%",background:C.card,border:`1.5px solid ${C.border}`,borderRadius:14,padding:"11px 16px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer",boxShadow:C.shadow}}>
-              <div style={{display:"flex",gap:10,alignItems:"center"}}>
+              style={{width:"100%",background:C.card,border:`1.5px solid ${C.border}`,borderRadius:14,padding:"8px 16px",marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer",boxShadow:C.shadow}}>
+              <div style={{display:"flex",gap:8,alignItems:"center"}}>
                 <span style={{fontSize:20}}>🚨</span>
                 <div style={{textAlign:"left"}}>
                   <div style={{fontWeight:700,fontSize:13,color:C.text}}>Reportar conducta inapropiada</div>
-                  <div style={{fontSize:11,color:C.textMed}}>Ayúdanos a mantener KidQuest seguro</div>
+                  <div style={{fontSize:11,color:C.textMed}}>Ayúdanos a mantener FinPlay seguro</div>
                 </div>
               </div>
               <span style={{color:C.textLt,fontSize:16}}>›</span>
@@ -3965,8 +4180,8 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             {/* admin panel access */}
             {user.isAdmin&&(
               <button onClick={()=>setTab("admin")}
-                style={{width:"100%",background:`linear-gradient(135deg,${C.purple}15,${C.sky}10)`,border:`2px solid ${C.purple}50`,borderRadius:14,padding:"11px 16px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer",boxShadow:C.shadow}}>
-                <div style={{display:"flex",gap:10,alignItems:"center"}}>
+                style={{width:"100%",background:`linear-gradient(135deg,${C.purple}15,${C.sky}10)`,border:`2px solid ${C.purple}50`,borderRadius:14,padding:"8px 16px",marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer",boxShadow:C.shadow}}>
+                <div style={{display:"flex",gap:8,alignItems:"center"}}>
                   <span style={{fontSize:20}}>⚙️</span>
                   <div style={{textAlign:"left"}}>
                     <div style={{fontWeight:800,fontSize:13,color:C.purple}}>Panel de Administración</div>
@@ -3978,8 +4193,8 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             )}
 
             {/* age profile picker */}
-            <button onClick={()=>setShowAgePick(true)} style={{width:"100%",background:C.card,border:`1.5px solid ${C.border}`,borderRadius:14,padding:"11px 16px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer",boxShadow:C.shadow}}>
-              <div style={{display:"flex",gap:10,alignItems:"center"}}>
+            <button onClick={()=>setShowAgePick(true)} style={{width:"100%",background:C.card,border:`1.5px solid ${C.border}`,borderRadius:14,padding:"8px 16px",marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer",boxShadow:C.shadow}}>
+              <div style={{display:"flex",gap:8,alignItems:"center"}}>
                 <span style={{fontSize:22}}>{AGE_PROFILES[ageGroup]?.icon||"🌱"}</span>
                 <div style={{textAlign:"left"}}>
                   <div style={{fontWeight:700,fontSize:13,color:C.text}}>Perfil de edad activo</div>
@@ -3991,25 +4206,25 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
 
             {/* share button */}
             <button onClick={()=>{
-  const msg = encodeURIComponent(`¡Logré ${user.trophies} trofeos en KidQuest! 🏆 Estoy en nivel ${user.level}. ¡Únete en kidquest-lime.vercel.app!`);
+  const msg = encodeURIComponent(`¡Logré ${user.trophies} trofeos en FinPlay! 🏆 Estoy en nivel ${user.level}. ¡Únete en kidquest-lime.vercel.app!`);
   window.open(`https://wa.me/?text=${msg}`,"_blank");
 }}
-              style={{width:"100%",background:C.goldLt,border:`1.5px solid ${C.gold}`,borderRadius:14,padding:"11px",color:C.goldDk,fontWeight:800,fontSize:13,cursor:"pointer",marginBottom:14}}>
+              style={{width:"100%",background:C.goldLt,border:`1.5px solid ${C.gold}`,borderRadius:14,padding:"11px",color:C.goldDk,fontWeight:800,fontSize:13,cursor:"pointer",marginBottom:16}}>
               📤 Compartir logro en WhatsApp / Instagram
             </button>
 
             {/* savings simulator */}
-            <div style={{background:C.card,borderRadius:18,padding:16,marginBottom:14,boxShadow:C.shadow}}>
+            <div style={{background:C.card,borderRadius:16,padding:16,marginBottom:16,boxShadow:C.shadow}}>
               <div style={{fontWeight:800,fontSize:15,color:C.text,marginBottom:12}}>🐷 Simulador de Ahorro</div>
               <div style={{marginBottom:12}}>
-                <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:C.textMed,marginBottom:6}}>
+                <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:C.textMed,marginBottom:8}}>
                   <span>Ahorro semanal</span><span style={{fontWeight:800,color:C.mint}}>${simWeekly.toLocaleString()}</span>
                 </div>
                 <input type="range" min={ageProfile.simMin} max={ageProfile.simMax} step={ageProfile.simStep} value={simWeekly} onChange={e=>setSimWeekly(Number(e.target.value))}
                   style={{width:"100%",accentColor:C.mint}}/>
               </div>
-              <div style={{marginBottom:14}}>
-                <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:C.textMed,marginBottom:6}}>
+              <div style={{marginBottom:16}}>
+                <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:C.textMed,marginBottom:8}}>
                   <span>Período</span><span style={{fontWeight:800,color:C.mint}}>{simMonths} meses</span>
                 </div>
                 <input type="range" min="1" max="36" step="1" value={simMonths} onChange={e=>setSimMonths(Number(e.target.value))}
@@ -4023,10 +4238,10 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             </div>
 
             {/* spending tracker */}
-            <div style={{background:C.card,borderRadius:18,padding:16,marginBottom:14,boxShadow:C.shadow}}>
+            <div style={{background:C.card,borderRadius:16,padding:16,marginBottom:16,boxShadow:C.shadow}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
                 <div style={{fontWeight:800,fontSize:15,color:C.text}}>Registro de gastos</div>
-                <BtnMain onClick={()=>setShowSpend(true)} bg={`linear-gradient(135deg,${C.mint},${C.mintDk})`} style={{padding:"7px 14px",fontSize:12}}>
+                <BtnMain onClick={()=>setShowSpend(true)} bg={`linear-gradient(135deg,${C.mint},${C.mintDk})`} style={{padding:"8px 16px",fontSize:12}}>
                   + Registrar
                 </BtnMain>
               </div>
@@ -4041,7 +4256,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                     {EXPENSE_CATS.map(cat=>{
                       const total=spendLog.filter(e=>e.cat===cat.id).reduce((s,e)=>s+e.amt,0);
                       return total>0&&(
-                        <div key={cat.id} style={{background:cat.color+"18",borderRadius:11,padding:"9px 12px",border:`1.5px solid ${cat.color}30`}}>
+                        <div key={cat.id} style={{background:cat.color+"18",borderRadius:12,padding:"8px 12px",border:`1.5px solid ${cat.color}30`}}>
                           <div style={{fontSize:11,color:cat.color,fontWeight:700}}>{cat.icon} {cat.label}</div>
                           <div style={{fontWeight:900,fontSize:16,color:C.text}}>${fmtN(total)}</div>
                         </div>
@@ -4059,7 +4274,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                             <div style={{fontSize:10,color:C.textMed}}>{new Date(e.ts).toLocaleDateString("es")}</div>
                           </div>
                         </div>
-                        <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                        <div style={{display:"flex",gap:8,alignItems:"center"}}>
                           <span style={{fontWeight:800,color:cat.color,fontSize:13}}>${e.amt.toLocaleString()}</span>
                           <button onClick={()=>setSpendLog(p=>p.filter(x=>x.id!==e.id))} style={{background:"none",border:"none",color:C.textLt,cursor:"pointer",fontSize:14}}>✕</button>
                         </div>
@@ -4071,16 +4286,16 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             </div>
 
             {/* monthly history */}
-            <div style={{background:C.card,borderRadius:18,padding:16,marginBottom:14,boxShadow:C.shadow}}>
+            <div style={{background:C.card,borderRadius:16,padding:16,marginBottom:16,boxShadow:C.shadow}}>
               <div style={{fontWeight:800,fontSize:15,color:C.text,marginBottom:12}}>Historial mensual</div>
               <div style={{display:"flex",gap:3,alignItems:"flex-end",height:80,marginBottom:8}}>
                 {monthlyHist.map((m,i)=>{
                   const max=Math.max(...monthlyHist.map(x=>x.saved),1);
                   return(
                     <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
-                      <div style={{fontSize:8,fontWeight:700,color:C.mint}}>${fmtN(m.saved)}</div>
+                      <div style={{fontSize:10,fontWeight:700,color:C.mint}}>${fmtN(m.saved)}</div>
                       <div style={{width:"100%",height:Math.round((m.saved/max)*68)+4,background:`linear-gradient(to top,${C.mintDk},${C.mint})`,borderRadius:"4px 4px 0 0",transition:"height 0.5s"}}/>
-                      <div style={{fontSize:9,color:C.textMed}}>{m.month}</div>
+                      <div style={{fontSize:10,color:C.textMed}}>{m.month}</div>
                     </div>
                   );
                 })}
@@ -4092,10 +4307,10 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             </div>
 
             {/* economy lessons */}
-            <div style={{fontWeight:800,fontSize:15,color:C.text,marginBottom:10}}>🧠 Lecciones de Economía</div>
+            <div style={{fontWeight:800,fontSize:15,color:C.text,marginBottom:8}}>🧠 Lecciones de Economía</div>
             {lessons.map((l,i)=>(
               <div key={i} onClick={()=>!l.done&&setActiveLesson(l)} style={{background:C.card,borderRadius:14,padding:"12px 14px",marginBottom:8,display:"flex",gap:12,alignItems:"center",boxShadow:l.done?"none":C.shadow,border:`2px solid ${l.done?C.mint+"50":C.border}`,cursor:l.done?"default":"pointer",opacity:l.done?0.75:1,position:"relative",transition:"all 0.18s"}}>
-                <div style={{width:42,height:42,borderRadius:13,background:l.done?`linear-gradient(135deg,${C.mint},${C.mintDk})`:`linear-gradient(135deg,${C.gold},${C.goldDk})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,boxShadow:l.done?`0 3px 10px ${C.mint}40`:`0 3px 10px ${C.gold}40`}}>{l.emoji}</div>
+                <div style={{width:42,height:42,borderRadius:16,background:l.done?`linear-gradient(135deg,${C.mint},${C.mintDk})`:`linear-gradient(135deg,${C.gold},${C.goldDk})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,boxShadow:l.done?`0 3px 10px ${C.mint}40`:`0 3px 10px ${C.gold}40`}}>{l.emoji}</div>
                 <div style={{flex:1}}>
                   <div style={{fontWeight:800,fontSize:13,color:l.done?C.mintDk:C.text}}>{l.done?"✅ ":""}{l.title}</div>
                   <div style={{fontSize:11,color:C.textMed}}>{l.duration} · +{l.xp} XP</div>
@@ -4121,12 +4336,12 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                 {e:"🤖",t:"Amigo de la IA",   d:"20 fotos aprobadas por IA",      done:totalTasks>=20,  c:C.purple, p:Math.min((totalTasks/20)*100,100)},
               ];
               return achList.map((a,i)=>(
-                <div key={i} style={{background:C.card,borderRadius:14,padding:"11px 13px",marginBottom:7,display:"flex",gap:11,alignItems:"center",boxShadow:C.shadow,border:`1.5px solid ${a.done?a.c+"40":C.border}`,opacity:a.done?1:0.65}}>
+                <div key={i} style={{background:C.card,borderRadius:14,padding:"11px 13px",marginBottom:8,display:"flex",gap:11,alignItems:"center",boxShadow:C.shadow,border:`1.5px solid ${a.done?a.c+"40":C.border}`,opacity:a.done?1:0.65}}>
                   <div style={{width:40,height:40,borderRadius:12,background:a.c+"18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,filter:a.done?"none":"grayscale(1)"}}>{a.e}</div>
                   <div style={{flex:1}}>
                     <div style={{fontWeight:800,fontSize:13,color:a.done?a.c:C.text}}>{a.t}</div>
                     <div style={{fontSize:11,color:C.textMed}}>{a.d}</div>
-                    {!a.done&&<div style={{marginTop:4,height:4,borderRadius:4,background:C.border,overflow:"hidden"}}><div style={{height:"100%",borderRadius:4,width:`${a.p}%`,background:a.c,transition:"width 0.5s"}}/></div>}
+                    {!a.done&&<div style={{marginTop:4,height:4,borderRadius:8,background:C.border,overflow:"hidden"}}><div style={{height:"100%",borderRadius:8,width:`${a.p}%`,background:a.c,transition:"width 0.5s"}}/></div>}
                   </div>
                   {a.done&&<span className="pop-in" style={{fontSize:20}}>⭐</span>}
                 </div>
@@ -4140,15 +4355,15 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
           <div style={{padding:"16px 14px 0"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
               <div style={{fontWeight:800,fontSize:20,color:C.text}}>Validar tareas</div>
-              <div style={{display:"flex",gap:6}}>
-                <button onClick={()=>setShowTaskCreator(true)} style={{background:C.mintLt,border:`1.5px solid ${C.mint}`,borderRadius:11,padding:"6px 10px",color:C.mintDk,fontSize:11,fontWeight:700,cursor:"pointer"}}>+ Misión</button>
-                <button onClick={()=>{setAssignStep("pick");setSelectedStudents([]);setShowChallengeAssign(true);}} style={{background:C.goldLt,border:`1.5px solid ${C.gold}`,borderRadius:11,padding:"6px 10px",color:C.goldDk,fontSize:11,fontWeight:700,cursor:"pointer"}}>🎯 Desafío</button>
-                <button onClick={()=>setShowDealCreate(true)} style={{background:C.mintLt,border:`1.5px solid ${C.mint}`,borderRadius:11,padding:"6px 10px",color:C.mintDk,fontSize:11,fontWeight:700,cursor:"pointer"}}>🤝 Trueque</button>
-                <button onClick={()=>setShowControls(true)} style={{background:C.card,border:`1.5px solid ${C.border}`,borderRadius:11,padding:"6px 10px",color:C.textMed,fontSize:11,fontWeight:700,cursor:"pointer"}}>⚙️</button>
-                <button onClick={()=>setShowLinkTutor(true)} style={{background:`linear-gradient(135deg,${C.mint},${C.mintDk})`,border:"none",borderRadius:11,padding:"6px 10px",color:"white",fontSize:11,fontWeight:700,cursor:"pointer"}}>🔗</button>
+              <div style={{display:"flex",gap:8}}>
+                <button onClick={()=>setShowTaskCreator(true)} style={{background:C.mintLt,border:`1.5px solid ${C.mint}`,borderRadius:12,padding:"8px 8px",color:C.mintDk,fontSize:11,fontWeight:700,cursor:"pointer"}}>+ Misión</button>
+                <button onClick={()=>{setAssignStep("pick");setSelectedStudents([]);setShowChallengeAssign(true);}} style={{background:C.goldLt,border:`1.5px solid ${C.gold}`,borderRadius:12,padding:"8px 8px",color:C.goldDk,fontSize:11,fontWeight:700,cursor:"pointer"}}>🎯 Desafío</button>
+                <button onClick={()=>setShowDealCreate(true)} style={{background:C.mintLt,border:`1.5px solid ${C.mint}`,borderRadius:12,padding:"8px 8px",color:C.mintDk,fontSize:11,fontWeight:700,cursor:"pointer"}}>🤝 Trueque</button>
+                <button onClick={()=>setShowControls(true)} style={{background:C.card,border:`1.5px solid ${C.border}`,borderRadius:12,padding:"8px 8px",color:C.textMed,fontSize:11,fontWeight:700,cursor:"pointer"}}>⚙️</button>
+                <button onClick={()=>setShowLinkTutor(true)} style={{background:`linear-gradient(135deg,${C.mint},${C.mintDk})`,border:"none",borderRadius:12,padding:"8px 8px",color:"white",fontSize:11,fontWeight:700,cursor:"pointer"}}>🔗</button>
               </div>
             </div>
-            <div style={{background:C.purpleLt,border:`1.5px solid ${C.purple}30`,borderRadius:14,padding:"10px 14px",marginBottom:14,fontSize:12,color:C.purple,fontWeight:600}}>
+            <div style={{background:C.purpleLt,border:`1.5px solid ${C.purple}30`,borderRadius:14,padding:"8px 16px",marginBottom:16,fontSize:12,color:C.purple,fontWeight:600}}>
               🤖 IA pre-analizó las fotos · Las apelaciones también son revisadas automáticamente
             </div>
 
@@ -4159,14 +4374,14 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             {/* Real pending tasks from Supabase */}
             {loadingPending&&(
               <div style={{textAlign:"center",padding:24,color:C.textMed}}>
-                <div style={{fontSize:32,marginBottom:8}} className="float">⏳</div>
+                <div style={{fontSize:30,marginBottom:8}} className="float">⏳</div>
                 Cargando tareas pendientes…
               </div>
             )}
             {!loadingPending&&linkedStudents.length===0&&(
               <div style={{background:C.goldLt,border:`1.5px solid ${C.gold}30`,borderRadius:16,padding:18,textAlign:"center"}}>
-                <div style={{fontSize:32,marginBottom:8}}>👦</div>
-                <div style={{fontWeight:700,fontSize:14,color:C.goldDk,marginBottom:6}}>No tienes hijos vinculados aún</div>
+                <div style={{fontSize:30,marginBottom:8}}>👦</div>
+                <div style={{fontWeight:700,fontSize:14,color:C.goldDk,marginBottom:8}}>No tienes hijos vinculados aún</div>
                 <div style={{fontSize:12,color:C.textMed,marginBottom:12}}>Ve a la pestaña "Mi QR" y genera un código para que tu hijo se una</div>
                 <BtnMain onClick={()=>setTab("qrcode")} bg={`linear-gradient(135deg,${C.gold},${C.goldDk})`} style={{display:"inline-block",padding:"8px 20px",fontSize:13}}>
                   Ir a Mi QR →
@@ -4175,7 +4390,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             )}
             {!loadingPending&&linkedStudents.length>0&&pendingTasks.length===0&&pendingLoaded&&(
               <div style={{background:C.mintLt,border:`1.5px solid ${C.mint}30`,borderRadius:16,padding:18,textAlign:"center"}}>
-                <div style={{fontSize:32,marginBottom:8}}>✅</div>
+                <div style={{fontSize:30,marginBottom:8}}>✅</div>
                 <div style={{fontWeight:700,fontSize:14,color:C.mintDk}}>¡Todo al día!</div>
                 <div style={{fontSize:12,color:C.textMed,marginTop:4}}>No hay tareas pendientes de revisión</div>
               </div>
@@ -4184,8 +4399,8 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
               const child = linkedStudents.find(s=>s.id===v.user_id)||{name:"Estudiante",avatar:"a_cub"};
               const timeAgo = v.completed_at ? new Date(v.completed_at).toLocaleString("es",{hour:"2-digit",minute:"2-digit",day:"numeric",month:"short"}) : "Pendiente";
               return(
-                <div key={v.id} style={{background:C.card,borderRadius:18,padding:16,marginBottom:12,boxShadow:C.shadow}}>
-                  <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:10}}>
+                <div key={v.id} style={{background:C.card,borderRadius:16,padding:16,marginBottom:12,boxShadow:C.shadow}}>
+                  <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:8}}>
                     <div style={{width:38,height:38,borderRadius:"50%",background:C.mintLt,border:`2px solid ${C.mint}`,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0}}>
                       <KQIcon id={child.avatar||"a_cub"} size={34}/>
                     </div>
@@ -4197,13 +4412,13 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                     {v.ai_score>0&&<Chip label={`🤖 ${v.ai_score}%`} bg={v.ai_score>=70?C.mintLt:C.goldLt} color={v.ai_score>=70?C.mintDk:C.goldDk}/>}
                   </div>
                   {v.self_desc&&(
-                    <div style={{background:C.skyLt,border:`1.5px solid ${C.sky}30`,borderRadius:12,padding:10,marginBottom:10}}>
+                    <div style={{background:C.skyLt,border:`1.5px solid ${C.sky}30`,borderRadius:12,padding:10,marginBottom:8}}>
                       <div style={{fontSize:11,fontWeight:700,color:C.sky,marginBottom:4}}>📝 Descripción del niño</div>
                       <div style={{fontSize:12,color:C.textMed,fontStyle:"italic"}}>"{v.self_desc}"</div>
                     </div>
                   )}
                   {v.evidence_url&&(
-                    <div style={{background:C.mintLt,borderRadius:12,padding:10,marginBottom:10,fontSize:12,color:C.mintDk,fontWeight:600}}>
+                    <div style={{background:C.mintLt,borderRadius:12,padding:10,marginBottom:8,fontSize:12,color:C.mintDk,fontWeight:600}}>
                       📸 Foto enviada como evidencia
                     </div>
                   )}
@@ -4241,12 +4456,12 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             {/* Active Trueques */}
             {deals.filter(d=>d.createdBy===userId).length>0&&(
               <div style={{marginTop:16}}>
-                <div style={{fontWeight:800,fontSize:16,color:C.text,marginBottom:10}}>🤝 Mis Trueques</div>
+                <div style={{fontWeight:800,fontSize:16,color:C.text,marginBottom:8}}>🤝 Mis Trueques</div>
                 {deals.filter(d=>d.createdBy===userId).map(deal=>(
                   <div key={deal.id} style={{background:C.card,borderRadius:16,padding:14,marginBottom:8,boxShadow:C.shadow,border:`1.5px solid ${deal.status==="completed"?C.mint:C.border}`}}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
                       <div style={{flex:1}}>
-                        <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:3}}>
+                        <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:3}}>
                           <span style={{fontSize:20}}>{deal.rewardEmoji}</span>
                           <div style={{fontWeight:800,fontSize:13,color:C.text}}>{deal.title}</div>
                         </div>
@@ -4257,8 +4472,8 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                         {deal.status==="completed"?"✅ Completado":"⏳ Activo"}
                       </span>
                     </div>
-                    <div style={{height:6,borderRadius:6,background:C.border,overflow:"hidden",marginBottom:4}}>
-                      <div style={{height:"100%",width:`${Math.min((deal.tasksCompleted/deal.taskCount)*100,100)}%`,background:`linear-gradient(90deg,${C.mint},${C.gold})`,borderRadius:6}}/>
+                    <div style={{height:6,borderRadius:8,background:C.border,overflow:"hidden",marginBottom:4}}>
+                      <div style={{height:"100%",width:`${Math.min((deal.tasksCompleted/deal.taskCount)*100,100)}%`,background:`linear-gradient(90deg,${C.mint},${C.gold})`,borderRadius:8}}/>
                     </div>
                     <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:C.textMed}}>
                       <span>{deal.tasksCompleted}/{deal.taskCount} tareas</span>
@@ -4277,8 +4492,8 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
         {/* ── PARENT: PROGRESS ── */}
         {role===ROLES.PARENT&&tab==="progress"&&(
           <div style={{padding:"16px 14px 0"}}>
-            <div style={{fontWeight:800,fontSize:20,color:C.text,marginBottom:14}}>Progreso de {linkedStudents[0]?.name||"tu hijo"}</div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
+            <div style={{fontWeight:800,fontSize:20,color:C.text,marginBottom:16}}>Progreso de {linkedStudents[0]?.name||"tu hijo"}</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:16}}>
               {[{e:"✅",l:"Aprobadas",v:"12",c:C.mint},{e:"🤖",l:"IA aprobó",v:"9",c:C.purple},{e:"⚖️",l:"Apelaciones",v:"2",c:C.sky},{e:"🔥",l:"Racha",v:"15d",c:C.coral}].map((s,i)=>(
                 <div key={i} style={{background:C.card,borderRadius:14,padding:"12px 10px",textAlign:"center",boxShadow:C.shadow}}>
                   <div style={{fontSize:24}}>{s.e}</div>
@@ -4287,25 +4502,25 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                 </div>
               ))}
             </div>
-            <div style={{background:C.card,borderRadius:18,padding:16,marginBottom:14,boxShadow:C.shadow}}>
+            <div style={{background:C.card,borderRadius:16,padding:16,marginBottom:16,boxShadow:C.shadow}}>
               <div style={{fontWeight:800,fontSize:14,color:C.text,marginBottom:12}}>📅 Esta semana</div>
               {(() => {
                 const wdata = realWeekData.length>0 ? realWeekData : WEEK_DATA;
                 const maxPts = Math.max(...wdata.map(d=>d.pts), 1);
                 return (
-                  <div style={{display:"flex",alignItems:"flex-end",gap:6,height:72}}>
+                  <div style={{display:"flex",alignItems:"flex-end",gap:8,height:72}}>
                     {wdata.map((d,i)=>(
                       <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
-                        {d.pts>0&&<div style={{fontSize:9,fontWeight:800,color:C.mint}}>{d.pts}</div>}
+                        {d.pts>0&&<div style={{fontSize:10,fontWeight:800,color:C.mint}}>{d.pts}</div>}
                         <div style={{width:"100%",height:Math.max((d.pts/maxPts)*60,4),background:d.pts?`linear-gradient(to top,${C.mintDk},${C.mint})`:C.border,borderRadius:"5px 5px 0 0"}}/>
-                        <div style={{fontSize:9,color:C.textMed}}>{d.day}</div>
+                        <div style={{fontSize:10,color:C.textMed}}>{d.day}</div>
                       </div>
                     ))}
                   </div>
                 );
               })()}
             </div>
-            <div style={{background:C.card,borderRadius:18,padding:16,boxShadow:C.shadow}}>
+            <div style={{background:C.card,borderRadius:16,padding:16,boxShadow:C.shadow}}>
               <div style={{fontWeight:800,fontSize:14,color:C.text,marginBottom:8}}>🐷 {user.savingsGoal.emoji} Meta: {user.savingsGoal.name}</div>
               <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
                 <span style={{fontSize:12,color:C.textMed}}>Meta: ${fmtN(user.savingsGoal.target)}</span>
@@ -4323,9 +4538,9 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                   const max=Math.max(...monthlyHist.map(x=>x.saved),1);
                   return(
                     <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
-                      <div style={{fontSize:8,fontWeight:700,color:C.mint}}>${fmtN(m.saved)}</div>
+                      <div style={{fontSize:10,fontWeight:700,color:C.mint}}>${fmtN(m.saved)}</div>
                       <div style={{width:"100%",height:Math.round((m.saved/max)*56)+4,background:`linear-gradient(to top,${C.mintDk},${C.mint})`,borderRadius:"4px 4px 0 0"}}/>
-                      <div style={{fontSize:8,color:C.textMed}}>{m.month}</div>
+                      <div style={{fontSize:10,color:C.textMed}}>{m.month}</div>
                     </div>
                   );
                 })}
@@ -4345,33 +4560,33 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
         {role===ROLES.PARENT&&tab==="allowance"&&(
           <div style={{padding:"16px 14px 0"}}>
             <div style={{fontWeight:800,fontSize:20,color:C.text,marginBottom:4}}>Mesada de {linkedStudents[0]?.name||"tu hijo"}</div>
-            <div style={{fontSize:13,color:C.textMed,marginBottom:14}}>Gestiona la mesada y enseña economía real</div>
-            <div style={{background:`linear-gradient(135deg,${C.gold},${C.goldDk})`,borderRadius:20,padding:20,color:"white",marginBottom:14,position:"relative",overflow:"hidden"}}>
-              <div style={{position:"absolute",right:-10,top:-10,fontSize:80,opacity:0.15}}>💰</div>
+            <div style={{fontSize:13,color:C.textMed,marginBottom:16}}>Gestiona la mesada y enseña economía real</div>
+            <div style={{background:`linear-gradient(135deg,${C.gold},${C.goldDk})`,borderRadius:20,padding:20,color:"white",marginBottom:16,position:"relative",overflow:"hidden"}}>
+              <div style={{position:"absolute",right:-10,top:-10,fontSize:100,opacity:0.15}}>💰</div>
               <div style={{fontSize:12,opacity:0.85,marginBottom:4}}>Mesada mensual</div>
               <div style={{fontWeight:900,fontSize:36}}>${fmtN(user.allowance)}</div>
               <div style={{display:"flex",justifyContent:"space-between",marginTop:14}}>
                 <div><div style={{fontWeight:700,fontSize:14}}>${fmtN(user.allowanceSpent)}</div><div style={{fontSize:11,opacity:0.8}}>Gastado</div></div>
                 <div style={{textAlign:"right"}}><div style={{fontWeight:700,fontSize:14}}>${fmtN(user.allowance-user.allowanceSpent)}</div><div style={{fontSize:11,opacity:0.8}}>Disponible</div></div>
               </div>
-              <div style={{height:7,borderRadius:7,background:"rgba(255,255,255,0.3)",overflow:"hidden",marginTop:10}}>
-                <div style={{height:"100%",borderRadius:7,width:`${allowancePct}%`,background:"white"}}/>
+              <div style={{height:7,borderRadius:8,background:"rgba(255,255,255,0.3)",overflow:"hidden",marginTop:10}}>
+                <div style={{height:"100%",borderRadius:8,width:`${allowancePct}%`,background:"white"}}/>
               </div>
             </div>
             {/* 50/30/20 rule */}
-            <div style={{background:C.card,borderRadius:18,padding:16,marginBottom:14,boxShadow:C.shadow}}>
+            <div style={{background:C.card,borderRadius:16,padding:16,marginBottom:16,boxShadow:C.shadow}}>
               <div style={{fontWeight:800,fontSize:14,color:C.text,marginBottom:12}}>📐 Regla 50-30-20 aplicada</div>
               {[
                 {l:"50% Necesidades",  val:Math.round(user.allowance*0.5), color:C.mint,  pct:50},
                 {l:"30% Gustos",       val:Math.round(user.allowance*0.3), color:C.sky,   pct:30},
                 {l:"20% Ahorro",       val:Math.round(user.allowance*0.2), color:C.gold,  pct:20},
               ].map((r,i)=>(
-                <div key={i} style={{marginBottom:10}}>
+                <div key={i} style={{marginBottom:8}}>
                   <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:C.textMed,marginBottom:4}}>
                     <span style={{fontWeight:700}}>{r.l}</span><span style={{color:r.color,fontWeight:800}}>${fmtN(r.val)}</span>
                   </div>
-                  <div style={{height:6,borderRadius:6,background:C.border,overflow:"hidden"}}>
-                    <div style={{height:"100%",borderRadius:6,width:`${r.pct}%`,background:r.color}}/>
+                  <div style={{height:6,borderRadius:8,background:C.border,overflow:"hidden"}}>
+                    <div style={{height:"100%",borderRadius:8,width:`${r.pct}%`,background:r.color}}/>
                   </div>
                 </div>
               ))}
@@ -4394,12 +4609,12 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
         {role===ROLES.PARENT&&tab==="qrcode"&&(
           <div style={{padding:"16px 14px 100px"}}>
             <div style={{fontWeight:900,fontSize:22,color:C.text,marginBottom:4}}>Vincular hijos</div>
-            <div style={{fontSize:13,color:C.textMed,marginBottom:18}}>Genera un código para que tu hijo se una a KidQuest bajo tu supervisión</div>
+            <div style={{fontSize:13,color:C.textMed,marginBottom:16}}>Genera un código para que tu hijo se una a FinPlay bajo tu supervisión</div>
 
             {/* Generate new code */}
-            <div style={{background:C.card,borderRadius:18,padding:18,marginBottom:14,boxShadow:C.shadow}}>
-              <div style={{fontWeight:800,fontSize:15,color:C.text,marginBottom:6}}>Código de invitación</div>
-              <div style={{fontSize:12,color:C.textMed,marginBottom:14,lineHeight:1.6}}>
+            <div style={{background:C.card,borderRadius:16,padding:18,marginBottom:16,boxShadow:C.shadow}}>
+              <div style={{fontWeight:800,fontSize:15,color:C.text,marginBottom:8}}>Código de invitación</div>
+              <div style={{fontSize:12,color:C.textMed,marginBottom:16,lineHeight:1.6}}>
                 El código es válido por 7 días. Compártelo con tu hijo por WhatsApp o como prefieras. Solo funciona una vez.
               </div>
               <BtnMain onClick={generateInviteToken} disabled={generatingToken}
@@ -4410,16 +4625,16 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
 
             {/* Active codes */}
             {myInviteTokens.length>0&&(
-              <div style={{background:C.card,borderRadius:18,padding:16,marginBottom:14,boxShadow:C.shadow}}>
+              <div style={{background:C.card,borderRadius:16,padding:16,marginBottom:16,boxShadow:C.shadow}}>
                 <div style={{fontWeight:800,fontSize:14,color:C.text,marginBottom:12}}>Códigos activos</div>
                 {myInviteTokens.filter(t=>!t.used).slice(0,5).map(t=>(
                   <div key={t.id} style={{background:C.mintLt,borderRadius:14,padding:14,marginBottom:8}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
                       <div style={{fontWeight:900,fontSize:24,letterSpacing:4,color:C.mintDk}}>{t.token}</div>
                       <button onClick={()=>{
                         navigator.clipboard?.writeText(t.token);
                         notify(`Código ${t.token} copiado`,"📋");
-                      }} style={{background:C.mint,border:"none",borderRadius:9,padding:"6px 12px",color:"white",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+                      }} style={{background:C.mint,border:"none",borderRadius:9,padding:"8px 12px",color:"white",fontWeight:700,fontSize:12,cursor:"pointer"}}>
                         Copiar
                       </button>
                     </div>
@@ -4433,9 +4648,9 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
 
             {/* Share via WhatsApp */}
             {myInviteTokens.filter(t=>!t.used)[0]&&(
-              <a href={`https://wa.me/?text=¡Hola! Te invito a unirte a KidQuest 🦎. Descarga la app en kidquest-lime.vercel.app, regístrate como Estudiante y usa el código: ${myInviteTokens.filter(t=>!t.used)[0]?.token}`}
+              <a href={`https://wa.me/?text=¡Hola! Te invito a unirte a FinPlay 🚀. Descarga la app en kidquest-lime.vercel.app, regístrate como Estudiante y usa el código: ${myInviteTokens.filter(t=>!t.used)[0]?.token}`}
                 target="_blank" rel="noopener noreferrer"
-                style={{display:"block",width:"100%",padding:"13px",borderRadius:15,
+                style={{display:"block",width:"100%",padding:"13px",borderRadius:16,
                   background:"linear-gradient(135deg,#25D366,#128C7E)",
                   color:"white",fontWeight:800,fontSize:14,textAlign:"center",
                   textDecoration:"none",boxShadow:"0 4px 16px #25D36640"}}>
@@ -4445,10 +4660,10 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
 
             {/* Linked children */}
             {linkedStudents.length>0&&(
-              <div style={{background:C.card,borderRadius:18,padding:16,marginTop:14,boxShadow:C.shadow}}>
+              <div style={{background:C.card,borderRadius:16,padding:16,marginTop:14,boxShadow:C.shadow}}>
                 <div style={{fontWeight:800,fontSize:14,color:C.text,marginBottom:12}}>✅ Hijos vinculados ({linkedStudents.length})</div>
                 {linkedStudents.map(s=>(
-                  <div key={s.id} style={{display:"flex",gap:10,alignItems:"center",padding:"8px 0",borderBottom:`1px solid ${C.border}`}}>
+                  <div key={s.id} style={{display:"flex",gap:8,alignItems:"center",padding:"8px 0",borderBottom:`1px solid ${C.border}`}}>
                     <div style={{width:36,height:36,borderRadius:"50%",background:C.mintLt,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0}}>
                       <KQIcon id={s.avatar||"a_cub"} size={32}/>
                     </div>
@@ -4466,22 +4681,22 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
         {/* ── TEACHER: PANEL ── */}
         {role===ROLES.TEACHER&&tab==="panel"&&(
           <div style={{padding:"16px 14px 0"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
               <div style={{fontWeight:800,fontSize:20,color:C.text}}>Panel docente</div>
-              <div style={{display:"flex",gap:6}}>
-                <button onClick={()=>setShowTaskCreator(true)} style={{background:C.mintLt,border:`1.5px solid ${C.mint}`,borderRadius:11,padding:"6px 10px",color:C.mintDk,fontSize:11,fontWeight:700,cursor:"pointer"}}>+ Misión</button>
-                <button onClick={()=>{setAssignStep("pick");setSelectedStudents([]);setShowChallengeAssign(true);}} style={{background:C.goldLt,border:`1.5px solid ${C.gold}`,borderRadius:11,padding:"6px 10px",color:C.goldDk,fontSize:11,fontWeight:700,cursor:"pointer"}}>🎯 Desafío</button>
-                <button onClick={()=>setShowDealCreate(true)} style={{background:C.mintLt,border:`1.5px solid ${C.mint}`,borderRadius:11,padding:"6px 10px",color:C.mintDk,fontSize:11,fontWeight:700,cursor:"pointer"}}>🤝 Trueque</button>
-                <button onClick={()=>notify("Reporte PDF listo para compartir","📊")} style={{background:C.skyLt,border:`1.5px solid ${C.sky}`,borderRadius:11,padding:"6px 10px",color:C.sky,fontSize:11,fontWeight:700,cursor:"pointer"}}>📊 PDF</button>
-                <button onClick={()=>setShowLinkTutor(true)} style={{background:`linear-gradient(135deg,${C.mint},${C.mintDk})`,border:"none",borderRadius:11,padding:"6px 10px",color:"white",fontSize:11,fontWeight:700,cursor:"pointer"}}>🔗</button>
+              <div style={{display:"flex",gap:8}}>
+                <button onClick={()=>setShowTaskCreator(true)} style={{background:C.mintLt,border:`1.5px solid ${C.mint}`,borderRadius:12,padding:"8px 8px",color:C.mintDk,fontSize:11,fontWeight:700,cursor:"pointer"}}>+ Misión</button>
+                <button onClick={()=>{setAssignStep("pick");setSelectedStudents([]);setShowChallengeAssign(true);}} style={{background:C.goldLt,border:`1.5px solid ${C.gold}`,borderRadius:12,padding:"8px 8px",color:C.goldDk,fontSize:11,fontWeight:700,cursor:"pointer"}}>🎯 Desafío</button>
+                <button onClick={()=>setShowDealCreate(true)} style={{background:C.mintLt,border:`1.5px solid ${C.mint}`,borderRadius:12,padding:"8px 8px",color:C.mintDk,fontSize:11,fontWeight:700,cursor:"pointer"}}>🤝 Trueque</button>
+                <button onClick={()=>notify("Reporte PDF listo para compartir","📊")} style={{background:C.skyLt,border:`1.5px solid ${C.sky}`,borderRadius:12,padding:"8px 8px",color:C.sky,fontSize:11,fontWeight:700,cursor:"pointer"}}>📊 PDF</button>
+                <button onClick={()=>setShowLinkTutor(true)} style={{background:`linear-gradient(135deg,${C.mint},${C.mintDk})`,border:"none",borderRadius:12,padding:"8px 8px",color:"white",fontSize:11,fontWeight:700,cursor:"pointer"}}>🔗</button>
               </div>
             </div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:14}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
               {[{e:"👦",l:"Alumnos",v:28,c:C.mint},{e:"✅",l:"Activos hoy",v:21,c:C.mintDk},{e:"⚖️",l:"Apelaciones",v:4,c:C.purple}].map((s,i)=>(
                 <div key={i} style={{background:C.card,borderRadius:14,padding:"12px 8px",textAlign:"center",boxShadow:C.shadow}}>
                   <div style={{fontSize:24}}>{s.e}</div>
                   <div style={{fontWeight:900,fontSize:20,color:s.c}}>{s.v}</div>
-                  <div style={{fontSize:9,color:C.textMed}}>{s.l}</div>
+                  <div style={{fontSize:10,color:C.textMed}}>{s.l}</div>
                 </div>
               ))}
             </div>
@@ -4495,27 +4710,27 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                 {label:"Alumnos con racha activa",val:"18/28",color:C.gold,pct:64},
                 {label:"Lecciones completadas (prom.)",val:"2.3/6",color:C.purple,pct:38},
               ].map((s,i)=>(
-                <div key={i} style={{marginBottom:10}}>
+                <div key={i} style={{marginBottom:8}}>
                   <div style={{display:"flex",justifyContent:"space-between",fontSize:12,marginBottom:4}}>
                     <span style={{color:C.textMed}}>{s.label}</span>
                     <span style={{fontWeight:800,color:s.color}}>{s.val}</span>
                   </div>
-                  <div style={{height:5,borderRadius:5,background:C.border,overflow:"hidden"}}>
-                    <div style={{height:"100%",width:`${s.pct}%`,background:s.color,borderRadius:5}}/>
+                  <div style={{height:5,borderRadius:8,background:C.border,overflow:"hidden"}}>
+                    <div style={{height:"100%",width:`${s.pct}%`,background:s.color,borderRadius:8}}/>
                   </div>
                 </div>
               ))}
-              <div style={{marginTop:8,background:C.coralLt,border:`1.5px solid ${C.coral}30`,borderRadius:11,padding:"9px 12px",fontSize:12,color:C.coral}}>
+              <div style={{marginTop:8,background:C.coralLt,border:`1.5px solid ${C.coral}30`,borderRadius:12,padding:"8px 12px",fontSize:12,color:C.coral}}>
                 ⚠️ <b>Mayor dificultad:</b> "Interés compuesto" — 68% quiz incorrecto
               </div>
             </div>
 
-            <div style={{background:C.card,borderRadius:18,padding:16,marginBottom:12,boxShadow:C.shadow}}>
+            <div style={{background:C.card,borderRadius:16,padding:16,marginBottom:12,boxShadow:C.shadow}}>
               <div style={{fontWeight:800,fontSize:14,color:C.text,marginBottom:12}}>🏆 Ranking 5to B</div>
               {CLAN.members.map((m,i)=>(
-                <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:i<4?`1px solid ${C.border}`:"none"}}>
+                <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 0",borderBottom:i<4?`1px solid ${C.border}`:"none"}}>
                   <div style={{fontWeight:900,fontSize:16,color:["#F5C518","#B0B0B0","#CD7F32","#CBD5E0","#CBD5E0"][i],minWidth:22}}>{"🥇🥈🥉".split("")[i]||`#${i+1}`}</div>
-                  <div style={{width:30,height:30,borderRadius:"50%",background:C.mintLt,display:"flex",alignItems:"center",justifyContent:"center",fontSize:17}}>{m.avatar}</div>
+                  <div style={{width:30,height:30,borderRadius:"50%",background:C.mintLt,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>{m.avatar}</div>
                   <div style={{flex:1}}>
                     <div style={{fontWeight:700,fontSize:13,color:C.text}}>{m.name}</div>
                     <div style={{fontSize:11,color:C.textMed}}>{m.tasks} tareas · 🔥{m.streak}d</div>
@@ -4533,23 +4748,23 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
         {/* ── TEACHER: ASSIGN ── */}
         {role===ROLES.TEACHER&&tab==="assign"&&(
           <div style={{padding:"16px 14px 0"}}>
-            <div style={{fontWeight:800,fontSize:20,color:C.text,marginBottom:14}}>Asignar misiones</div>
+            <div style={{fontWeight:800,fontSize:20,color:C.text,marginBottom:16}}>Asignar misiones</div>
             {assignedM.length>0&&(
-              <div style={{background:C.mintLt,border:`1.5px solid ${C.mint}`,borderRadius:14,padding:"12px 14px",marginBottom:14}}>
-                <div style={{fontWeight:700,color:C.mintDk,fontSize:13,marginBottom:5}}>✅ Asignadas al 5to B ({assignedM.length})</div>
+              <div style={{background:C.mintLt,border:`1.5px solid ${C.mint}`,borderRadius:14,padding:"12px 14px",marginBottom:16}}>
+                <div style={{fontWeight:700,color:C.mintDk,fontSize:13,marginBottom:8}}>✅ Asignadas al 5to B ({assignedM.length})</div>
                 {assignedM.map(id=>{const m=MISSIONS_BANK.find(x=>x.id===id);return m&&<div key={id} style={{fontSize:12,color:C.textMed}}>{m.emoji} {m.title}</div>;})}
               </div>
             )}
             {MISSIONS_BANK.map(m=>{
               const on=assignedM.includes(m.id);
               return (
-                <div key={m.id} style={{background:C.card,borderRadius:16,padding:"13px 14px",marginBottom:10,boxShadow:C.shadow,border:`1.5px solid ${on?C.mint:C.border}`}}>
+                <div key={m.id} style={{background:C.card,borderRadius:16,padding:"13px 14px",marginBottom:8,boxShadow:C.shadow,border:`1.5px solid ${on?C.mint:C.border}`}}>
                   <div style={{display:"flex",alignItems:"center",gap:11}}>
                     <div style={{width:42,height:42,borderRadius:12,background:C.mintLt,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{m.emoji}</div>
                     <div style={{flex:1}}>
                       <div style={{fontWeight:800,fontSize:14,color:C.text}}>{m.title}</div>
-                      <div style={{fontSize:11,color:C.textMed,marginBottom:5}}>{m.desc}</div>
-                      <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+                      <div style={{fontSize:11,color:C.textMed,marginBottom:8}}>{m.desc}</div>
+                      <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                         <Chip label={FL[m.freq]} bg={FC[m.freq]+"18"} color={FC[m.freq]}/>
                         <Chip label={`⭐${m.xp}`} bg={C.goldLt} color={C.goldDk}/>
                       </div>
@@ -4568,12 +4783,12 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
         {/* ── TEACHER: RANKING ── */}
         {role===ROLES.TEACHER&&tab==="ranking"&&(
           <div style={{padding:"16px 14px 0"}}>
-            <div style={{fontWeight:800,fontSize:20,color:C.text,marginBottom:14}}>Ranking interescolar</div>
-            <div style={{background:C.mintLt,borderRadius:14,padding:"10px 14px",marginBottom:14,fontSize:12,color:C.mintDk,fontWeight:600}}>
+            <div style={{fontWeight:800,fontSize:20,color:C.text,marginBottom:16}}>Ranking interescolar</div>
+            <div style={{background:C.mintLt,borderRadius:14,padding:"8px 16px",marginBottom:16,fontSize:12,color:C.mintDk,fontWeight:600}}>
               🤖 Solo cuentan tareas verificadas · Sistema anti-trampa activo
             </div>
-            {SCHOOL_RANK.map((s,i)=>(
-              <div key={i} style={{background:C.card,borderRadius:16,padding:"13px 14px",marginBottom:10,display:"flex",alignItems:"center",gap:11,boxShadow:i===0?C.shadowMd:C.shadow,border:`1.5px solid ${i===0?C.gold+"60":C.border}`}}>
+            {(realRanking.length>0?realRanking.map(s=>({school:s.name,pts:s.xp,icon:s.avatar_key||"a_cub",level:s.level,streak:s.streak,username:s.username})):SCHOOL_RANK).map((s,i)=>(
+              <div key={i} style={{background:C.card,borderRadius:16,padding:"13px 14px",marginBottom:8,display:"flex",alignItems:"center",gap:11,boxShadow:i===0?C.shadowMd:C.shadow,border:`1.5px solid ${i===0?C.gold+"60":C.border}`}}>
                 <div style={{fontWeight:900,fontSize:20,color:["#F5C518","#B0B0B0","#CD7F32","#CBD5E0","#CBD5E0"][i],minWidth:24}}>{"🥇🥈🥉".split("")[i]||`#${i+1}`}</div>
                 <div style={{fontSize:24}}>{s.e}</div>
                 <div style={{flex:1}}>
@@ -4607,13 +4822,13 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
           </div>
 
           {/* Coming soon banner */}
-          <div style={{background:`linear-gradient(135deg,${C.purple},${C.sky})`,borderRadius:22,padding:28,textAlign:"center",marginBottom:18,position:"relative",overflow:"hidden",boxShadow:`0 8px 32px ${C.purple}40`}}>
+          <div style={{background:`linear-gradient(135deg,${C.purple},${C.sky})`,borderRadius:20,padding:28,textAlign:"center",marginBottom:16,position:"relative",overflow:"hidden",boxShadow:`0 8px 32px ${C.purple}40`}}>
             <div style={{position:"absolute",inset:0,background:"rgba(255,255,255,0.05)",backdropFilter:"blur(1px)"}}/>
             <div style={{position:"relative"}}>
-              <div style={{fontSize:56,marginBottom:10}} className="float">🏗️</div>
-              <div style={{fontWeight:900,fontSize:22,color:"white",marginBottom:6}}>¡Pronto estará habilitada esta zona!</div>
+              <div style={{fontSize:56,marginBottom:8}} className="float">🏗️</div>
+              <div style={{fontWeight:900,fontSize:22,color:"white",marginBottom:8}}>¡Pronto estará habilitada esta zona!</div>
               <div style={{fontSize:14,color:"rgba(255,255,255,0.85)",lineHeight:1.6,marginBottom:16}}>
-                Estamos construyendo la tienda de cristales de KidQuest.<br/>
+                Estamos construyendo la tienda de cristales de FinPlay.<br/>
                 Muy pronto podrás comprar paquetes especiales para acelerar tu progreso.
               </div>
               <div style={{display:"inline-flex",alignItems:"center",gap:8,background:"rgba(255,255,255,0.2)",borderRadius:20,padding:"8px 18px"}}>
@@ -4631,11 +4846,11 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             {name:"Saco",        gems:1200, price:"$9.99",  icon:"🎒", color:C.purple, bonus:"+ 200 💎 gratis"},
             {name:"Legendario",  gems:2500, price:"$19.99", icon:"🏆", color:C.gold,   bonus:"+ 500 💎 gratis", best:true},
           ].map((p,i)=>(
-            <div key={i} style={{background:C.card,borderRadius:18,padding:16,marginBottom:10,
+            <div key={i} style={{background:C.card,borderRadius:16,padding:16,marginBottom:8,
               boxShadow:p.best?`0 4px 20px ${C.gold}40`:C.shadow,
               border:`2px solid ${p.best?C.gold:C.border}`,position:"relative",overflow:"hidden"}}>
               {p.best&&<div style={{position:"absolute",top:0,right:0,background:C.gold,color:"white",fontSize:10,fontWeight:800,padding:"4px 12px",borderRadius:"0 18px 0 12px"}}>⭐ MEJOR VALOR</div>}
-              <div style={{display:"flex",alignItems:"center",gap:14}}>
+              <div style={{display:"flex",alignItems:"center",gap:16}}>
                 <div style={{width:52,height:52,borderRadius:14,background:p.color+"20",border:`2px solid ${p.color}40`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,flexShrink:0}}>{p.icon}</div>
                 <div style={{flex:1}}>
                   <div style={{fontWeight:800,fontSize:15,color:C.text}}>{p.name}</div>
@@ -4644,13 +4859,13 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                 </div>
                 <div style={{textAlign:"right"}}>
                   <div style={{fontWeight:900,fontSize:18,color:C.text}}>{p.price}</div>
-                  <div style={{background:C.border,borderRadius:10,padding:"6px 14px",fontSize:12,color:C.textMed,fontWeight:700,marginTop:4,cursor:"not-allowed"}}>Pronto</div>
+                  <div style={{background:C.border,borderRadius:10,padding:"8px 16px",fontSize:12,color:C.textMed,fontWeight:700,marginTop:4,cursor:"not-allowed"}}>Pronto</div>
                 </div>
               </div>
             </div>
           ))}
           <div style={{background:C.goldLt,borderRadius:14,padding:"12px 16px",fontSize:12,color:C.goldDk,fontWeight:600,textAlign:"center"}}>
-            💡 Los cristales gratis se ganan completando misiones y subiendo de nivel. ¡Nunca necesitas comprar para disfrutar KidQuest!
+            💡 Los cristales gratis se ganan completando misiones y subiendo de nivel. ¡Nunca necesitas comprar para disfrutar FinPlay!
           </div>
         </div>
       )}
@@ -4660,13 +4875,13 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
         <div style={{padding:"16px 14px 100px"}}>
           {/* Header */}
           <div style={{background:`linear-gradient(135deg,${C.purple},${C.sky})`,borderRadius:20,padding:16,marginBottom:16,color:"white",position:"relative",overflow:"hidden"}}>
-            <div style={{position:"absolute",right:-10,top:-10,fontSize:60,opacity:0.1}}>⚙️</div>
+            <div style={{position:"absolute",right:-10,top:-10,fontSize:56,opacity:0.1}}>⚙️</div>
             <div style={{fontWeight:900,fontSize:20}}>Panel de Administración</div>
             <div style={{fontSize:12,opacity:0.85,marginTop:2}}>{user.isMaster?"👑 Maestro":"⚙️ Admin"} · {user.name} · @{user.username}</div>
           </div>
 
           {/* Admin sub-tabs */}
-          <div style={{display:"flex",gap:7,marginBottom:16,overflowX:"auto",paddingBottom:4}}>
+          <div style={{display:"flex",gap:8,marginBottom:16,overflowX:"auto",paddingBottom:4}}>
             {[
               {id:"users",   l:"Usuarios",  icon:"👥"},
               {id:"reports", l:"Reportes",  icon:"🚨"},
@@ -4693,7 +4908,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                   }
                 } catch(e){ notify("Error cargando datos","⚠️"); }
                 setAdminLoading(false);
-              }} style={{flexShrink:0,padding:"8px 14px",borderRadius:13,border:`2px solid ${adminTab===t.id?C.purple:C.border}`,background:adminTab===t.id?C.purpleLt:C.card,cursor:"pointer",fontWeight:700,fontSize:12,color:adminTab===t.id?C.purple:C.textMed,display:"flex",gap:5,alignItems:"center"}}>
+              }} style={{flexShrink:0,padding:"8px 14px",borderRadius:16,border:`2px solid ${adminTab===t.id?C.purple:C.border}`,background:adminTab===t.id?C.purpleLt:C.card,cursor:"pointer",fontWeight:700,fontSize:12,color:adminTab===t.id?C.purple:C.textMed,display:"flex",gap:8,alignItems:"center"}}>
                 <span>{t.icon}</span>{t.l}
               </button>
             ))}
@@ -4706,11 +4921,11 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             <div>
               <input value={adminSearch} onChange={e=>setAdminSearch(e.target.value)}
                 placeholder="Buscar por nombre o email…"
-                style={{width:"100%",padding:"11px 14px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:13,color:C.text,background:C.card,outline:"none",marginBottom:12}}/>
+                style={{width:"100%",padding:"8px 16px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:13,color:C.text,background:C.card,outline:"none",marginBottom:12}}/>
               {(adminUsers.filter(u=>!adminSearch||u.name?.toLowerCase().includes(adminSearch.toLowerCase())||u.username?.includes(adminSearch))).map(u=>(
                 <div key={u.id} style={{background:C.card,borderRadius:14,padding:"12px 14px",marginBottom:8,boxShadow:C.shadow,border:`1.5px solid ${u.account_status==="banned"?C.coral:u.admin_role!=="none"?C.purple:C.border}`}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                    <div style={{display:"flex",gap:9,alignItems:"center"}}>
+                    <div style={{display:"flex",gap:8,alignItems:"center"}}>
                       <div style={{width:40,height:40,borderRadius:"50%",background:u.is_minor?`linear-gradient(135deg,${C.purple}80,${C.purpleLt})`:`linear-gradient(135deg,${C.mint},${C.mintDk})`,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0}}>
                         <KQIcon id={u.avatar_key||"a_cub"} size={36}/>
                       </div>
@@ -4718,14 +4933,14 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                         <div style={{fontWeight:800,fontSize:13,color:C.text}}>{u.name||"Sin nombre"}</div>
                         <div style={{fontSize:10,color:C.textMed}}>@{u.username||"—"} · {u.age_years||"?"}a · Nv.{u.level||1}</div>
                         <div style={{display:"flex",gap:3,marginTop:3,flexWrap:"wrap"}}>
-                          <span style={{background:u.role==="student"?C.mintLt:u.role==="parent"?C.goldLt:C.skyLt,color:u.role==="student"?C.mintDk:u.role==="parent"?C.goldDk:C.sky,fontSize:9,fontWeight:800,borderRadius:6,padding:"2px 5px"}}>{u.role==="student"?"🎮 Niño":u.role==="parent"?"👨‍👩‍👦 Padre":"🏫 Profe"}</span>
-                          <span style={{background:u.is_minor?C.purpleLt:C.mintLt,color:u.is_minor?C.purple:C.mintDk,fontSize:9,fontWeight:700,borderRadius:6,padding:"2px 5px"}}>{u.is_minor?"Menor":"Adulto"}</span>
-                          {u.admin_role&&u.admin_role!=="none"&&<span style={{background:C.purpleLt,color:C.purple,fontSize:9,fontWeight:700,borderRadius:6,padding:"2px 5px"}}>⭐{u.admin_role}</span>}
-                          <span style={{background:u.account_status==="active"?C.mintLt:u.account_status==="banned"?C.coralLt:C.goldLt,color:u.account_status==="active"?C.mintDk:u.account_status==="banned"?C.coral:C.goldDk,fontSize:9,fontWeight:700,borderRadius:6,padding:"2px 5px"}}>{u.account_status==="active"?"✅ Activo":u.account_status==="suspended"?"⏸ Suspendido":"🚫 "+u.account_status}</span>
+                          <span style={{background:u.role==="student"?C.mintLt:u.role==="parent"?C.goldLt:C.skyLt,color:u.role==="student"?C.mintDk:u.role==="parent"?C.goldDk:C.sky,fontSize:10,fontWeight:800,borderRadius:8,padding:"2px 5px"}}>{u.role==="student"?"🎮 Niño":u.role==="parent"?"👨‍👩‍👦 Padre":"🏫 Profe"}</span>
+                          <span style={{background:u.is_minor?C.purpleLt:C.mintLt,color:u.is_minor?C.purple:C.mintDk,fontSize:10,fontWeight:700,borderRadius:8,padding:"2px 5px"}}>{u.is_minor?"Menor":"Adulto"}</span>
+                          {u.admin_role&&u.admin_role!=="none"&&<span style={{background:C.purpleLt,color:C.purple,fontSize:10,fontWeight:700,borderRadius:8,padding:"2px 5px"}}>⭐{u.admin_role}</span>}
+                          <span style={{background:u.account_status==="active"?C.mintLt:u.account_status==="banned"?C.coralLt:C.goldLt,color:u.account_status==="active"?C.mintDk:u.account_status==="banned"?C.coral:C.goldDk,fontSize:10,fontWeight:700,borderRadius:8,padding:"2px 5px"}}>{u.account_status==="active"?"✅ Activo":u.account_status==="suspended"?"⏸ Suspendido":"🚫 "+u.account_status}</span>
                         </div>
                       </div>
                     </div>
-                    <div style={{display:"flex",gap:5,flexWrap:"wrap",justifyContent:"flex-end"}}>
+                    <div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"flex-end"}}>
                       {user.isMaster&&(
                         <button onClick={async()=>{
                           setSelectedUser(u);
@@ -4746,10 +4961,10 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                             });
                           } catch(e){ console.warn(e); }
                           setLoadingLinks(false);
-                        }} style={{padding:"5px 9px",borderRadius:9,border:`1.5px solid ${C.purple}`,background:C.purpleLt,color:C.purple,fontSize:10,fontWeight:700,cursor:"pointer"}}>👤</button>
+                        }} style={{padding:"4px 8px",borderRadius:9,border:`1.5px solid ${C.purple}`,background:C.purpleLt,color:C.purple,fontSize:10,fontWeight:700,cursor:"pointer"}}>👤</button>
                       )}
                       <button onClick={()=>{setGiftUser(u);setAdminTab("gifts")}}
-                        style={{padding:"5px 9px",borderRadius:9,border:`1.5px solid ${C.gold}`,background:C.goldLt,color:C.goldDk,fontSize:10,fontWeight:700,cursor:"pointer"}}>🎁</button>
+                        style={{padding:"4px 8px",borderRadius:9,border:`1.5px solid ${C.gold}`,background:C.goldLt,color:C.goldDk,fontSize:10,fontWeight:700,cursor:"pointer"}}>🎁</button>
                       {user.isMaster&&u.id!==userId&&(
                         <>
                           <button onClick={async()=>{
@@ -4758,14 +4973,14 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                             await supabase.from("profiles").update({account_status:newStatus}).eq("id",u.id);
                             setAdminUsers(p=>p.map(x=>x.id===u.id?{...x,account_status:newStatus}:x));
                             notify(`Usuario ${newStatus==="active"?"activado":"suspendido"}`,"⚙️");
-                          }} style={{padding:"5px 9px",borderRadius:9,border:`1.5px solid ${C.coral}`,background:C.coralLt,color:C.coral,fontSize:10,fontWeight:700,cursor:"pointer"}}>
+                          }} style={{padding:"4px 8px",borderRadius:9,border:`1.5px solid ${C.coral}`,background:C.coralLt,color:C.coral,fontSize:10,fontWeight:700,cursor:"pointer"}}>
                             {u.account_status==="active"?"🚫 Susp.":"✅ Activ."}
                           </button>
                         </>
                       )}
                     </div>
                   </div>
-                  <div style={{display:"flex",gap:10,marginTop:8,fontSize:11,color:C.textMed}}>
+                  <div style={{display:"flex",gap:8,marginTop:8,fontSize:11,color:C.textMed}}>
                     <span>💎 {u.gems||0}</span>
                     <span>⭐ {u.xp||0} XP</span>
                     <span>🔥 {u.streak||0}d</span>
@@ -4781,15 +4996,15 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             <div>
               {adminReports.length===0&&<div style={{textAlign:"center",padding:24,color:C.textMed}}>No hay reportes pendientes ✓</div>}
               {adminReports.map(r=>(
-                <div key={r.id} style={{background:C.card,borderRadius:14,padding:14,marginBottom:10,boxShadow:C.shadow,border:`2px solid ${r.status==="pending"?C.coral:C.border}`}}>
+                <div key={r.id} style={{background:C.card,borderRadius:14,padding:14,marginBottom:8,boxShadow:C.shadow,border:`2px solid ${r.status==="pending"?C.coral:C.border}`}}>
                   <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
                     <div style={{fontWeight:800,fontSize:13,color:C.text}}>{r.report_type?.replace(/_/g," ")}</div>
                     <span style={{background:r.status==="pending"?C.coralLt:C.mintLt,color:r.status==="pending"?C.coral:C.mintDk,fontSize:10,fontWeight:700,borderRadius:8,padding:"2px 8px"}}>{r.status}</span>
                   </div>
-                  <div style={{fontSize:12,color:C.textMed,marginBottom:10,lineHeight:1.5}}>{r.description}</div>
-                  <div style={{fontSize:10,color:C.textLt,marginBottom:10}}>📅 {new Date(r.created_at).toLocaleDateString("es")}</div>
+                  <div style={{fontSize:12,color:C.textMed,marginBottom:8,lineHeight:1.5}}>{r.description}</div>
+                  <div style={{fontSize:10,color:C.textLt,marginBottom:8}}>📅 {new Date(r.created_at).toLocaleDateString("es")}</div>
                   {r.status==="pending"&&(
-                    <div style={{display:"flex",gap:7}}>
+                    <div style={{display:"flex",gap:8}}>
                       <button onClick={async()=>{
                         const {supabase}=await import("./supabase.js");
                         await supabase.from("reports").update({status:"resolved",admin_notes:"Revisado y resuelto",resolved_by:userId,resolved_at:new Date().toISOString()}).eq("id",r.id);
@@ -4815,10 +5030,10 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
               <div style={{fontWeight:800,fontSize:15,color:C.text,marginBottom:12}}>🎁 Regalar a usuario</div>
               {!giftUser?(
                 <div>
-                  <div style={{fontSize:13,color:C.textMed,marginBottom:10}}>Selecciona un usuario para regalar:</div>
+                  <div style={{fontSize:13,color:C.textMed,marginBottom:8}}>Selecciona un usuario para regalar:</div>
                   {adminUsers.map(u=>(
                     <button key={u.id} onClick={()=>setGiftUser(u)}
-                      style={{width:"100%",padding:"11px 14px",marginBottom:7,borderRadius:13,border:`1.5px solid ${C.border}`,background:C.card,display:"flex",gap:10,alignItems:"center",cursor:"pointer",textAlign:"left"}}>
+                      style={{width:"100%",padding:"8px 16px",marginBottom:8,borderRadius:16,border:`1.5px solid ${C.border}`,background:C.card,display:"flex",gap:8,alignItems:"center",cursor:"pointer",textAlign:"left"}}>
                       <div style={{width:32,height:32,borderRadius:"50%",background:C.mintLt,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0}}>
                         <KQIcon id={u.avatar_key||"a_cub"} size={28}/>
                       </div>
@@ -4831,7 +5046,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                 </div>
               ):(
                 <div>
-                  <div style={{background:C.purpleLt,borderRadius:13,padding:12,marginBottom:14,display:"flex",gap:10,alignItems:"center"}}>
+                  <div style={{background:C.purpleLt,borderRadius:16,padding:12,marginBottom:16,display:"flex",gap:8,alignItems:"center"}}>
                     <div style={{width:36,height:36,borderRadius:"50%",background:C.mintLt,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0}}>
                       <KQIcon id={giftUser.avatar_key||"a_cub"} size={32}/>
                     </div>
@@ -4842,25 +5057,25 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                     <button onClick={()=>setGiftUser(null)} style={{background:"none",border:"none",color:C.textMed,cursor:"pointer",fontSize:18}}>✕</button>
                   </div>
                   <div style={{marginBottom:11}}>
-                    <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:6}}>Tipo de regalo</div>
-                    <div style={{display:"flex",gap:7}}>
+                    <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:8}}>Tipo de regalo</div>
+                    <div style={{display:"flex",gap:8}}>
                       {[{id:"gems",l:"💎 Cristales"},{id:"coins",l:"💰 Monedas"},{id:"xp",l:"⭐ XP"}].map(t=>(
                         <button key={t.id} onClick={()=>setGiftType(t.id)}
-                          style={{flex:1,padding:"9px 6px",borderRadius:11,border:`2px solid ${giftType===t.id?C.purple:C.border}`,background:giftType===t.id?C.purpleLt:C.card,cursor:"pointer",fontWeight:700,fontSize:12,color:giftType===t.id?C.purple:C.textMed}}>
+                          style={{flex:1,padding:"9px 6px",borderRadius:12,border:`2px solid ${giftType===t.id?C.purple:C.border}`,background:giftType===t.id?C.purpleLt:C.card,cursor:"pointer",fontWeight:700,fontSize:12,color:giftType===t.id?C.purple:C.textMed}}>
                           {t.l}
                         </button>
                       ))}
                     </div>
                   </div>
                   <div style={{marginBottom:11}}>
-                    <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:6}}>Cantidad</div>
+                    <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:8}}>Cantidad</div>
                     <input type="number" value={giftAmount} onChange={e=>setGiftAmount(Number(e.target.value))} min="1" max="99999"
-                      style={{width:"100%",padding:"11px 14px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:16,fontWeight:700,color:C.text,background:C.card,outline:"none"}}/>
+                      style={{width:"100%",padding:"8px 16px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:16,fontWeight:700,color:C.text,background:C.card,outline:"none"}}/>
                   </div>
                   <div style={{marginBottom:16}}>
-                    <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:6}}>Mensaje (opcional)</div>
+                    <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:8}}>Mensaje (opcional)</div>
                     <input value={giftMsg} onChange={e=>setGiftMsg(e.target.value)} placeholder="¡Sigue así campeón!"
-                      style={{width:"100%",padding:"11px 14px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:13,color:C.text,background:C.card,outline:"none"}}/>
+                      style={{width:"100%",padding:"8px 16px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:13,color:C.text,background:C.card,outline:"none"}}/>
                   </div>
                   <BtnMain onClick={async()=>{
                     try {
@@ -4888,7 +5103,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             <div>
               <div style={{fontWeight:800,fontSize:15,color:C.text,marginBottom:12}}>🏆 Ranking global</div>
               {adminUsers.slice(0,20).map((u,i)=>(
-                <div key={u.id} style={{background:i<3?`linear-gradient(135deg,${[C.gold,C.textLt,"#CD7F32"][i]}18,${C.card})`:C.card,borderRadius:13,padding:"11px 14px",marginBottom:7,boxShadow:C.shadow,display:"flex",gap:10,alignItems:"center",border:`1.5px solid ${i<3?[C.gold,C.textLt,"#CD7F32"][i]:C.border}30`}}>
+                <div key={u.id} style={{background:i<3?`linear-gradient(135deg,${[C.gold,C.textLt,"#CD7F32"][i]}18,${C.card})`:C.card,borderRadius:16,padding:"8px 16px",marginBottom:8,boxShadow:C.shadow,display:"flex",gap:8,alignItems:"center",border:`1.5px solid ${i<3?[C.gold,C.textLt,"#CD7F32"][i]:C.border}30`}}>
                   <div style={{width:28,height:28,borderRadius:"50%",background:i<3?[C.gold,C.textLt,"#CD7F32"][i]:C.border,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:13,color:"white",flexShrink:0}}>
                     {i<3?["🥇","🥈","🥉"][i]:i+1}
                   </div>
@@ -4912,11 +5127,11 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
           {adminTab==="admins"&&user.isMaster&&!adminLoading&&(
             <div>
               <div style={{fontWeight:800,fontSize:15,color:C.text,marginBottom:12}}>⭐ Gestión de administradores</div>
-              <div style={{background:C.goldLt,border:`1.5px solid ${C.gold}30`,borderRadius:12,padding:"10px 14px",marginBottom:14,fontSize:12,color:C.goldDk}}>
+              <div style={{background:C.goldLt,border:`1.5px solid ${C.gold}30`,borderRadius:12,padding:"8px 16px",marginBottom:16,fontSize:12,color:C.goldDk}}>
                 💡 Solo el usuario Maestro puede asignar o revocar roles de administración
               </div>
               {adminUsers.map(u=>(
-                <div key={u.id} style={{background:C.card,borderRadius:13,padding:"12px 14px",marginBottom:7,boxShadow:C.shadow,border:`1.5px solid ${u.admin_role!=="none"?C.purple:C.border}`}}>
+                <div key={u.id} style={{background:C.card,borderRadius:16,padding:"12px 14px",marginBottom:8,boxShadow:C.shadow,border:`1.5px solid ${u.admin_role!=="none"?C.purple:C.border}`}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                     <div>
                       <div style={{fontWeight:800,fontSize:13,color:C.text}}>{u.name}</div>
@@ -4929,7 +5144,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                         await supabase.from("profiles").update({admin_role:newRole}).eq("id",u.id);
                         setAdminUsers(p=>p.map(x=>x.id===u.id?{...x,admin_role:newRole}:x));
                         notify(`Rol de ${u.name} actualizado a ${newRole}`,"⭐");
-                      }} style={{padding:"7px 10px",borderRadius:10,border:`1.5px solid ${C.purple}`,background:C.purpleLt,color:C.purple,fontWeight:700,fontSize:12,cursor:"pointer",outline:"none"}}>
+                      }} style={{padding:"8px 8px",borderRadius:10,border:`1.5px solid ${C.purple}`,background:C.purpleLt,color:C.purple,fontWeight:700,fontSize:12,cursor:"pointer",outline:"none"}}>
                         <option value="none">Sin rol</option>
                         <option value="moderator">Moderador</option>
                         <option value="admin">Admin</option>
@@ -4951,17 +5166,17 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
         <div style={{padding:"16px 14px 100px"}}>
 
           {/* ── Profile Hero ── */}
-          <div style={{background:`linear-gradient(135deg,${role===ROLES.PARENT?C.gold:C.sky},${role===ROLES.PARENT?C.goldDk:"#1565C0"})`,borderRadius:22,padding:22,marginBottom:16,textAlign:"center",color:"white",position:"relative",overflow:"hidden",boxShadow:`0 6px 24px ${role===ROLES.PARENT?C.gold:C.sky}50`}}>
-            <div style={{position:"absolute",right:-10,top:-10,fontSize:80,opacity:0.07}}>{role===ROLES.PARENT?"👨‍👩‍👦":"🏫"}</div>
+          <div style={{background:`linear-gradient(135deg,${role===ROLES.PARENT?C.gold:C.sky},${role===ROLES.PARENT?C.goldDk:"#1565C0"})`,borderRadius:20,padding:22,marginBottom:16,textAlign:"center",color:"white",position:"relative",overflow:"hidden",boxShadow:`0 6px 24px ${role===ROLES.PARENT?C.gold:C.sky}50`}}>
+            <div style={{position:"absolute",right:-10,top:-10,fontSize:100,opacity:0.07}}>{role===ROLES.PARENT?"👨‍👩‍👦":"🏫"}</div>
             {/* Clickable avatar */}
             <div onClick={()=>setShowAvatarEditor(true)} style={{cursor:"pointer",display:"inline-block",marginBottom:12,position:"relative"}}>
-              <div style={{width:88,height:88,borderRadius:"50%",background:"rgba(255,255,255,0.25)",border:"3px solid rgba(255,255,255,0.6)",overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 16px rgba(0,0,0,0.2)"}}>
+              <div style={{width:88,height:88,borderRadius:"50%",background:"rgba(255,255,255,0.25)",border:"3px solid rgba(255,255,255,0.6)",overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:C.shadowMd}}>
                 {avatarPhoto
                   ? <img src={avatarPhoto} style={{width:"100%",height:"100%",objectFit:"cover"}} alt="avatar"/>
                   : <KQIcon id={user.avatar||"a_buddy"} size={80}/>
                 }
               </div>
-              <div style={{position:"absolute",bottom:0,right:0,width:26,height:26,borderRadius:"50%",background:"rgba(255,255,255,0.9)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,boxShadow:"0 2px 8px rgba(0,0,0,0.2)"}}>✏️</div>
+              <div style={{position:"absolute",bottom:0,right:0,width:26,height:26,borderRadius:"50%",background:"rgba(255,255,255,0.9)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,boxShadow:C.shadow}}>✏️</div>
             </div>
             <div style={{display:"flex",alignItems:"center",gap:8,justifyContent:"center",marginBottom:4}}>
               <div style={{fontWeight:900,fontSize:22}}>{user.name||"Sin nombre"}</div>
@@ -4992,18 +5207,18 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
 
           {/* ── Ruby inventory (parent) ── */}
           {role===ROLES.PARENT&&rubyInventory.length>0&&(
-            <div style={{background:C.card,borderRadius:18,padding:16,marginBottom:14,boxShadow:C.shadow}}>
+            <div style={{background:C.card,borderRadius:16,padding:16,marginBottom:16,boxShadow:C.shadow}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
                 <div style={{fontWeight:800,fontSize:14,color:C.text}}>💎🔴 Colección de Rubíes ({rubyInventory.length})</div>
                 <button onClick={()=>setTab("rubies")} style={{background:C.rubyLt,border:`1.5px solid ${C.ruby}30`,borderRadius:9,padding:"4px 10px",fontSize:11,fontWeight:700,color:C.ruby,cursor:"pointer"}}>Ver tienda →</button>
               </div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:7}}>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
                 {rubyInventory.slice(0,8).map((item,i)=>{
                   const r=RUBY_RARITIES[item.rarity];
                   return(
                     <div key={i} style={{background:r?.bg||C.rubyLt,borderRadius:12,padding:8,textAlign:"center",border:`1.5px solid ${r?.color||C.ruby}30`}}>
                       <KQIcon id={item.svgKey||"a_cub"} size={36}/>
-                      <div style={{fontSize:9,fontWeight:700,color:r?.color||C.ruby,marginTop:3,lineHeight:1.2}}>{item.name}</div>
+                      <div style={{fontSize:10,fontWeight:700,color:r?.color||C.ruby,marginTop:3,lineHeight:1.2}}>{item.name}</div>
                     </div>
                   );
                 })}
@@ -5013,15 +5228,15 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
 
           {/* ── Regular inventory ── */}
           {inventory.length>0&&(
-            <div style={{background:C.card,borderRadius:18,padding:16,marginBottom:14,boxShadow:C.shadow}}>
+            <div style={{background:C.card,borderRadius:16,padding:16,marginBottom:16,boxShadow:C.shadow}}>
               <div style={{fontWeight:800,fontSize:14,color:C.text,marginBottom:12}}>🎒 Inventario ({inventory.length})</div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:7}}>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
                 {inventory.slice(0,8).map((item,i)=>{
                   const r=RARITIES[item.rarity];
                   return(
                     <div key={i} style={{background:r?.bg||C.mintLt,borderRadius:12,padding:8,textAlign:"center",border:`1.5px solid ${r?.c||C.mint}30`}}>
                       <KQIcon id={item.svgKey||"a_cub"} size={36}/>
-                      <div style={{fontSize:9,fontWeight:700,color:r?.c||C.mint,marginTop:3,lineHeight:1.2}}>{item.name}</div>
+                      <div style={{fontSize:10,fontWeight:700,color:r?.c||C.mint,marginTop:3,lineHeight:1.2}}>{item.name}</div>
                     </div>
                   );
                 })}
@@ -5030,7 +5245,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
           )}
 
           {/* ── Quick actions ── */}
-          <div style={{background:C.card,borderRadius:18,overflow:"hidden",boxShadow:C.shadow,marginBottom:12}}>
+          <div style={{background:C.card,borderRadius:16,overflow:"hidden",boxShadow:C.shadow,marginBottom:12}}>
             {[
               {icon:"✏️", label:"Editar nombre y usuario",         action:()=>{setEditDisplayName(user.name||"");setEditUsername(user.username||"");setShowProfileEdit(true);}},
               {icon:"🎨", label:"Cambiar avatar / foto",           action:()=>setShowAvatarEditor(true)},
@@ -5043,7 +5258,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
               ]),
               {icon:dark?"☀️":"🌙", label:dark?"Modo claro":"Modo oscuro", action:()=>setDark(d=>!d)},
             ].map((item,i,arr)=>(
-              <button key={i} onClick={item.action} style={{width:"100%",padding:"14px 18px",border:"none",borderBottom:i<arr.length-1?`1px solid ${C.border}`:"none",background:"none",display:"flex",alignItems:"center",gap:14,cursor:"pointer",textAlign:"left",fontFamily:"'Nunito',sans-serif"}}>
+              <button key={i} onClick={item.action} style={{width:"100%",padding:"16px 16px",border:"none",borderBottom:i<arr.length-1?`1px solid ${C.border}`:"none",background:"none",display:"flex",alignItems:"center",gap:16,cursor:"pointer",textAlign:"left",fontFamily:"'Nunito',sans-serif"}}>
                 <span style={{fontSize:20,flexShrink:0}}>{item.icon}</span>
                 <span style={{fontSize:14,fontWeight:600,color:C.text,flex:1}}>{item.label}</span>
                 <span style={{color:C.textLt}}>›</span>
@@ -5082,11 +5297,11 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
       {role===ROLES.PARENT&&tab==="rubies"&&(
         <div style={{padding:"16px 14px 100px"}}>
           {/* Header */}
-          <div style={{background:"linear-gradient(135deg,#E53935,#B71C1C)",borderRadius:22,padding:18,marginBottom:16,color:"white",position:"relative",overflow:"hidden",boxShadow:"0 6px 24px #E5393550"}}>
-            <div style={{position:"absolute",right:-10,top:-10,fontSize:80,opacity:0.08}}>💎</div>
+          <div style={{background:"linear-gradient(135deg,#E53935,#B71C1C)",borderRadius:20,padding:18,marginBottom:16,color:"white",position:"relative",overflow:"hidden",boxShadow:"0 6px 24px #E5393550"}}>
+            <div style={{position:"absolute",right:-10,top:-10,fontSize:100,opacity:0.08}}>💎</div>
             <div style={{fontWeight:900,fontSize:20,marginBottom:4}}>Tienda de Rubíes 💎🔴</div>
             <div style={{fontSize:13,opacity:0.9,marginBottom:12}}>Items exclusivos para tutores — gana rubíes aprobando tareas de tus hijos</div>
-            <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
               <div style={{background:"rgba(255,255,255,0.2)",borderRadius:14,padding:"8px 16px",display:"flex",alignItems:"center",gap:8}}>
                 <svg width="20" height="20" viewBox="0 0 18 18" fill="none"><polygon points="9,1 15,6 13,17 5,17 3,6" fill="#FF8A80"/><polygon points="9,3 14,7 12,15 6,15 4,7" fill="white" opacity="0.4"/></svg>
                 <span style={{fontWeight:900,fontSize:22}}>{user.rubies||0}</span>
@@ -5097,7 +5312,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
           </div>
 
           {/* How to earn */}
-          <div style={{background:"#FFEBEE",border:"1.5px solid #E5393530",borderRadius:14,padding:"10px 14px",marginBottom:16,fontSize:12,color:"#B71C1C"}}>
+          <div style={{background:"#FFEBEE",border:"1.5px solid #E5393530",borderRadius:14,padding:"8px 16px",marginBottom:16,fontSize:12,color:"#B71C1C"}}>
             🔴 Los rubíes solo se ganan cuando <b>apruebas tareas de tus hijos</b>. No se compran. Los profesores no tienen acceso a esta tienda.
           </div>
 
@@ -5106,9 +5321,9 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
           {RUBY_CHESTS.map(ch=>(
             <div key={ch.id} style={{background:C.card,borderRadius:20,marginBottom:12,boxShadow:`0 4px 20px ${ch.glow}`,border:`2px solid ${ch.color}30`,overflow:"hidden"}}>
               <div style={{background:ch.gradient,padding:"16px 18px 12px",color:"white",position:"relative",overflow:"hidden"}}>
-                <div style={{position:"absolute",right:-8,top:-8,opacity:0.1,fontSize:70}}>💎</div>
-                <div style={{display:"flex",alignItems:"center",gap:14}}>
-                  <div style={{fontSize:52,filter:`drop-shadow(0 4px 12px ${ch.glow})`}} className={ch.id==="rb_legend"?"float":""}>
+                <div style={{position:"absolute",right:-8,top:-8,opacity:0.1,fontSize:64}}>💎</div>
+                <div style={{display:"flex",alignItems:"center",gap:16}}>
+                  <div style={{fontSize:48,filter:`drop-shadow(0 4px 12px ${ch.glow})`}} className={ch.id==="rb_legend"?"float":""}>
                     <svg width="52" height="52" viewBox="0 0 56 56" fill="none">
                       <defs><linearGradient id={`rcg_${ch.id}`} x1="0" y1="0" x2="0" y2="1"><stop stopColor="rgba(255,255,255,0.8)"/><stop offset="1" stopColor="rgba(255,255,255,0.2)"/></linearGradient></defs>
                       <rect x="6" y="26" width="44" height="24" rx="4" fill="rgba(0,0,0,0.3)"/>
@@ -5120,13 +5335,13 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                     </svg>
                   </div>
                   <div>
-                    <div style={{fontWeight:900,fontSize:17}}>{ch.name}</div>
+                    <div style={{fontWeight:900,fontSize:18}}>{ch.name}</div>
                     <div style={{fontSize:12,opacity:0.85,marginTop:2}}>{ch.desc}</div>
                   </div>
                 </div>
               </div>
               <div style={{padding:"12px 18px"}}>
-                <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}}>
+                <div style={{display:"flex",gap:8,marginBottom:12,flexWrap:"wrap"}}>
                   {Object.entries(ch.rates).filter(([,v])=>v>0).map(([k,v])=>(
                     <span key={k} style={{background:RUBY_RARITIES[k]?.bg,color:RUBY_RARITIES[k]?.color,fontSize:10,fontWeight:700,borderRadius:8,padding:"2px 8px"}}>
                       {RUBY_RARITIES[k]?.label} {v}%
@@ -5147,7 +5362,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
 
           {/* Ruby inventory */}
           {rubyInventory.length>0&&(
-            <div style={{background:C.card,borderRadius:18,padding:16,marginTop:8,boxShadow:C.shadow}}>
+            <div style={{background:C.card,borderRadius:16,padding:16,marginTop:8,boxShadow:C.shadow}}>
               <div style={{fontWeight:800,fontSize:15,color:C.text,marginBottom:12}}>💎 Mi colección de rubíes ({rubyInventory.length})</div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
                 {rubyInventory.map((item,i)=>{
@@ -5156,7 +5371,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                     <div key={i} style={{background:r?.bg||C.mintLt,borderRadius:14,padding:10,textAlign:"center",border:`2px solid ${r?.color||C.mint}30`,position:"relative"}}>
                       <KQIcon id={item.svgKey||"a_cub"} size={44}/>
                       <div style={{fontSize:10,fontWeight:700,color:r?.color||C.mint,marginTop:4}}>{item.name}</div>
-                      <div style={{fontSize:9,color:r?.color,fontWeight:600}}>{r?.label}</div>
+                      <div style={{fontSize:10,color:r?.color,fontWeight:600}}>{r?.label}</div>
                     </div>
                   );
                 })}
@@ -5184,7 +5399,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                     <circle cx="28" cy="26.5" r="1.5" fill="#FF8A80"/>
                   </svg>
                 </div>
-                <div style={{fontWeight:900,fontSize:20,color:C.text,marginBottom:6}}>{openingRuby.name}</div>
+                <div style={{fontWeight:900,fontSize:20,color:C.text,marginBottom:8}}>{openingRuby.name}</div>
                 <div style={{fontSize:13,color:C.textMed,marginBottom:20}}>{openingRuby.desc}</div>
                 <BtnMain onClick={()=>{
                   const newRubies=(user.rubies||0)-openingRuby.rubies;
@@ -5228,9 +5443,9 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
               const r=RUBY_RARITIES[rubyWin.rarity];
               return(
                 <div>
-                  <div style={{fontWeight:900,fontSize:13,color:r?.color,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>{r?.star} {r?.label}</div>
+                  <div style={{fontWeight:900,fontSize:13,color:r?.color,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>{r?.star} {r?.label}</div>
                   <div style={{marginBottom:12,display:"flex",justifyContent:"center"}} className="pop-in">
-                    <div style={{width:90,height:90,borderRadius:22,background:r?.bg,border:`3px solid ${r?.color}`,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:`0 0 28px ${r?.glow}`}}>
+                    <div style={{width:90,height:90,borderRadius:20,background:r?.bg,border:`3px solid ${r?.color}`,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:`0 0 28px ${r?.glow}`}}>
                       <KQIcon id={rubyWin.svgKey||"a_cub"} size={72}/>
                     </div>
                   </div>
@@ -5253,12 +5468,12 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
           <div className="modal pop-in" style={{maxHeight:"92vh",overflowY:"auto"}}>
             {/* Header */}
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-              <div style={{fontWeight:900,fontSize:17,color:C.text}}>👤 Perfil completo</div>
-              <button onClick={()=>setSelectedUser(null)} style={{background:C.border,border:"none",borderRadius:9,padding:"5px 10px",cursor:"pointer",color:C.textMed}}>✕</button>
+              <div style={{fontWeight:900,fontSize:18,color:C.text}}>👤 Perfil completo</div>
+              <button onClick={()=>setSelectedUser(null)} style={{background:C.border,border:"none",borderRadius:9,padding:"4px 8px",cursor:"pointer",color:C.textMed}}>✕</button>
             </div>
 
             {/* Avatar + name */}
-            <div style={{display:"flex",gap:14,alignItems:"center",marginBottom:16,padding:"12px 14px",background:C.bg,borderRadius:14}}>
+            <div style={{display:"flex",gap:16,alignItems:"center",marginBottom:16,padding:"12px 14px",background:C.bg,borderRadius:14}}>
               <div style={{width:56,height:56,borderRadius:"50%",background:`linear-gradient(135deg,${C.mint},${C.mintDk})`,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0}}>
                 <KQIcon id={selectedUser.avatar_key||"a_cub"} size={50}/>
               </div>
@@ -5270,7 +5485,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             </div>
 
             {/* Stats grid */}
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:14}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
               {[
                 {l:"Rol",       v:selectedUser.role==="student"?"🎮 Niño":selectedUser.role==="parent"?"👨‍👩‍👦 Padre":"🏫 Profe"},
                 {l:"Edad",      v:`${selectedUser.age_years||"?"}a ${selectedUser.is_minor?"(menor)":"(adulto)"}`},
@@ -5282,9 +5497,9 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
                 {l:"💰 Monedas", v:selectedUser.coins||0},
                 {l:"🔴 Rubíes",  v:selectedUser.rubies||0},
               ].map((s,i)=>(
-                <div key={i} style={{background:C.card,borderRadius:11,padding:"8px 10px",textAlign:"center",boxShadow:C.shadow}}>
+                <div key={i} style={{background:C.card,borderRadius:12,padding:"8px 10px",textAlign:"center",boxShadow:C.shadow}}>
                   <div style={{fontWeight:800,fontSize:12,color:C.text}}>{s.v}</div>
-                  <div style={{fontSize:9,color:C.textMed,marginTop:1}}>{s.l}</div>
+                  <div style={{fontSize:10,color:C.textMed,marginTop:1}}>{s.l}</div>
                 </div>
               ))}
             </div>
@@ -5292,15 +5507,15 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
             {/* Connections */}
             {loadingLinks
               ? <div style={{textAlign:"center",padding:16,color:C.textMed,fontSize:13}}>Cargando vínculos…</div>
-              : (<div style={{marginBottom:14}}>
-                  <div style={{fontWeight:800,fontSize:14,color:C.text,marginBottom:10}}>🔗 Vínculos</div>
+              : (<div style={{marginBottom:16}}>
+                  <div style={{fontWeight:800,fontSize:14,color:C.text,marginBottom:8}}>🔗 Vínculos</div>
 
                   {/* Parents */}
                   {userLinks.parents.length>0&&(
-                    <div style={{marginBottom:10}}>
-                      <div style={{fontSize:11,fontWeight:700,color:C.goldDk,marginBottom:6}}>👨‍👩‍👦 Padres/Tutores ({userLinks.parents.length})</div>
+                    <div style={{marginBottom:8}}>
+                      <div style={{fontSize:11,fontWeight:700,color:C.goldDk,marginBottom:8}}>👨‍👩‍👦 Padres/Tutores ({userLinks.parents.length})</div>
                       {userLinks.parents.map(p=>(
-                        <div key={p.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:C.goldLt,borderRadius:11,padding:"8px 12px",marginBottom:5}}>
+                        <div key={p.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:C.goldLt,borderRadius:12,padding:"8px 12px",marginBottom:8}}>
                           <div>
                             <div style={{fontWeight:700,fontSize:12,color:C.text}}>{p.name}</div>
                             <div style={{fontSize:10,color:C.textMed}}>@{p.username||"—"}</div>
@@ -5323,10 +5538,10 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
 
                   {/* Children */}
                   {userLinks.children.length>0&&(
-                    <div style={{marginBottom:10}}>
-                      <div style={{fontSize:11,fontWeight:700,color:C.mint,marginBottom:6}}>🎮 Hijos vinculados ({userLinks.children.length})</div>
+                    <div style={{marginBottom:8}}>
+                      <div style={{fontSize:11,fontWeight:700,color:C.mint,marginBottom:8}}>🎮 Hijos vinculados ({userLinks.children.length})</div>
                       {userLinks.children.map(c=>(
-                        <div key={c.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:C.mintLt,borderRadius:11,padding:"8px 12px",marginBottom:5}}>
+                        <div key={c.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:C.mintLt,borderRadius:12,padding:"8px 12px",marginBottom:8}}>
                           <div>
                             <div style={{fontWeight:700,fontSize:12,color:C.text}}>{c.name}</div>
                             <div style={{fontSize:10,color:C.textMed}}>@{c.username||"—"}</div>
@@ -5349,10 +5564,10 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
 
                   {/* Teachers */}
                   {userLinks.teachers.length>0&&(
-                    <div style={{marginBottom:10}}>
-                      <div style={{fontSize:11,fontWeight:700,color:C.sky,marginBottom:6}}>🏫 Profesores ({userLinks.teachers.length})</div>
+                    <div style={{marginBottom:8}}>
+                      <div style={{fontSize:11,fontWeight:700,color:C.sky,marginBottom:8}}>🏫 Profesores ({userLinks.teachers.length})</div>
                       {userLinks.teachers.map(t=>(
-                        <div key={t.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:C.skyLt,borderRadius:11,padding:"8px 12px",marginBottom:5}}>
+                        <div key={t.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:C.skyLt,borderRadius:12,padding:"8px 12px",marginBottom:8}}>
                           <div>
                             <div style={{fontWeight:700,fontSize:12,color:C.text}}>{t.name}</div>
                             <div style={{fontSize:10,color:C.textMed}}>@{t.username||"—"}</div>
@@ -5375,10 +5590,10 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
 
                   {/* Students (for teachers) */}
                   {userLinks.students.length>0&&(
-                    <div style={{marginBottom:10}}>
-                      <div style={{fontSize:11,fontWeight:700,color:C.purple,marginBottom:6}}>🎮 Alumnos ({userLinks.students.length})</div>
+                    <div style={{marginBottom:8}}>
+                      <div style={{fontSize:11,fontWeight:700,color:C.purple,marginBottom:8}}>🎮 Alumnos ({userLinks.students.length})</div>
                       {userLinks.students.map(s=>(
-                        <div key={s.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:C.purpleLt,borderRadius:11,padding:"8px 12px",marginBottom:5}}>
+                        <div key={s.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:C.purpleLt,borderRadius:12,padding:"8px 12px",marginBottom:8}}>
                           <div>
                             <div style={{fontWeight:700,fontSize:12,color:C.text}}>{s.name}</div>
                             <div style={{fontSize:10,color:C.textMed}}>@{s.username||"—"}</div>
@@ -5406,9 +5621,9 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
 
                   {/* Assign tutor manually */}
                   {user.isMaster&&selectedUser.role==="student"&&(
-                    <div style={{background:C.card,borderRadius:13,padding:12,marginTop:8,border:`1.5px solid ${C.border}`}}>
+                    <div style={{background:C.card,borderRadius:16,padding:12,marginTop:8,border:`1.5px solid ${C.border}`}}>
                       <div style={{fontWeight:700,fontSize:12,color:C.text,marginBottom:8}}>➕ Asignar tutor manualmente</div>
-                      <select id="admin_tutor_select" style={{width:"100%",padding:"9px 12px",borderRadius:10,border:`1.5px solid ${C.border}`,fontSize:12,color:C.text,background:C.card,outline:"none",marginBottom:8}}>
+                      <select id="admin_tutor_select" style={{width:"100%",padding:"8px 12px",borderRadius:10,border:`1.5px solid ${C.border}`,fontSize:12,color:C.text,background:C.card,outline:"none",marginBottom:8}}>
                         <option value="">Selecciona un padre/tutor…</option>
                         {adminUsers.filter(u=>u.role==="parent"&&u.id!==selectedUser.id).map(u=>(
                           <option key={u.id} value={u.id}>{u.name} (@{u.username||"—"})</option>
@@ -5458,7 +5673,7 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
       )}
 
       {/* ════ BOTTOM NAV ════ */}
-      <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:430,background:C.card,borderTop:`1.5px solid ${C.border}`,display:"flex",justifyContent:"space-around",padding:"10px 0 16px",zIndex:200,boxShadow:`0 -4px 24px ${C.mint}18`}}>
+      <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:430,background:C.card,borderTop:`1.5px solid ${C.border}`,display:"flex",justifyContent:"space-around",padding:"10px 0 16px",zIndex:200,boxShadow:`0 -4px 16px ${C.mint}20`}}>
         {currentTabs.map(t=>{
           const a=tab===t.id;
           const fn=NAV[t.id];
@@ -5467,8 +5682,8 @@ export default function KidQuest({ userId=null, userEmail=null, initialProfile=n
               <div style={{transform:a?"scale(1.18)":"scale(1)",transition:"all 0.22s cubic-bezier(0.34,1.56,0.64,1)"}}>
                 {fn?fn(a,C):null}
               </div>
-              <div style={{fontSize:9,fontWeight:700,color:a?C.mint:C.textLt,transition:"color 0.15s"}}>{t.l}</div>
-              {a&&<div style={{width:4,height:4,borderRadius:"50%",background:C.mint,boxShadow:`0 0 5px ${C.mint}`}}/>}
+              <div style={{fontSize:10,fontWeight:700,color:a?C.mint:C.textLt,transition:"color 0.15s"}}>{t.l}</div>
+              {a&&<div style={{width:4,height:4,borderRadius:"50%",background:C.mint,boxShadow:`0 4px 16px ${C.mint}40`}}/>}
             </button>
           );
         })}
@@ -5554,20 +5769,20 @@ function TutorRequestsPanel({userId, C, notify, onApprove}) {
   };
 
   return (
-    <div style={{background:C.goldLt,border:`2px solid ${C.gold}50`,borderRadius:16,padding:14,marginBottom:14}}>
-      <div style={{fontWeight:800,fontSize:14,color:C.goldDk,marginBottom:10}}>
+    <div style={{background:C.goldLt,border:`2px solid ${C.gold}50`,borderRadius:16,padding:14,marginBottom:16}}>
+      <div style={{fontWeight:800,fontSize:14,color:C.goldDk,marginBottom:8}}>
         🔔 Solicitudes de vinculación ({requests.length})
       </div>
       {requests.map(req=>(
-        <div key={req.id} style={{background:C.card,borderRadius:12,padding:12,marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center",gap:10}}>
+        <div key={req.id} style={{background:C.card,borderRadius:12,padding:12,marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}>
           <div>
             <div style={{fontWeight:700,fontSize:13,color:C.text}}>{req.child_name}</div>
             <div style={{fontSize:11,color:C.textMed}}>Quiere vincularte como tutor</div>
             <div style={{fontSize:10,color:C.textLt}}>{new Date(req.created_at).toLocaleDateString("es")}</div>
           </div>
-          <div style={{display:"flex",gap:6,flexShrink:0}}>
-            <button onClick={()=>reject(req)} style={{padding:"6px 10px",borderRadius:9,border:`1.5px solid ${C.coral}`,background:C.coralLt,color:C.coral,fontSize:11,fontWeight:700,cursor:"pointer"}}>✗</button>
-            <button onClick={()=>approve(req)} style={{padding:"6px 12px",borderRadius:9,border:"none",background:`linear-gradient(135deg,${C.mint},${C.mintDk})`,color:"white",fontSize:11,fontWeight:800,cursor:"pointer"}}>✅ Aceptar</button>
+          <div style={{display:"flex",gap:8,flexShrink:0}}>
+            <button onClick={()=>reject(req)} style={{padding:"8px 8px",borderRadius:9,border:`1.5px solid ${C.coral}`,background:C.coralLt,color:C.coral,fontSize:11,fontWeight:700,cursor:"pointer"}}>✗</button>
+            <button onClick={()=>approve(req)} style={{padding:"8px 12px",borderRadius:9,border:"none",background:`linear-gradient(135deg,${C.mint},${C.mintDk})`,color:"white",fontSize:11,fontWeight:800,cursor:"pointer"}}>✅ Aceptar</button>
           </div>
         </div>
       ))}
@@ -5581,14 +5796,29 @@ function Shell({C,children}){
 
 function BtnMain({onClick,bg,style={},disabled=false,children}){
   return <button onClick={onClick} disabled={disabled}
-    style={{padding:"13px 22px",borderRadius:16,border:"none",color:"white",fontFamily:"'Nunito',sans-serif",
-      fontSize:15,fontWeight:800,cursor:disabled?"not-allowed":"pointer",
-      transition:"all 0.2s cubic-bezier(0.34,1.56,0.64,1)",
-      background:disabled?"#C0CCC8":bg,opacity:disabled?0.7:1,
-      boxShadow:disabled?"none":"0 4px 16px rgba(0,0,0,0.18)",...style}}
-    onMouseDown={e=>{if(!disabled)e.currentTarget.style.transform="scale(0.97)";}}
-    onMouseUp={e=>{if(!disabled)e.currentTarget.style.transform="scale(1)";}}
-    onMouseLeave={e=>{if(!disabled)e.currentTarget.style.transform="scale(1)";}}>
+    style={{
+      padding:"12px 24px",
+      borderRadius:12,           // professional-ui: 12px for buttons
+      border:"none",
+      color:"white",
+      fontFamily:"'Nunito',sans-serif",
+      fontSize:15,
+      fontWeight:700,
+      cursor:disabled?"not-allowed":"pointer",
+      minHeight:44,              // professional-ui: 44px tap target
+      minWidth:88,
+      transition:"all 150ms cubic-bezier(0.4, 0, 0.2, 1)", // professional-ui: 150ms
+      background:disabled?"#C0CCC8":bg,
+      opacity:disabled?0.5:1,   // professional-ui: 0.4-0.5 for disabled
+      boxShadow:disabled?"none":`0 4px 12px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.06)`,
+      ...style
+    }}
+    onMouseEnter={e=>{if(!disabled){e.currentTarget.style.transform="translateY(-1px)";e.currentTarget.style.boxShadow="0 8px 24px rgba(0,0,0,0.16), 0 4px 8px rgba(0,0,0,0.08)";}}}
+    onMouseLeave={e=>{if(!disabled){e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow="0 4px 12px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.06)";}}}
+    onMouseDown={e=>{if(!disabled){e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.opacity="0.92";}}}
+    onMouseUp={e=>{if(!disabled){e.currentTarget.style.transform="translateY(-1px)";e.currentTarget.style.opacity="1";}}}
+    onFocus={e=>{if(!disabled)e.currentTarget.style.outline=`2px solid ${typeof bg==='string'?bg:"#00C896"}`;e.currentTarget.style.outlineOffset="2px";}}
+    onBlur={e=>{e.currentTarget.style.outline="none";}}>
     {children}
   </button>;
 }
@@ -5598,22 +5828,22 @@ function TCard({task,full,onVerify,C}){
   const ss={idle:{bg:C.card,bo:C.border},approved:{bg:C.mintLt,bo:C.mint+"60"},pending:{bg:C.goldLt,bo:C.gold+"60"}}[task.status]||{bg:C.card,bo:C.border};
   const vl=VERIFY_LEVELS[task.verify]||VERIFY_LEVELS.easy;
   return (
-    <div className={task.status==="idle"?"task-card":""} style={{background:ss.bg,border:`2px solid ${ss.bo}`,borderRadius:18,padding:15,marginBottom:10,boxShadow:task.status==="approved"?`0 3px 16px ${C.mint}30`:C.shadow}}>
+    <div className={task.status==="idle"?"task-card":""} style={{background:ss.bg,border:`2px solid ${ss.bo}`,borderRadius:16,padding:15,marginBottom:8,boxShadow:task.status==="approved"?`0 3px 16px ${C.mint}30`:C.shadow}}>
       <div style={{display:"flex",alignItems:"center",gap:11}}>
-        <div style={{width:46,height:46,borderRadius:13,background:fc+"16",display:"flex",alignItems:"center",justifyContent:"center",fontSize:25,flexShrink:0}}>{task.emoji}</div>
+        <div style={{width:46,height:46,borderRadius:16,background:fc+"16",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>{task.emoji}</div>
         <div style={{flex:1,minWidth:0}}>
-          <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",marginBottom:2}}>
+          <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:2}}>
             <span style={{fontWeight:800,fontSize:13,color:C.text}}>{task.title}</span>
             <Chip label={FL[task.freq]} bg={fc+"18"} color={fc}/>
           </div>
           {full&&<div style={{fontSize:11,color:C.textMed,marginBottom:4}}>{task.hint}</div>}
-          <div style={{display:"flex",gap:7,alignItems:"center",flexWrap:"wrap"}}>
+          <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
             <span style={{fontSize:11,color:C.goldDk,fontWeight:700}}>⭐{task.xp}</span>
             <span style={{fontSize:11,color:C.mintDk,fontWeight:700}}>💰{task.coins}</span>
             <Chip label={vl.label} bg={C.purpleLt} color={C.purple}/>
           </div>
         </div>
-        {task.status==="idle"&&<button onClick={onVerify} style={{padding:"8px 13px",borderRadius:13,border:"none",background:`linear-gradient(135deg,${C.mint},${C.mintDk})`,color:"white",fontWeight:800,fontSize:12,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>Ir →</button>}
+        {task.status==="idle"&&<button onClick={onVerify} style={{padding:"8px 13px",borderRadius:16,border:"none",background:`linear-gradient(135deg,${C.mint},${C.mintDk})`,color:"white",fontWeight:800,fontSize:12,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>Ir →</button>}
         {task.status==="approved"&&<span style={{fontSize:22}}>✅</span>}
         {task.status==="pending" &&<span style={{fontSize:22}}>⏳</span>}
       </div>
@@ -5633,7 +5863,7 @@ function ChatView({msgs,setMsgs,isMe,myAuthor,myAvatar,myRole,input,setInput,cha
   return (
     <div style={{display:"flex",flexDirection:"column",height:"calc(100vh - 130px)"}}>
       <div style={{padding:"12px 14px 0",flexShrink:0}}>
-        <div style={{background:header.gradient,borderRadius:16,padding:"11px 14px",marginBottom:8,display:"flex",alignItems:"center",gap:10,color:"white"}}>
+        <div style={{background:header.gradient,borderRadius:16,padding:"8px 16px",marginBottom:8,display:"flex",alignItems:"center",gap:8,color:"white"}}>
           <span style={{fontSize:24}}>🐉</span>
           <div style={{flex:1}}><div style={{fontWeight:800,fontSize:14}}>{header.title}</div><div style={{fontSize:11,opacity:0.8}}>{header.sub}</div></div>
         </div>
@@ -5641,7 +5871,7 @@ function ChatView({msgs,setMsgs,isMe,myAuthor,myAvatar,myRole,input,setInput,cha
           🔒 Canal seguro · Solo miembros del clan
         </div>
         {quickReplies.length>0&&(
-          <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:8}}>
+          <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:8}}>
             {quickReplies.map((r,i)=>(
               <button key={i} onClick={()=>onQuick?onQuick(r):setMsgs(p=>[...p,{id:Date.now(),author:myAuthor,avatar:myAvatar,role:myRole,text:r,time:now_t(),system:false}])}
                 style={{padding:"5px 11px",borderRadius:20,border:`1.5px solid ${C.border}`,background:C.card,color:C.textMed,fontSize:11,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
@@ -5659,7 +5889,7 @@ function ChatView({msgs,setMsgs,isMe,myAuthor,myAvatar,myRole,input,setInput,cha
         <input value={input} onChange={e=>setInput(e.target.value.slice(0,120))} onKeyDown={e=>{if(e.key==="Enter")send();}}
           placeholder="Escribe un mensaje…"
           style={{flex:1,background:C.card,border:`1.5px solid ${C.border}`,borderRadius:14,padding:"10px 13px",color:C.text,fontSize:13,outline:"none",fontFamily:"'Nunito',sans-serif"}}/>
-        <button onClick={send} style={{width:40,height:40,borderRadius:13,border:"none",background:`linear-gradient(135deg,${C.mint},${C.mintDk})`,color:"white",fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>➤</button>
+        <button onClick={send} style={{width:40,height:40,borderRadius:16,border:"none",background:`linear-gradient(135deg,${C.mint},${C.mintDk})`,color:"white",fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>➤</button>
       </div>
     </div>
   );
@@ -5674,14 +5904,14 @@ function Bubble({msg,isMe,C}){
   const rc={student:C.mint,parent:C.goldDk,teacher:C.sky}[msg.role]||C.textLt;
   const rl={student:"Miembro",parent:"Tutor",teacher:"Profe"}[msg.role]||"";
   return (
-    <div style={{display:"flex",flexDirection:isMe?"row-reverse":"row",gap:7,marginBottom:10,alignItems:"flex-end"}}>
+    <div style={{display:"flex",flexDirection:isMe?"row-reverse":"row",gap:8,marginBottom:8,alignItems:"flex-end"}}>
       <div style={{width:30,height:30,borderRadius:"50%",background:`${rc}18`,border:`2px solid ${rc}50`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>{msg.avatar}</div>
       <div style={{maxWidth:"72%",display:"flex",flexDirection:"column",alignItems:isMe?"flex-end":"flex-start",gap:2}}>
-        {!isMe&&<div style={{display:"flex",gap:5,alignItems:"center"}}><span style={{fontSize:11,fontWeight:800,color:rc}}>{msg.author}</span><Chip label={rl} bg={`${rc}15`} color={rc}/></div>}
-        <div style={{background:isMe?`linear-gradient(135deg,${C.mint},${C.gold})`:C.card,borderRadius:isMe?"17px 17px 4px 17px":"17px 17px 17px 4px",padding:"9px 12px",fontSize:13,lineHeight:1.4,color:isMe?"white":C.text,border:isMe?"none":`1px solid ${C.border}`,boxShadow:isMe?"none":C.shadow}}>
+        {!isMe&&<div style={{display:"flex",gap:8,alignItems:"center"}}><span style={{fontSize:11,fontWeight:800,color:rc}}>{msg.author}</span><Chip label={rl} bg={`${rc}15`} color={rc}/></div>}
+        <div style={{background:isMe?`linear-gradient(135deg,${C.mint},${C.gold})`:C.card,borderRadius:isMe?"17px 17px 4px 17px":"17px 17px 17px 4px",padding:"8px 12px",fontSize:13,lineHeight:1.4,color:isMe?"white":C.text,border:isMe?"none":`1px solid ${C.border}`,boxShadow:isMe?"none":C.shadow}}>
           {msg.text}
         </div>
-        <div style={{fontSize:9,color:C.textLt}}>{msg.time}</div>
+        <div style={{fontSize:10,color:C.textLt}}>{msg.time}</div>
       </div>
     </div>
   );
@@ -5700,7 +5930,7 @@ function MiniRing({pct,color,size=56}){
 }
 
 function Chip({label,bg,color,style={}}){ return <span style={{display:"inline-flex",alignItems:"center",background:bg,color,padding:"3px 9px",borderRadius:20,fontSize:10,fontWeight:800,lineHeight:1.5,whiteSpace:"nowrap",...style}}>{label}</span>; }
-function CoinPill({icon,val,color,bg}){ return <div style={{background:bg,borderRadius:12,padding:"4px 10px",display:"flex",alignItems:"center",gap:4,boxShadow:`0 2px 8px ${bg}80`}}><span style={{fontSize:14}}>{icon}</span><span style={{fontWeight:900,fontSize:13,color}}>{val}</span></div>; }
+function CoinPill({icon,val,color,bg}){ return <div style={{background:bg,borderRadius:12,padding:"4px 10px",display:"flex",alignItems:"center",gap:4,boxShadow:"0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04)"}}><span style={{fontSize:14}}>{icon}</span><span style={{fontWeight:900,fontSize:13,color}}>{val}</span></div>; }
 
 // ── Frames nativos (3 gratuitos, siempre disponibles) ──
 const NATIVE_FRAMES = [
@@ -5784,8 +6014,20 @@ function buildCSS(C){ return `
   ::-webkit-scrollbar{width:3px}
   ::-webkit-scrollbar-thumb{background:${C.mint}50;border-radius:3px}
   input::placeholder,textarea::placeholder{color:${C.textLt}}
-  input[type=range]{height:5px;border-radius:5px;cursor:pointer}
+  input[type=range]{height:8px;border-radius:8px;cursor:pointer}
 
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
   @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
   @keyframes floatSlow{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-5px) rotate(2deg)}}
   @keyframes chestShake{0%,100%{transform:rotate(0) scale(1)}20%{transform:rotate(-10deg) scale(1.05)}40%{transform:rotate(10deg) scale(1.05)}60%{transform:rotate(-7deg)}80%{transform:rotate(7deg)}}
