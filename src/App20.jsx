@@ -1112,23 +1112,6 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
   const [onboardName,      setOnboardName]      = useState("");
   const [onboardUsername,  setOnboardUsername]  = useState("");
 
-  // ── SCHOOL & CLASS (chat seccionado) ──
-  const [schools,         setSchools]         = useState([]);
-  const [myClasses,       setMyClasses]       = useState([]);    // teacher's classes
-  const [studentClass,    setStudentClass]    = useState(null);  // student's enrolled class
-  const [selectedSchool,  setSelectedSchool]  = useState(null);
-  const [showSchoolModal, setShowSchoolModal] = useState(false);
-  const [showCreateClass, setShowCreateClass] = useState(false);
-
-  const loadSchools = async()=>{
-    if(schools.length>0) return;
-    try {
-      const {supabase}=await import("./supabase.js");
-      const {data}=await supabase.from("schools").select("*").order("name");
-      if(data) setSchools(data);
-    } catch(e){}
-  };
-
   // ── REAL RANKING ──
   const [realRanking, setRealRanking] = useState([]);
   const [rankLoaded,  setRankLoaded]  = useState(false);
@@ -1246,9 +1229,7 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
   // ── CHAT (Supabase Realtime) ──
   const [kMsgs,     setKMsgs]     = useState([]);
   const [aMsgs,     setAMsgs]     = useState([]);
-  const [classMsgs, setClassMsgs] = useState([]);
-  const [chatRoom,  setChatRoom]  = useState("general"); // "general" or "class"
-  const [chatTab,   setChatTab]   = useState("clan");   // clan | adult (legacy)
+  const [chatRoom,  setChatRoom]  = useState("clan");   // clan | adult
   const [classRoom,  setClassRoom]  = useState("clan");   // teacher's class room if linked
   const [chatInited,setChatInited]= useState(false);
   const chatEndRef = useRef(null);
@@ -1321,58 +1302,8 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
     const load = async()=>{
       try{
         const {supabase} = await import("./supabase.js");
-        // Load student's class (if enrolled)
-        if(initialProfile.role==="student"){
-          try {
-            const {data:cm}=await supabase.from("class_members")
-              .select("class_id, school_classes(id, grade, year, school_id, schools(name))")
-              .eq("student_id",userId).maybeSingle();
-            if(cm?.school_classes){
-              setStudentClass({
-                id:cm.school_classes.id,
-                grade:cm.school_classes.grade,
-                year:cm.school_classes.year,
-                school_name:cm.school_classes.schools?.name
-              });
-            }
-          } catch(e){}
-        }
-        // Load teacher's classes
-        if(initialProfile.role==="teacher"){
-          try {
-            const {data:cls}=await supabase.from("school_classes")
-              .select("*, schools(name)")
-              .eq("teacher_id",userId);
-            if(cls) setMyClasses(cls);
-          } catch(e){}
-        }
         // Task progress
         const {data:tp} = await supabase.from("task_progress").select("*").eq("user_id",userId);
-        // ── Load inventory (regular items + frames) ──
-        try {
-          const {data:invData} = await supabase.from("inventory")
-            .select("*").eq("user_id",userId);
-          if(invData?.length){
-            // Regular items (no ruby_ prefix)
-            const regular = invData.filter(i=>!i.rarity?.startsWith("ruby_"));
-            if(regular.length){
-              setInventory(regular.map(i=>({
-                id:i.item_id, type:i.item_type, name:i.item_name,
-                rarity:i.rarity, svgKey:i.svg_key
-              })));
-            }
-            // Ruby items (parents)
-            if(initialProfile.role==="parent"){
-              const ruby = invData.filter(i=>i.rarity?.startsWith("ruby_"));
-              if(ruby.length){
-                setRubyInventory(ruby.map(i=>({
-                  id:i.item_id, type:i.item_type, name:i.item_name,
-                  rarity:i.rarity.replace("ruby_",""), svgKey:i.svg_key
-                })));
-              }
-            }
-          }
-        } catch(e){ console.warn("Inventory load:",e.message); }
         if(tp?.length) setTasks(prev=>prev.map(t=>{
           const s=tp.find(p=>p.task_id===t.id); return s?{...t,status:s.status}:t;
         }));
@@ -1631,24 +1562,6 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
       })));
 
       // Load adult chat
-      // Load class chat messages if student is in a class
-      if(initialProfile.role==="student"){
-        try {
-          const {data:cm}=await supabase.from("class_members")
-            .select("class_id").eq("student_id",userId).maybeSingle();
-          if(cm?.class_id){
-            const {data:cMsgs}=await supabase.from("chat_messages")
-              .select("*").eq("room",`class_${cm.class_id}`)
-              .order("created_at",{ascending:true}).limit(50);
-            if(cMsgs?.length) setClassMsgs(cMsgs.map(m=>({
-              id:m.id, author:m.author_name, avatar:m.avatar_key||"a_cub",
-              role:m.author_role, text:m.text,
-              time:new Date(m.created_at).toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"}),
-              system:m.is_system
-            })));
-          }
-        } catch(e){}
-      }
       const {data:adultMsgs} = await supabase
         .from("chat_messages")
         .select("*")
@@ -3161,53 +3074,30 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
               <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:8}}>Nombre de usuario</div>
               <div style={{display:"flex",alignItems:"center",gap:8}}>
                 <span style={{fontSize:16,color:C.textMed}}>@</span>
-                <input value={editUsername} onChange={e=>setEditUsername(e.target.value.replace(/\s/g,"_"))}
-                  placeholder="apodo_o_emoji_🎮"
+                <input value={editUsername} onChange={e=>setEditUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g,""))}
+                  placeholder="tu_usuario"
                   style={{flex:1,padding:"12px 14px",borderRadius:16,border:`1.5px solid ${C.border}`,fontSize:15,fontWeight:600,color:C.text,background:C.card,outline:"none",letterSpacing:1}}/>
               </div>
-              <div style={{fontSize:11,color:C.textMed,marginTop:4}}>Tu apodo único. Puedes usar emojis. Solo se cambia 1 vez gratis.</div>
+              <div style={{fontSize:11,color:C.textMed,marginTop:4}}>Solo letras, números y guión bajo. Sin espacios.</div>
             </div>
-            {/* Show cost if name was already changed */}
-            {initialProfile?.name_changed_count>0&&(
-              <div style={{background:C.goldLt,border:`1.5px solid ${C.gold}40`,borderRadius:12,padding:"8px 12px",marginBottom:12,fontSize:12,color:C.goldDk,textAlign:"center"}}>
-                💎 Cambiar nombre cuesta <b>50 cristales</b> · Tienes {user.gems} 💎
-              </div>
-            )}
             <BtnMain onClick={async()=>{
               if(!editDisplayName.trim()) return notify("Escribe tu nombre","⚠️");
-              const nameChanged = editDisplayName.trim()!==user.name;
-              const userChanged = editUsername.trim()!==user.username;
-              const alreadyChanged = (initialProfile?.name_changed_count||0)>0;
-              const cost = alreadyChanged ? 50 : 0;
-              if(cost>0 && (nameChanged||userChanged)){
-                if(user.gems<cost) return notify(`Necesitas ${cost} 💎 · tienes ${user.gems}`,"💎");
-                if(!confirm(`¿Gastar ${cost} 💎 para cambiar?`)) return;
-              }
               setSavingProfile(true);
               try {
-                const updates = {
-                  name: editDisplayName.trim(),
-                  name_changed_count: (initialProfile?.name_changed_count||0)+1,
-                };
-                if(editUsername.trim().length>=2) updates.username = editUsername.trim();
-                if(cost>0) updates.gems = user.gems-cost;
-                setUser(p=>({
-                  ...p,
-                  name:editDisplayName.trim(),
-                  username:editUsername.trim()||p.username,
-                  gems:cost>0 ? p.gems-cost : p.gems
-                }));
+                const updates = {name:editDisplayName.trim()};
+                if(editUsername.trim().length>=3) updates.username = editUsername.trim();
+                setUser(p=>({...p,name:editDisplayName.trim(),username:editUsername.trim()||p.username}));
                 if(userId){
                   const {supabase} = await import("./supabase.js");
                   const {error} = await supabase.from("profiles").update(updates).eq("id",userId);
                   if(error) return notify("Error: "+error.message,"⚠️");
                 }
                 setShowProfileEdit(false);
-                notify(cost>0?`✅ Perfil actualizado · -${cost} 💎`:"✅ Perfil actualizado","👤");
+                notify("✅ Perfil actualizado","👤");
               } catch(e){ notify("Error: "+e.message,"⚠️"); }
               setSavingProfile(false);
             }} disabled={savingProfile} bg={`linear-gradient(135deg,${C.mint},${C.mintDk})`} style={{width:"100%"}}>
-              {savingProfile?"Guardando…":(initialProfile?.name_changed_count>0?"💎 Guardar (50 💎)":"💾 Guardar cambios")}
+              {savingProfile?"Guardando…":"💾 Guardar cambios"}
             </BtnMain>
           </div>
         </div>
@@ -3433,12 +3323,9 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
                                   const r=RARITIES[fr.rarity];
                                   const sel=avatarFrame===fr.id;
                                   return (
-                                    <button key={i} onClick={async()=>{
-                                      setAvatarFrame(fr.id);
-                                      if(userId){ try{const {supabase}=await import("./supabase.js"); await supabase.from("profiles").update({frame:fr.id}).eq("id",userId);}catch(e){} }
-                                    }}
+                                    <button key={i} onClick={()=>setAvatarFrame(fr.id)}
                                       style={{padding:"10px 8px",borderRadius:14,border:`2px solid ${sel?r.color:r.color+"40"}`,background:sel?r.bg:C.card,cursor:"pointer",textAlign:"center",transition:"all 0.15s",position:"relative",boxShadow:sel?`0 0 12px ${r.glow}`:"none"}}>
-                                      <div style={{position:"absolute",top:3,left:3,fontSize:10}}><RarDot r={fr.rarity}/></div>
+                                      <div style={{position:"absolute",top:3,left:3,fontSize:10}}><RarDot r={item.rarity}/></div>
                                       <FramePreview id={fr.id} size={38} emoji={avatarEmoji}/>
                                       <div style={{fontSize:10,fontWeight:700,color:sel?r.color:C.text,marginTop:5}}>{fr.name}</div>
                                       <div style={{fontSize:10,color:r.color,fontWeight:700}}>{r.label}</div>
@@ -3536,8 +3423,8 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
                   <span style={{color:C.textMed,fontSize:15,flexShrink:0}}>@</span>
                   <input
                     value={onboardUsername}
-                    onChange={e=>setOnboardUsername(e.target.value.replace(/[\s]/g,"_"))}
-                    placeholder="apodo_o_emoji_🎮"
+                    onChange={e=>setOnboardUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g,""))}
+                    placeholder="nombre_usuario"
                     style={{flex:1,padding:"8px 16px",borderRadius:16,border:`2px solid ${C.border}`,
                       fontSize:14,fontWeight:600,color:C.text,background:C.card,outline:"none",
                       letterSpacing:1}}
@@ -3582,83 +3469,6 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
                     }).eq("id",userId);
                   }
                   setShowOnboarding(false);
-                  // Move to step 3 (school) for students/teachers, finish for parents
-                  if(role===ROLES.PARENT){
-                    setShowOnboarding(false);
-                    notify(`¡Listo ${user.name}! Bienvenido a FinPlay 🎉`,"🦎");
-                  } else {
-                    await loadSchools();
-                    setOnboardStep(3);
-                  }
-                }} bg={`linear-gradient(135deg,${C.gold},${C.goldDk})`} style={{width:"100%"}}>
-                  {role===ROLES.PARENT?"🎉 ¡Empezar FinPlay!":"Siguiente →"}
-                </BtnMain>
-              </>
-            )}
-            {/* STEP 3: Select school (students + teachers) */}
-            {onboardStep===3&&(
-              <>
-                <div style={{fontWeight:900,fontSize:20,color:C.text,marginBottom:4}}>
-                  {role===ROLES.TEACHER?"¿En qué colegio enseñas?":"¿En qué colegio estudias?"}
-                </div>
-                <div style={{fontSize:13,color:C.textMed,marginBottom:16}}>
-                  Esto te conecta al chat de tu comunidad
-                </div>
-                <select 
-                  value={selectedSchool||""} 
-                  onChange={e=>setSelectedSchool(e.target.value)}
-                  style={{width:"100%",padding:"13px 16px",borderRadius:14,border:`2px solid ${C.border}`,
-                    fontSize:14,fontWeight:600,color:C.text,background:C.card,outline:"none",
-                    marginBottom:16,boxSizing:"border-box"}}>
-                  <option value="">Selecciona tu colegio…</option>
-                  {schools.map(s=>(
-                    <option key={s.id} value={s.id}>{s.name}{s.comuna?` · ${s.comuna}`:""}</option>
-                  ))}
-                </select>
-                {role===ROLES.STUDENT&&selectedSchool&&(
-                  <input
-                    placeholder="Tu curso (ej: 5ºB)"
-                    id="onboard_grade"
-                    style={{width:"100%",padding:"13px 16px",borderRadius:14,border:`2px solid ${C.border}`,
-                      fontSize:14,fontWeight:600,color:C.text,background:C.card,outline:"none",
-                      marginBottom:16,boxSizing:"border-box",textAlign:"center"}}
-                  />
-                )}
-                <BtnMain onClick={async()=>{
-                  if(!selectedSchool){ notify("Selecciona tu colegio","⚠️"); return; }
-                  if(userId){
-                    const {supabase}=await import("./supabase.js");
-                    if(role===ROLES.TEACHER){
-                      // Just save school to profile
-                      await supabase.from("profiles").update({
-                        onboarding_done:true, school_id:selectedSchool
-                      }).eq("id",userId);
-                    } else {
-                      // Student needs grade
-                      const grade = document.getElementById("onboard_grade")?.value?.trim();
-                      if(!grade){ notify("Escribe tu curso","⚠️"); return; }
-                      // Find or create class for this school + grade
-                      const {data:existing} = await supabase.from("school_classes")
-                        .select("id").eq("school_id",selectedSchool).eq("grade",grade).limit(1);
-                      let classId;
-                      if(existing?.length) {
-                        classId = existing[0].id;
-                      } else {
-                        // Create as orphan class (no teacher yet)
-                        const {data:newCls} = await supabase.from("school_classes")
-                          .insert({school_id:selectedSchool,grade,teacher_id:userId})
-                          .select().single();
-                        classId = newCls?.id;
-                      }
-                      if(classId){
-                        await supabase.from("class_members").insert({class_id:classId,student_id:userId});
-                        const {data:sch}=await supabase.from("schools").select("name").eq("id",selectedSchool).single();
-                        setStudentClass({id:classId,grade,school_name:sch?.name});
-                      }
-                      await supabase.from("profiles").update({onboarding_done:true,school_id:selectedSchool}).eq("id",userId);
-                    }
-                  }
-                  setShowOnboarding(false);
                   notify(`¡Listo ${user.name}! Bienvenido a FinPlay 🎉`,"🦎");
                 }} bg={`linear-gradient(135deg,${C.gold},${C.goldDk})`} style={{width:"100%"}}>
                   🎉 ¡Empezar FinPlay!
@@ -3688,7 +3498,7 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
             {!userId&&<button onClick={()=>{setScreen("roleSelect");setRole(null);}} style={{background:"none",border:"none",color:C.textLt,cursor:"pointer",fontSize:18,lineHeight:1}}>←</button>}
             {role===ROLES.STUDENT&&(
               <>
-                <div style={{flexShrink:0}}><AvatarDisplay photo={avatarPhoto} emoji={avatarEmoji} frame={avatarFrame} bg={avatarBg} size={38} C={C} white/></div>
+                <div className="float" style={{flexShrink:0}}><AvatarDisplay photo={avatarPhoto} emoji={avatarEmoji} frame={avatarFrame} bg={avatarBg} size={38} C={C} white/></div>
                 <div>
                   <div style={{fontWeight:800,fontSize:15,color:C.text,lineHeight:1.2}}>{user.name}</div>
                   <div style={{display:"flex",gap:8,alignItems:"center",marginTop:2,flexWrap:"wrap"}}>
@@ -4290,32 +4100,11 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
 
         {/* ── STUDENT: CHAT ── */}
         {role===ROLES.STUDENT&&tab==="chat"&&(
-          <div>
-            {/* Tabs: General + Mi curso */}
-            <div style={{display:"flex",gap:8,padding:"12px 14px 0",background:C.bg,position:"sticky",top:0,zIndex:5}}>
-              <button onClick={()=>setChatRoom("general")} style={{flex:1,padding:"8px 16px",borderRadius:12,border:`1.5px solid ${chatRoom==="general"?C.mint:C.border}`,background:chatRoom==="general"?C.mintLt:C.card,color:chatRoom==="general"?C.mintDk:C.textMed,fontWeight:700,fontSize:13,cursor:"pointer"}}>
-                🌍 General
-              </button>
-              <button onClick={()=>{
-                if(!studentClass){ notify("No estás en ninguna clase. Pide el código a tu profesor.","🏫"); return; }
-                setChatRoom("class");
-              }} style={{flex:1,padding:"8px 16px",borderRadius:12,border:`1.5px solid ${chatRoom==="class"?C.sky:C.border}`,background:chatRoom==="class"?C.skyLt:C.card,color:chatRoom==="class"?C.sky:C.textMed,fontWeight:700,fontSize:13,cursor:"pointer",opacity:studentClass?1:0.5}}>
-                🏫 {studentClass?studentClass.grade:"Mi clase"}
-              </button>
-            </div>
-            {chatRoom==="general"?(
-              <ChatView msgs={kMsgs} setMsgs={setKMsgs} isMe={m=>m.author===user.name} myAuthor={user.name} myAvatar={user.avatar} myRole="student" onSend={t=>sendChatMsg(t,"clan")}
-                input={chatInput} setInput={setChatInput} chatEndRef={chatEndRef} C={C}
-                header={{title:"Chat general 🌍",sub:"Todos los estudiantes · Moderado",gradient:`linear-gradient(135deg,${C.mint},${C.mintDk})`}}
-                quickReplies={["🔥 ¡Vamos!","✅ ¡Lo hice!","💪 ¡A por ello!","😎 ¡Fácil!"]}
-                locked={!canClan} lockMsg={`Necesitas Nivel ${MIN_CLAN}`}/>
-            ):(
-              <ChatView msgs={classMsgs} setMsgs={setClassMsgs} isMe={m=>m.author===user.name} myAuthor={user.name} myAvatar={user.avatar} myRole="student" onSend={t=>sendChatMsg(t,studentClass?`class_${studentClass.id}`:"clan")}
-                input={chatInput} setInput={setChatInput} chatEndRef={chatEndRef} C={C}
-                header={{title:`🏫 ${studentClass?.grade||"Mi clase"}`,sub:`Solo tus compañeros · ${studentClass?.school_name||""}`,gradient:`linear-gradient(135deg,${C.sky},#1565C0)`}}
-                quickReplies={["📚 Tarea","❓ Pregunta","✅ ¡Listo!","👋 Hola"]}/>
-            )}
-          </div>
+          <ChatView msgs={kMsgs} setMsgs={setKMsgs} isMe={m=>m.author===user.name} myAuthor={user.name} myAvatar={user.avatar} myRole="student" onSend={t=>sendChatMsg(t, classRoom!=="clan"?"clan":classRoom)}
+            input={chatInput} setInput={setChatInput} chatEndRef={chatEndRef} C={C}
+            header={{title:"Chat del clan",sub:"Solo miembros · Moderado por adultos",gradient:`linear-gradient(135deg,${C.mint},${C.mintDk})`}}
+            quickReplies={["🔥 ¡Vamos!","✅ ¡Lo hice!","💪 ¡A por ello!","😎 ¡Fácil!"]}
+            locked={!canClan} lockMsg={`Necesitas Nivel ${MIN_CLAN}`}/>
         )}
 
         {/* ── STUDENT: ME ── */}
