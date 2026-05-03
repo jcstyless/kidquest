@@ -935,8 +935,6 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
   // If userId exists (logged in), skip splash entirely — go straight to app
   const [screen,    setScreen]    = useState(()=>{
     if(initialProfile?.role) return "app";
-    // OAuth user without role → must choose role first
-    if(userId && initialProfile && !initialProfile.role) return "roleSelect";
     if(userId) return "app";      // logged in but profile delayed → app anyway
     return "splash";              // not logged in → show splash
   });
@@ -959,7 +957,7 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
   });
 
   const completeTutorial = async () => {
-    setTutDone(true);
+    completeTutorial();
     if(userId){
       try {
         const {supabase} = await import("./supabase.js");
@@ -1121,8 +1119,6 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
   const [selectedSchool,  setSelectedSchool]  = useState(null);
   const [showSchoolModal, setShowSchoolModal] = useState(false);
   const [showCreateClass, setShowCreateClass] = useState(false);
-  const [schoolSearch,    setSchoolSearch]    = useState("");
-  const [showSchoolPicker, setShowSchoolPicker] = useState(false);
 
   const loadSchools = async()=>{
     if(schools.length>0) return;
@@ -1941,19 +1937,7 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
           {r:ROLES.PARENT, nk:"validate", l:"Soy Padre / Tutor",s:"Verifica y gestiona la mesada",       bg:C.goldLt,  bc:C.gold,   ac:C.goldDk},
           {r:ROLES.TEACHER,nk:"panel",    l:"Soy Profesor",     s:"Gestiona tu clase y rankings",        bg:C.skyLt,   bc:C.sky,    ac:C.sky},
         ].map(opt=>(
-          <button key={opt.r} onClick={async()=>{
-            setRole(opt.r);
-            setTab(opt.r===ROLES.STUDENT?"home":opt.r===ROLES.PARENT?"validate":"panel");
-            setTutDone(opt.r!==ROLES.STUDENT);
-            // Save to Supabase if logged in (OAuth user)
-            if(userId){
-              try {
-                const {supabase}=await import("./supabase.js");
-                await supabase.from("profiles").update({role:opt.r}).eq("id",userId);
-              } catch(e){ console.warn("Role save:",e.message); }
-            }
-            setScreen("app");
-          }}
+          <button key={opt.r} onClick={()=>{setRole(opt.r);setTab(opt.r===ROLES.STUDENT?"home":opt.r===ROLES.PARENT?"validate":"panel");setTutDone(opt.r!==ROLES.STUDENT);setScreen("app");}}
             style={{width:"100%",marginBottom:16,padding:"18px 20px",borderRadius:20,border:`2px solid ${opt.bc}`,background:opt.bg,cursor:"pointer",display:"flex",alignItems:"center",gap:16,transition:"all 0.18s"}}>
             <div style={{width:52,height:52,borderRadius:16,background:opt.bc+"22",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{NAV[opt.nk]?.(true,{...C,mint:opt.bc,gold:opt.bc,sky:opt.bc})}</div>
             <div style={{flex:1,textAlign:"left"}}>
@@ -2058,7 +2042,7 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
                 {tutStep===0&&(<div>
                   <div style={{fontSize:56,marginBottom:8}} className="float">🚀</div>
                   <div style={{fontWeight:900,fontSize:22,color:C.text,marginBottom:8}}>¡Hola, {user.name.split(" ")[0]}!</div>
-                  <div style={{fontSize:14,color:C.textMed,lineHeight:1.6,marginBottom:20}}><b>FinPlay</b> te enseña a manejar tu dinero jugando. Completa tareas reales, aprende a ahorrar y descubre cómo planificar tus metas. Tu tutor te apoya en el camino.</div>
+                  <div style={{fontSize:14,color:C.textMed,lineHeight:1.6,marginBottom:20}}>Bienvenido a <b>FinPlay</b>. Completa misiones, gana recompensas y sube de nivel. Tu tutor revisa y aprueba todo.</div>
                   <BtnMain onClick={()=>setTutStep(1)} bg={`linear-gradient(135deg,${C.mint},${C.mintDk})`} style={{width:"100%"}}>¿Cómo funciona? →</BtnMain>
                 </div>)}
                 {tutStep===1&&(<div>
@@ -2079,19 +2063,11 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
                 </div>)}
                 {tutStep===2&&(<div>
                   <div style={{fontSize:48,marginBottom:8}}>💰</div>
-                  <div style={{fontWeight:900,fontSize:18,color:C.text,marginBottom:8}}>Aprende ahorrando de verdad</div>
-                  <div style={{background:C.goldLt,borderRadius:14,padding:16,fontSize:13,color:C.goldDk,lineHeight:1.6,marginBottom:16,textAlign:"left"}}>
-                    📊 <b>Guarda $2.000 cada semana</b> y en 3 meses tendrás <b>$24.000</b>.<br/><br/>
-                    🎯 Define metas que te importen: zapatillas, un juego, salir con amigos.<br/><br/>
-                    🧠 Aprenderás a:<br/>
-                    • Planificar gastos<br/>
-                    • Diferenciar deseos de necesidades<br/>
-                    • Tomar decisiones con tu dinero
+                  <div style={{fontWeight:900,fontSize:18,color:C.text,marginBottom:8}}>Ahorra con metas reales</div>
+                  <div style={{background:C.goldLt,borderRadius:14,padding:14,fontSize:13,color:C.goldDk,lineHeight:1.7,marginBottom:16,textAlign:"left"}}>
+                    Si guardas <b>$2.000 por semana</b>, en 3 meses tendrás <b>$24.000</b>. Pon una meta concreta — zapatillas, videojuego, lo que quieras — y FinPlay te ayuda a llegar. 🎯
                   </div>
-                  <div style={{fontSize:11,color:C.textMed,textAlign:"center",marginBottom:8,fontStyle:"italic"}}>
-                    "El dinero que ahorras hoy es libertad mañana"
-                  </div>
-                  <BtnMain onClick={()=>completeTutorial()} bg={`linear-gradient(135deg,${C.gold},${C.goldDk})`} style={{width:"100%"}}>🚀 ¡Empezar a aprender!</BtnMain>
+                  <BtnMain onClick={()=>completeTutorial()} bg={`linear-gradient(135deg,${C.gold},${C.goldDk})`} style={{width:"100%"}}>🚀 ¡Empezar!</BtnMain>
                 </div>)}
                 <div style={{display:"flex",justifyContent:"center",gap:8,marginTop:14}}>
                   {[0,1,2].map(i=><div key={i} style={{width:8,height:8,borderRadius:"50%",background:tutStep===i?C.mint:C.border}}/>)}
@@ -2105,7 +2081,7 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
                 {tutStep===0&&(<div>
                   <div style={{fontSize:56,marginBottom:8}} className="float">👨‍👩‍👦</div>
                   <div style={{fontWeight:900,fontSize:22,color:C.text,marginBottom:8}}>¡Hola, {user.name.split(" ")[0]}!</div>
-                  <div style={{fontSize:14,color:C.textMed,lineHeight:1.6,marginBottom:20}}>En <b>FinPlay</b> eres el guía financiero de tus hijos. Asigna tareas, valida su esfuerzo y enséñales a manejar dinero de forma responsable. Cada aprobación cuenta.</div>
+                  <div style={{fontSize:14,color:C.textMed,lineHeight:1.6,marginBottom:20}}>En <b>FinPlay</b> eres el tutor. Vinculas a tus hijos, apruebas sus tareas y ganas <b>Rubíes</b> exclusivos.</div>
                   <BtnMain onClick={()=>setTutStep(1)} bg={`linear-gradient(135deg,${C.gold},${C.goldDk})`} style={{width:"100%"}}>Ver cómo funciona →</BtnMain>
                 </div>)}
                 {tutStep===1&&(<div>
@@ -2135,7 +2111,7 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
                 {tutStep===0&&(<div>
                   <div style={{fontSize:56,marginBottom:8}} className="float">🏫</div>
                   <div style={{fontWeight:900,fontSize:22,color:C.text,marginBottom:8}}>¡Hola, Profe!</div>
-                  <div style={{fontSize:14,color:C.textMed,lineHeight:1.6,marginBottom:20}}>Con <b>FinPlay</b> haces educación financiera práctica. Crea desafíos para tu clase, motiva con gamificación real y forma estudiantes con conciencia económica.</div>
+                  <div style={{fontSize:14,color:C.textMed,lineHeight:1.6,marginBottom:20}}>En <b>FinPlay</b> gestionas tu clase. Conecta alumnos, asigna misiones y sigue su progreso en el ranking.</div>
                   <BtnMain onClick={()=>completeTutorial()} bg={`linear-gradient(135deg,${C.sky},#1565C0)`} style={{width:"100%"}}>🏫 ¡Ir a mi panel!</BtnMain>
                 </div>)}
               </>
@@ -3536,9 +3512,7 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
                 <div style={{fontSize:56,marginBottom:12}} className="float">🦎</div>
                 <div style={{fontWeight:900,fontSize:22,color:C.text,marginBottom:8}}>¡Bienvenido a FinPlay!</div>
                 <div style={{fontSize:14,color:C.textMed,marginBottom:20,lineHeight:1.6}}>
-                  <b style={{color:C.text}}>FinPlay</b> es tu camino para entender el dinero.<br/><br/>
-                  Aprenderás a ahorrar, presupuestar y tomar decisiones financieras inteligentes — todo jugando.<br/><br/>
-                  <span style={{fontSize:12,color:C.textLt}}>Solo te tomará 1 minuto configurar tu perfil.</span>
+                  Antes de empezar, personaliza tu perfil.<br/>Solo te tomará 1 minuto.
                 </div>
                 <BtnMain onClick={()=>setOnboardStep(1)} bg={`linear-gradient(135deg,${C.mint},${C.mintDk})`} style={{width:"100%"}}>
                   ¡Vamos! →
@@ -3621,65 +3595,29 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
                 </BtnMain>
               </>
             )}
-            {/* STEP 3: Select school (students + teachers) — OPCIONAL */}
+            {/* STEP 3: Select school (students + teachers) */}
             {onboardStep===3&&(
               <>
                 <div style={{fontWeight:900,fontSize:20,color:C.text,marginBottom:4}}>
                   {role===ROLES.TEACHER?"¿En qué colegio enseñas?":"¿En qué colegio estudias?"}
                 </div>
-                <div style={{fontSize:13,color:C.textMed,marginBottom:16,lineHeight:1.5}}>
-                  {role===ROLES.TEACHER
-                    ?"Crea tu curso para que tus alumnos se conecten al chat de clase."
-                    :"Te conecta al chat de tu colegio. Tu profesor podrá agregarte a su curso."}
+                <div style={{fontSize:13,color:C.textMed,marginBottom:16}}>
+                  Esto te conecta al chat de tu comunidad
                 </div>
-                <input
-                  placeholder="🔍 Buscar colegio o comuna…"
-                  value={schoolSearch}
-                  onChange={e=>setSchoolSearch(e.target.value)}
-                  style={{width:"100%",padding:"11px 16px",borderRadius:12,border:`1.5px solid ${C.border}`,
-                    fontSize:14,color:C.text,background:C.card,outline:"none",marginBottom:8,boxSizing:"border-box"}}
-                />
-                <div style={{maxHeight:280,overflowY:"auto",border:`1.5px solid ${C.border}`,borderRadius:12,marginBottom:12,background:C.bg}}>
-                  {(()=>{
-                    // Group schools by region, filter by search
-                    const term = schoolSearch.toLowerCase().trim();
-                    const filtered = !term ? schools : schools.filter(s=>
-                      s.name.toLowerCase().includes(term) ||
-                      (s.comuna||"").toLowerCase().includes(term) ||
-                      (s.region||"").toLowerCase().includes(term)
-                    );
-                    if(filtered.length===0) return <div style={{padding:20,textAlign:"center",color:C.textLt,fontSize:13}}>Sin resultados</div>;
-                    const grouped = filtered.reduce((acc,s)=>{
-                      const r = s.region||"Otros";
-                      (acc[r]=acc[r]||[]).push(s);
-                      return acc;
-                    },{});
-                    return Object.entries(grouped).map(([region,list])=>(
-                      <div key={region}>
-                        <div style={{padding:"8px 12px",background:C.mintLt,fontSize:11,fontWeight:800,color:C.mintDk,textTransform:"uppercase",letterSpacing:0.5,position:"sticky",top:0,zIndex:1}}>
-                          📍 {region} ({list.length})
-                        </div>
-                        {list.map(s=>(
-                          <button key={s.id} onClick={()=>setSelectedSchool(s.id)}
-                            style={{width:"100%",padding:"10px 14px",border:"none",
-                              background:selectedSchool===s.id?C.mintLt:"transparent",
-                              borderBottom:`1px solid ${C.border}40`,
-                              cursor:"pointer",textAlign:"left",
-                              display:"flex",alignItems:"center",gap:8}}>
-                            <span style={{flex:1,fontSize:13,fontWeight:selectedSchool===s.id?700:500,color:C.text}}>
-                              {s.name}
-                              {s.comuna&&<span style={{color:C.textMed,fontSize:11,fontWeight:400,display:"block"}}>{s.comuna}</span>}
-                            </span>
-                            {selectedSchool===s.id&&<span style={{color:C.mintDk,fontWeight:900}}>✓</span>}
-                          </button>
-                        ))}
-                      </div>
-                    ));
-                  })()}
-                </div>
+                <select 
+                  value={selectedSchool||""} 
+                  onChange={e=>setSelectedSchool(e.target.value)}
+                  style={{width:"100%",padding:"13px 16px",borderRadius:14,border:`2px solid ${C.border}`,
+                    fontSize:14,fontWeight:600,color:C.text,background:C.card,outline:"none",
+                    marginBottom:16,boxSizing:"border-box"}}>
+                  <option value="">Selecciona tu colegio…</option>
+                  {schools.map(s=>(
+                    <option key={s.id} value={s.id}>{s.name}{s.comuna?` · ${s.comuna}`:""}</option>
+                  ))}
+                </select>
                 {role===ROLES.STUDENT&&selectedSchool&&(
                   <input
-                    placeholder="Tu curso (ej: 5ºB · opcional)"
+                    placeholder="Tu curso (ej: 5ºB)"
                     id="onboard_grade"
                     style={{width:"100%",padding:"13px 16px",borderRadius:14,border:`2px solid ${C.border}`,
                       fontSize:14,fontWeight:600,color:C.text,background:C.card,outline:"none",
@@ -3687,45 +3625,44 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
                   />
                 )}
                 <BtnMain onClick={async()=>{
+                  if(!selectedSchool){ notify("Selecciona tu colegio","⚠️"); return; }
                   if(userId){
                     const {supabase}=await import("./supabase.js");
-                    if(selectedSchool){
-                      if(role===ROLES.TEACHER){
-                        await supabase.from("profiles").update({onboarding_done:true,school_id:selectedSchool}).eq("id",userId);
-                      } else {
-                        const grade = document.getElementById("onboard_grade")?.value?.trim();
-                        if(grade){
-                          const {data:existing}=await supabase.from("school_classes")
-                            .select("id").eq("school_id",selectedSchool).eq("grade",grade).limit(1);
-                          let classId;
-                          if(existing?.length) classId=existing[0].id;
-                          else {
-                            const {data:newCls}=await supabase.from("school_classes")
-                              .insert({school_id:selectedSchool,grade,teacher_id:userId})
-                              .select().single();
-                            classId=newCls?.id;
-                          }
-                          if(classId){
-                            await supabase.from("class_members").insert({class_id:classId,student_id:userId});
-                            const {data:sch}=await supabase.from("schools").select("name").eq("id",selectedSchool).single();
-                            setStudentClass({id:classId,grade,school_name:sch?.name});
-                          }
-                        }
-                        await supabase.from("profiles").update({onboarding_done:true,school_id:selectedSchool}).eq("id",userId);
-                      }
+                    if(role===ROLES.TEACHER){
+                      // Just save school to profile
+                      await supabase.from("profiles").update({
+                        onboarding_done:true, school_id:selectedSchool
+                      }).eq("id",userId);
                     } else {
-                      // Skip school
-                      await supabase.from("profiles").update({onboarding_done:true}).eq("id",userId);
+                      // Student needs grade
+                      const grade = document.getElementById("onboard_grade")?.value?.trim();
+                      if(!grade){ notify("Escribe tu curso","⚠️"); return; }
+                      // Find or create class for this school + grade
+                      const {data:existing} = await supabase.from("school_classes")
+                        .select("id").eq("school_id",selectedSchool).eq("grade",grade).limit(1);
+                      let classId;
+                      if(existing?.length) {
+                        classId = existing[0].id;
+                      } else {
+                        // Create as orphan class (no teacher yet)
+                        const {data:newCls} = await supabase.from("school_classes")
+                          .insert({school_id:selectedSchool,grade,teacher_id:userId})
+                          .select().single();
+                        classId = newCls?.id;
+                      }
+                      if(classId){
+                        await supabase.from("class_members").insert({class_id:classId,student_id:userId});
+                        const {data:sch}=await supabase.from("schools").select("name").eq("id",selectedSchool).single();
+                        setStudentClass({id:classId,grade,school_name:sch?.name});
+                      }
+                      await supabase.from("profiles").update({onboarding_done:true,school_id:selectedSchool}).eq("id",userId);
                     }
                   }
                   setShowOnboarding(false);
-                  notify(`¡Listo ${user.name}! Bienvenido a FinPlay 🎉`,"🚀");
+                  notify(`¡Listo ${user.name}! Bienvenido a FinPlay 🎉`,"🦎");
                 }} bg={`linear-gradient(135deg,${C.gold},${C.goldDk})`} style={{width:"100%"}}>
-                  {selectedSchool?"🎉 ¡Empezar FinPlay!":"Saltar y empezar →"}
+                  🎉 ¡Empezar FinPlay!
                 </BtnMain>
-                <div style={{fontSize:11,color:C.textLt,textAlign:"center",marginTop:8}}>
-                  Puedes elegir o cambiar tu colegio después desde tu perfil
-                </div>
               </>
             )}
             {/* Skip option */}
@@ -3740,157 +3677,6 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
                 Configurar después
               </button>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* ════ SCHOOL PICKER MODAL (cambiar después de registro) ════ */}
-      {showSchoolPicker&&(
-        <div className="overlay" style={{zIndex:9990}}>
-          <div className="modal pop-in" style={{maxHeight:"90vh",overflowY:"auto"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-              <div style={{fontWeight:900,fontSize:18,color:C.text}}>🏫 Mi colegio</div>
-              <button onClick={()=>setShowSchoolPicker(false)} style={{background:C.border,border:"none",borderRadius:9,padding:"4px 8px",cursor:"pointer",color:C.textMed}}>✕</button>
-            </div>
-            <div style={{fontSize:12,color:C.textMed,marginBottom:12,lineHeight:1.5}}>
-              {role===ROLES.TEACHER
-                ?"Selecciona el colegio donde enseñas. Después podrás crear tus cursos."
-                :"Selecciona tu colegio. Tu profesor luego te conectará a tu curso."}
-            </div>
-            <input
-              placeholder="🔍 Buscar colegio o comuna…"
-              value={schoolSearch}
-              onChange={e=>setSchoolSearch(e.target.value)}
-              style={{width:"100%",padding:"11px 16px",borderRadius:12,border:`1.5px solid ${C.border}`,
-                fontSize:14,color:C.text,background:C.card,outline:"none",marginBottom:8,boxSizing:"border-box"}}
-            />
-            <div style={{maxHeight:340,overflowY:"auto",border:`1.5px solid ${C.border}`,borderRadius:12,marginBottom:12,background:C.bg}}>
-              {(()=>{
-                const term = schoolSearch.toLowerCase().trim();
-                const filtered = !term ? schools : schools.filter(s=>
-                  s.name.toLowerCase().includes(term) ||
-                  (s.comuna||"").toLowerCase().includes(term) ||
-                  (s.region||"").toLowerCase().includes(term)
-                );
-                if(filtered.length===0) return <div style={{padding:20,textAlign:"center",color:C.textLt,fontSize:13}}>Sin resultados</div>;
-                const grouped = filtered.reduce((acc,s)=>{
-                  const r = s.region||"Otros";
-                  (acc[r]=acc[r]||[]).push(s);
-                  return acc;
-                },{});
-                return Object.entries(grouped).map(([region,list])=>(
-                  <div key={region}>
-                    <div style={{padding:"8px 12px",background:C.mintLt,fontSize:11,fontWeight:800,color:C.mintDk,textTransform:"uppercase",letterSpacing:0.5,position:"sticky",top:0,zIndex:1}}>
-                      📍 {region} ({list.length})
-                    </div>
-                    {list.map(s=>(
-                      <button key={s.id} onClick={async()=>{
-                        if(userId){
-                          const {supabase}=await import("./supabase.js");
-                          await supabase.from("profiles").update({school_id:s.id}).eq("id",userId);
-                          notify(`Colegio actualizado: ${s.name}`,"🏫");
-                        }
-                        if(role===ROLES.STUDENT){
-                          const grade = prompt("¿Cuál es tu curso? (ej: 5ºB)");
-                          if(grade){
-                            const {supabase}=await import("./supabase.js");
-                            const {data:existing}=await supabase.from("school_classes")
-                              .select("id").eq("school_id",s.id).eq("grade",grade).limit(1);
-                            let classId;
-                            if(existing?.length) classId=existing[0].id;
-                            else {
-                              const {data:newCls}=await supabase.from("school_classes")
-                                .insert({school_id:s.id,grade,teacher_id:userId})
-                                .select().single();
-                              classId=newCls?.id;
-                            }
-                            if(classId){
-                              await supabase.from("class_members").insert({class_id:classId,student_id:userId});
-                              setStudentClass({id:classId,grade,school_name:s.name});
-                            }
-                          }
-                        }
-                        setShowSchoolPicker(false);
-                      }}
-                        style={{width:"100%",padding:"10px 14px",border:"none",
-                          background:"transparent",borderBottom:`1px solid ${C.border}40`,
-                          cursor:"pointer",textAlign:"left"}}>
-                        <div style={{fontSize:13,fontWeight:600,color:C.text}}>{s.name}</div>
-                        {s.comuna&&<div style={{color:C.textMed,fontSize:11,marginTop:2}}>{s.comuna}</div>}
-                      </button>
-                    ))}
-                  </div>
-                ));
-              })()}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ════ CREAR NUEVO CURSO (profesor) ════ */}
-      {showCreateClass&&(
-        <div className="overlay" style={{zIndex:9991}}>
-          <div className="modal pop-in" style={{maxHeight:"90vh",overflowY:"auto"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-              <div style={{fontWeight:900,fontSize:18,color:C.text}}>📚 Crear curso</div>
-              <button onClick={()=>setShowCreateClass(false)} style={{background:C.border,border:"none",borderRadius:9,padding:"4px 8px",cursor:"pointer",color:C.textMed}}>✕</button>
-            </div>
-            <div style={{fontSize:12,color:C.textMed,marginBottom:14,lineHeight:1.5}}>
-              Asocia un curso a tu colegio. Tus alumnos podrán unirse cuando seleccionen el mismo colegio y curso.
-            </div>
-            <div style={{marginBottom:12}}>
-              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:6}}>1. Colegio</div>
-              <input
-                placeholder="🔍 Buscar colegio…"
-                value={schoolSearch}
-                onChange={e=>setSchoolSearch(e.target.value)}
-                style={{width:"100%",padding:"9px 12px",borderRadius:10,border:`1.5px solid ${C.border}`,fontSize:13,color:C.text,background:C.card,outline:"none",marginBottom:6,boxSizing:"border-box"}}
-              />
-              <div style={{maxHeight:160,overflowY:"auto",border:`1.5px solid ${C.border}`,borderRadius:10,background:C.bg}}>
-                {(()=>{
-                  const term = schoolSearch.toLowerCase().trim();
-                  const filtered = !term ? schools.slice(0,30) : schools.filter(s=>
-                    s.name.toLowerCase().includes(term) || (s.comuna||"").toLowerCase().includes(term)
-                  );
-                  return filtered.map(s=>(
-                    <button key={s.id} onClick={()=>setSelectedSchool(s.id)}
-                      style={{width:"100%",padding:"8px 12px",border:"none",
-                        background:selectedSchool===s.id?C.mintLt:"transparent",
-                        borderBottom:`1px solid ${C.border}40`,cursor:"pointer",textAlign:"left"}}>
-                      <div style={{fontSize:12,fontWeight:selectedSchool===s.id?700:500,color:C.text}}>{s.name}</div>
-                      {s.comuna&&<div style={{fontSize:10,color:C.textMed}}>{s.comuna} · {s.region}</div>}
-                    </button>
-                  ));
-                })()}
-              </div>
-            </div>
-            <div style={{marginBottom:14}}>
-              <div style={{fontSize:12,fontWeight:700,color:C.textMed,marginBottom:6}}>2. Nombre del curso</div>
-              <input
-                id="new_class_grade"
-                placeholder="Ej: 5ºB Educación Financiera"
-                style={{width:"100%",padding:"11px 14px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:14,color:C.text,background:C.card,outline:"none",boxSizing:"border-box"}}
-              />
-            </div>
-            <BtnMain onClick={async()=>{
-              if(!selectedSchool){ notify("Selecciona un colegio","⚠️"); return; }
-              const grade = document.getElementById("new_class_grade")?.value?.trim();
-              if(!grade){ notify("Escribe el nombre del curso","⚠️"); return; }
-              try {
-                const {supabase}=await import("./supabase.js");
-                const {data:newCls,error}=await supabase.from("school_classes")
-                  .insert({school_id:selectedSchool,grade,teacher_id:userId})
-                  .select("*, schools(name)").single();
-                if(error) return notify("Error: "+error.message,"⚠️");
-                setMyClasses(p=>[...p,newCls]);
-                notify(`✅ Curso "${grade}" creado`,"📚");
-                setShowCreateClass(false);
-                setSelectedSchool(null);
-                setSchoolSearch("");
-              } catch(e){ notify("Error: "+e.message,"⚠️"); }
-            }} bg={`linear-gradient(135deg,${C.sky},#1565C0)`} style={{width:"100%"}}>
-              📚 Crear curso
-            </BtnMain>
           </div>
         </div>
       )}
@@ -4570,20 +4356,10 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
                       <div key={i} style={{textAlign:"center"}}><div style={{fontWeight:900,fontSize:14}}>{s.v}</div><div style={{fontSize:10,opacity:0.75}}>{s.l}</div></div>
                     ))}
                   </div>
-                  {/* action buttons */}
-                  <div style={{display:"flex",gap:8,marginTop:12,flexWrap:"wrap",justifyContent:"center"}}>
-                    <button onClick={()=>setShowAvatarEditor(true)} style={{padding:"7px 18px",borderRadius:20,border:"2px solid rgba(255,255,255,0.5)",background:"rgba(255,255,255,0.15)",color:"white",fontSize:12,fontWeight:700,cursor:"pointer",backdropFilter:"blur(4px)"}}>
-                      ✏️ Editar perfil
-                    </button>
-                    {(role===ROLES.STUDENT||role===ROLES.TEACHER)&&(
-                      <button onClick={async()=>{
-                        await loadSchools();
-                        setShowSchoolPicker(true);
-                      }} style={{padding:"7px 18px",borderRadius:20,border:"2px solid rgba(255,255,255,0.5)",background:"rgba(255,255,255,0.15)",color:"white",fontSize:12,fontWeight:700,cursor:"pointer",backdropFilter:"blur(4px)"}}>
-                        🏫 {studentClass||initialProfile?.school_id?"Mi colegio":"Elegir colegio"}
-                      </button>
-                    )}
-                  </div>
+                  {/* edit button */}
+                  <button onClick={()=>setShowAvatarEditor(true)} style={{marginTop:12,padding:"7px 18px",borderRadius:20,border:"2px solid rgba(255,255,255,0.5)",background:"rgba(255,255,255,0.15)",color:"white",fontSize:12,fontWeight:700,cursor:"pointer",backdropFilter:"blur(4px)"}}>
+                    ✏️ Editar perfil
+                  </button>
                 </div>
               );
             })()}
@@ -5134,44 +4910,6 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
                   <div style={{fontSize:10,color:C.textMed}}>{s.l}</div>
                 </div>
               ))}
-            </div>
-
-            {/* ── MIS CURSOS ── */}
-            <div style={{background:C.card,borderRadius:16,padding:14,marginBottom:12,boxShadow:C.shadow}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-                <div style={{fontWeight:800,fontSize:14,color:C.text}}>🏫 Mis cursos</div>
-                <button onClick={async()=>{
-                  await loadSchools();
-                  setShowCreateClass(true);
-                }} style={{background:C.skyLt,border:`1.5px solid ${C.sky}40`,borderRadius:10,padding:"6px 12px",color:C.sky,fontSize:11,fontWeight:700,cursor:"pointer"}}>
-                  + Nuevo curso
-                </button>
-              </div>
-              {myClasses.length===0?(
-                <div style={{textAlign:"center",padding:"16px 12px",color:C.textMed,fontSize:13,background:C.bg,borderRadius:12,border:`1.5px dashed ${C.border}`}}>
-                  📚 Aún no tienes cursos<br/>
-                  <span style={{fontSize:11,color:C.textLt}}>Crea uno para empezar a vincular alumnos</span>
-                </div>
-              ):(
-                myClasses.map(cls=>(
-                  <div key={cls.id} style={{padding:"10px 12px",background:C.skyLt,borderRadius:12,marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                    <div>
-                      <div style={{fontWeight:800,fontSize:13,color:C.text}}>{cls.grade}</div>
-                      <div style={{fontSize:11,color:C.textMed}}>{cls.schools?.name||"Mi colegio"}</div>
-                    </div>
-                    <button onClick={async()=>{
-                      const {supabase}=await import("./supabase.js");
-                      const {data:members}=await supabase.from("class_members")
-                        .select("student_id, profiles!student_id(name,username,avatar_key,xp,level)")
-                        .eq("class_id",cls.id);
-                      const list = (members||[]).map(m=>`• ${m.profiles?.name||"?"} (Nv.${m.profiles?.level||1})`).join("\n")||"Sin alumnos aún";
-                      alert(`📋 Alumnos en ${cls.grade}:\n\n${list}\n\n💡 Comparte tu código tutor con tus alumnos para que se unan.`);
-                    }} style={{background:C.card,border:`1.5px solid ${C.sky}`,borderRadius:10,padding:"6px 12px",color:C.sky,fontSize:11,fontWeight:700,cursor:"pointer"}}>
-                      Ver alumnos
-                    </button>
-                  </div>
-                ))
-              )}
             </div>
 
             {/* analytics */}
@@ -6092,123 +5830,29 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
                     <div style={{textAlign:"center",padding:"12px 0",color:C.textMed,fontSize:12}}>Sin vínculos registrados</div>
                   )}
 
-                  {/* Asignar tutor o profesor manualmente (solo admin) */}
+                  {/* Assign tutor manually */}
                   {user.isMaster&&selectedUser.role==="student"&&(
                     <div style={{background:C.card,borderRadius:16,padding:12,marginTop:8,border:`1.5px solid ${C.border}`}}>
-                      <div style={{fontWeight:700,fontSize:12,color:C.text,marginBottom:10}}>➕ Vincular adulto al estudiante</div>
-                      
-                      {/* Asignar Padre/Tutor */}
-                      <div style={{marginBottom:12}}>
-                        <div style={{fontSize:11,fontWeight:700,color:C.goldDk,marginBottom:6}}>👨‍👩‍👦 Padre/Tutor</div>
-                        <select id="admin_tutor_select" style={{width:"100%",padding:"8px 12px",borderRadius:10,border:`1.5px solid ${C.border}`,fontSize:12,color:C.text,background:C.card,outline:"none",marginBottom:6}}>
-                          <option value="">Selecciona un padre…</option>
-                          {adminUsers.filter(u=>u.role==="parent"&&u.id!==selectedUser.id&&!userLinks.parents.find(p=>p.id===u.id)).map(u=>(
-                            <option key={u.id} value={u.id}>{u.name} (@{u.username||"—"})</option>
-                          ))}
-                        </select>
-                        <button onClick={async()=>{
-                          const sel = document.getElementById("admin_tutor_select").value;
-                          if(!sel) return notify("Selecciona un padre/tutor","⚠️");
-                          const tutorData = adminUsers.find(u=>u.id===sel);
-                          if(!tutorData) return notify("Usuario no encontrado","⚠️");
-                          try {
-                            const {supabase}=await import("./supabase.js");
-                            const {error} = await supabase.from("parent_child").insert({parent_id:sel,child_id:selectedUser.id});
-                            if(error){
-                              if(error.code==="23505") return notify("Ya está vinculado a este estudiante","ℹ️");
-                              return notify("Error: "+error.message,"⚠️");
-                            }
-                            await supabase.from("profiles").update({account_status:"active"}).eq("id",selectedUser.id);
-                            setUserLinks(prev=>({...prev,parents:[...prev.parents,{id:sel,name:tutorData.name,username:tutorData.username,avatar_key:tutorData.avatar_key}]}));
-                            setAdminUsers(p=>p.map(u=>u.id===selectedUser.id?{...u,account_status:"active"}:u));
-                            // Reset select
-                            document.getElementById("admin_tutor_select").value="";
-                            notify(`✅ ${tutorData.name} vinculado como tutor`,"🔗");
-                          } catch(e){ notify("Error: "+e.message,"⚠️"); }
-                        }} style={{width:"100%",padding:"9px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${C.gold},${C.goldDk})`,color:"white",fontWeight:700,fontSize:12,cursor:"pointer"}}>
-                          ✅ Vincular padre/tutor
-                        </button>
-                      </div>
-
-                      {/* Asignar Profesor */}
-                      <div>
-                        <div style={{fontSize:11,fontWeight:700,color:C.sky,marginBottom:6}}>🏫 Profesor</div>
-                        <select id="admin_teacher_select" style={{width:"100%",padding:"8px 12px",borderRadius:10,border:`1.5px solid ${C.border}`,fontSize:12,color:C.text,background:C.card,outline:"none",marginBottom:6}}>
-                          <option value="">Selecciona un profesor…</option>
-                          {adminUsers.filter(u=>u.role==="teacher"&&u.id!==selectedUser.id&&!userLinks.teachers.find(t=>t.id===u.id)).map(u=>(
-                            <option key={u.id} value={u.id}>{u.name} (@{u.username||"—"})</option>
-                          ))}
-                        </select>
-                        <button onClick={async()=>{
-                          const sel = document.getElementById("admin_teacher_select").value;
-                          if(!sel) return notify("Selecciona un profesor","⚠️");
-                          const teacherData = adminUsers.find(u=>u.id===sel);
-                          if(!teacherData) return notify("Usuario no encontrado","⚠️");
-                          try {
-                            const {supabase}=await import("./supabase.js");
-                            const {error} = await supabase.from("teacher_student").insert({teacher_id:sel,student_id:selectedUser.id});
-                            if(error){
-                              if(error.code==="23505") return notify("Ya está vinculado a este estudiante","ℹ️");
-                              return notify("Error: "+error.message,"⚠️");
-                            }
-                            setUserLinks(prev=>({...prev,teachers:[...prev.teachers,{id:sel,name:teacherData.name,username:teacherData.username,avatar_key:teacherData.avatar_key}]}));
-                            document.getElementById("admin_teacher_select").value="";
-                            notify(`✅ ${teacherData.name} vinculado como profesor`,"🏫");
-                          } catch(e){ notify("Error: "+e.message,"⚠️"); }
-                        }} style={{width:"100%",padding:"9px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${C.sky},#1565C0)`,color:"white",fontWeight:700,fontSize:12,cursor:"pointer"}}>
-                          ✅ Vincular profesor
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Asignar estudiante a un padre/profesor (cuando seleccionan adulto) */}
-                  {user.isMaster&&(selectedUser.role==="parent"||selectedUser.role==="teacher")&&(
-                    <div style={{background:C.card,borderRadius:16,padding:12,marginTop:8,border:`1.5px solid ${C.border}`}}>
-                      <div style={{fontWeight:700,fontSize:12,color:C.text,marginBottom:10}}>➕ Asignar estudiante</div>
-                      <select id="admin_student_select" style={{width:"100%",padding:"8px 12px",borderRadius:10,border:`1.5px solid ${C.border}`,fontSize:12,color:C.text,background:C.card,outline:"none",marginBottom:8}}>
-                        <option value="">Selecciona un estudiante…</option>
-                        {adminUsers.filter(u=>{
-                          if(u.role!=="student"||u.id===selectedUser.id) return false;
-                          const linkList = selectedUser.role==="parent"?userLinks.children:userLinks.students;
-                          return !linkList.find(s=>s.id===u.id);
-                        }).map(u=>(
+                      <div style={{fontWeight:700,fontSize:12,color:C.text,marginBottom:8}}>➕ Asignar tutor manualmente</div>
+                      <select id="admin_tutor_select" style={{width:"100%",padding:"8px 12px",borderRadius:10,border:`1.5px solid ${C.border}`,fontSize:12,color:C.text,background:C.card,outline:"none",marginBottom:8}}>
+                        <option value="">Selecciona un padre/tutor…</option>
+                        {adminUsers.filter(u=>u.role==="parent"&&u.id!==selectedUser.id).map(u=>(
                           <option key={u.id} value={u.id}>{u.name} (@{u.username||"—"})</option>
                         ))}
                       </select>
                       <button onClick={async()=>{
-                        const sel = document.getElementById("admin_student_select").value;
-                        if(!sel) return notify("Selecciona un estudiante","⚠️");
-                        const studentData = adminUsers.find(u=>u.id===sel);
-                        if(!studentData) return notify("Usuario no encontrado","⚠️");
-                        try {
-                          const {supabase}=await import("./supabase.js");
-                          let error;
-                          if(selectedUser.role==="parent"){
-                            const r = await supabase.from("parent_child").insert({parent_id:selectedUser.id,child_id:sel});
-                            error = r.error;
-                          } else {
-                            const r = await supabase.from("teacher_student").insert({teacher_id:selectedUser.id,student_id:sel});
-                            error = r.error;
-                          }
-                          if(error){
-                            if(error.code==="23505") return notify("Ya están vinculados","ℹ️");
-                            return notify("Error: "+error.message,"⚠️");
-                          }
-                          // Activate student account
-                          await supabase.from("profiles").update({account_status:"active"}).eq("id",sel);
-                          setAdminUsers(p=>p.map(u=>u.id===sel?{...u,account_status:"active"}:u));
-                          // Update local state
-                          if(selectedUser.role==="parent"){
-                            setUserLinks(prev=>({...prev,children:[...prev.children,{id:sel,name:studentData.name,username:studentData.username,avatar_key:studentData.avatar_key}]}));
-                          } else {
-                            setUserLinks(prev=>({...prev,students:[...prev.students,{id:sel,name:studentData.name,username:studentData.username,avatar_key:studentData.avatar_key}]}));
-                          }
-                          document.getElementById("admin_student_select").value="";
-                          notify(`✅ ${studentData.name} vinculado al ${selectedUser.role==="parent"?"tutor":"profesor"}`,"🔗");
-                        } catch(e){ notify("Error: "+e.message,"⚠️"); }
+                        const sel = document.getElementById("admin_tutor_select").value;
+                        if(!sel) return notify("Selecciona un tutor","⚠️");
+                        const tutorName = adminUsers.find(u=>u.id===sel)?.name||"Tutor";
+                        const {supabase}=await import("./supabase.js");
+                        const {error} = await supabase.from("parent_child").insert({parent_id:sel,child_id:selectedUser.id});
+                        if(error&&error.code!=="23505") return notify("Error: "+error.message,"⚠️");
+                        await supabase.from("profiles").update({account_status:"active"}).eq("id",selectedUser.id);
+                        setUserLinks(prev=>({...prev,parents:[...prev.parents,{id:sel,name:tutorName}]}));
+                        setAdminUsers(p=>p.map(u=>u.id===selectedUser.id?{...u,account_status:"active"}:u));
+                        notify(`✅ ${tutorName} asignado como tutor`,"🔗");
                       }} style={{width:"100%",padding:"9px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${C.mint},${C.mintDk})`,color:"white",fontWeight:700,fontSize:12,cursor:"pointer"}}>
-                        ✅ Vincular estudiante
+                        ✅ Asignar tutor
                       </button>
                     </div>
                   )}
