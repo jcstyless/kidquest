@@ -884,14 +884,23 @@ Sé justo: el objetivo es motivar, no bloquear al niño.`;
 }
 
 async function appealDecision(taskTitle, originalReason, childExplanation) {
+  const prompt = `Eres el sistema de apelaciones de FinPlay. Un niño apeló una tarea rechazada.
+TAREA: "${taskTitle}"
+RAZÓN DEL RECHAZO: "${originalReason}"
+EXPLICACIÓN DEL NIÑO: "${childExplanation}"
+
+Evalúa si la apelación es válida. Responde SOLO JSON:
+{
+  "appeal_approved": bool,
+  "response": "Respuesta empática al niño, max 30 palabras en español",
+  "partial_credit": 0-100,
+  "tip_for_next_time": "Consejo constructivo max 20 palabras"
+}
+Sé empático y generoso si la explicación es razonable. El objetivo es educar, no castigar.`;
   try {
-    return await callEdgeAI({
-      mode: "appeal",
-      taskTitle,
-      originalReason,
-      childExplanation,
-    });
-  } catch(e) {
+    const raw = await callAI([{role:"user",content:prompt}]);
+    return JSON.parse(raw.replace(/```json|```/g,"").trim());
+  } catch {
     return {appeal_approved:true,response:"¡Apelación aceptada! Sabemos que lo intentaste 😊",partial_credit:75,tip_for_next_time:"La próxima vez toma la foto con mejor luz."};
   }
 }
@@ -1209,7 +1218,6 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
   const [gpsOk,       setGpsOk]       = useState(false);
   const [qrOk,        setQrOk]        = useState(false);
   const [qrTimer,     setQrTimer]     = useState(0);
-  const [activeQrCode, setActiveQrCode] = useState(null); // {id, code, expires_at}
   const [selfDesc,    setSelfDesc]     = useState("");
   const [verifyMode,  setVerifyMode]  = useState("photo"); // photo|qr|self|appeal
   const [appealText,  setAppealText]  = useState("");
@@ -1742,7 +1750,7 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
   const openVerify = (task) => {
     setVerifyTask(task); setPhotoThumb(null); setPhotoB64(null);
     setAiResult(null); setAiLoading(false); setGpsOk(false); setQrOk(false);
-    setQrTimer(0); setActiveQrCode(null); setSelfDesc(""); setVerifyMode("photo"); setAppealText(""); setAppealRes(null);
+    setQrTimer(0); setSelfDesc(""); setVerifyMode("photo"); setAppealText(""); setAppealRes(null);
   };
 
   const handleFile = async (e) => {
@@ -1780,44 +1788,9 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
     }
   };
 
-  const showQR = async() => {
-    if(!verifyTask||!userId) return;
-    setQrTimer(0);
-    setQrOk(false);
-    try {
-      const {supabase}=await import("./supabase.js");
-      // Generate 6-digit code
-      const code = Math.floor(100000 + Math.random()*900000).toString();
-      const {data:newCode, error}=await supabase.from("task_validation_codes").insert({
-        code, student_id: userId,
-        task_title: verifyTask.title,
-        task_hint: verifyTask.hint||"",
-        xp: verifyTask.xp, coins: verifyTask.coins,
-        status: "pending"
-      }).select().single();
-      if(error) {
-        notify("Error generando código: "+error.message,"⚠️");
-        return;
-      }
-      setActiveQrCode(newCode);
-      // Subscribe to realtime updates - listen for tutor approval
-      const channel = supabase.channel(`task-code-${newCode.id}`)
-        .on("postgres_changes",
-          {event:"UPDATE", schema:"public", table:"task_validation_codes", filter:`id=eq.${newCode.id}`},
-          (payload)=>{
-            const updated = payload.new;
-            if(updated.status==="approved"){
-              setQrOk(true);
-              notify("✅ Tutor aprobó tu tarea","🔑");
-              channel.unsubscribe();
-            } else if(updated.status==="rejected"){
-              notify("Tu tutor rechazó la solicitud","⚠️");
-              setActiveQrCode(null);
-              channel.unsubscribe();
-            }
-          })
-        .subscribe();
-    } catch(e){ notify("Error: "+e.message,"⚠️"); }
+  const showQR = () => {
+    setQrTimer(8);
+    const iv=setInterval(()=>setQrTimer(c=>{ if(c<=1){clearInterval(iv);setQrOk(true);notify("QR validado por el tutor ✓","🔑");return 0;} return c-1; }),1000);
   };
 
   const submitTask = async (partial=false) => {
@@ -2288,36 +2261,22 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
               </div>
             )}
 
-            {/* QR MODE — código real de 6 dígitos */}
+            {/* QR MODE */}
             {verifyMode==="qr"&&(
               <div>
-                <div style={{fontSize:13,color:C.textMed,marginBottom:12,lineHeight:1.5}}>
-                  Comparte este código con tu papá, mamá o tutor. Ellos lo aprobarán desde su app.
-                </div>
+                <div style={{fontSize:13,color:C.textMed,marginBottom:12,lineHeight:1.5}}>Muéstrale este QR a tu papá, mamá o tutor para que confirme que hiciste la tarea:</div>
                 {!qrOk?(
-                  activeQrCode?(
-                    <div style={{background:C.goldLt,border:`2px solid ${C.gold}`,borderRadius:16,padding:20,textAlign:"center"}}>
-                      <div style={{fontSize:11,color:C.goldDk,fontWeight:700,marginBottom:8,textTransform:"uppercase",letterSpacing:1}}>Tu código</div>
-                      <div style={{background:"white",borderRadius:14,padding:"16px 20px",margin:"0 auto 12px",boxShadow:C.shadow,display:"inline-block"}}>
-                        <div style={{fontWeight:900,fontSize:36,color:C.goldDk,letterSpacing:6,fontFamily:"monospace"}}>{activeQrCode.code}</div>
-                      </div>
-                      <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontSize:12,color:C.textMed}}>
-                        <span style={{display:"inline-block",width:8,height:8,borderRadius:"50%",background:C.gold,animation:"pulse 1.5s ease-in-out infinite"}}/>
-                        <span>Esperando aprobación del tutor…</span>
-                      </div>
-                      <div style={{fontSize:10,color:C.textLt,marginTop:8}}>
-                        Expira en 15 minutos
-                      </div>
+                  qrTimer>0?(
+                    <div style={{background:C.goldLt,border:`1.5px solid ${C.gold}`,borderRadius:16,padding:16,textAlign:"center"}}>
+                      <div style={{background:"white",borderRadius:12,padding:14,width:90,margin:"0 auto 10px",boxShadow:C.shadow}}><div style={{fontSize:48}}>🔲</div></div>
+                      <div style={{fontWeight:900,fontSize:28,color:C.goldDk}}>{qrTimer}</div>
+                      <div style={{fontSize:12,color:C.textMed}}>Esperando que tu tutor escanee…</div>
                     </div>
                   ):(
-                    <button className="vstep-btn" onClick={()=>showQR()} style={{borderColor:C.gold,color:C.goldDk}}>
-                      🔑 Generar código para el tutor
-                    </button>
+                    <button className="vstep-btn" onClick={()=>showQR()} style={{borderColor:C.gold,color:C.goldDk}}>Mostrar QR al tutor</button>
                   )
                 ):(
-                  <div className="verify-ok" style={{background:C.mintLt,borderColor:C.mint,color:C.mintDk}}>
-                    ✅ Tutor aprobó tu tarea
-                  </div>
+                  <div className="verify-ok" style={{background:C.mintLt,borderColor:C.mint,color:C.mintDk}}>QR validado ✓</div>
                 )}
               </div>
             )}
@@ -4847,9 +4806,6 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
             <TutorRequestsPanel userId={userId} C={C} notify={notify} onApprove={(childId,childName)=>{
               setLinkedStudents(p=>[...p,{id:childId,name:childName,avatar:"a_cub",level:1,gem_reward_claimed:false}]);
             }}/>
-
-            {/* Approve task by code (6 digit) */}
-            <TaskCodeApprovalPanel userId={userId} linkedStudents={linkedStudents} C={C} notify={notify} setUser={setUser}/>
             {/* Real pending tasks from Supabase */}
             {loadingPending&&(
               <div style={{textAlign:"center",padding:24,color:C.textMed}}>
@@ -6322,160 +6278,6 @@ function RarDot({r}){
 // ═══════════════════════════════════════════════════════════
 // TUTOR REQUESTS PANEL — parents see pending child requests
 // ═══════════════════════════════════════════════════════════
-function TaskCodeApprovalPanel({userId, linkedStudents, C, notify, setUser}) {
-  const [code,    setCode]    = useState("");
-  const [loading, setLoading] = useState(false);
-  const [pending, setPending] = useState([]); // pending codes from linked children
-
-  // Load pending codes from linked children
-  useEffect(()=>{
-    if(!userId||!linkedStudents?.length) return;
-    const childIds = linkedStudents.map(s=>s.id);
-    if(!childIds.length) return;
-    
-    import("./supabase.js").then(async({supabase})=>{
-      try {
-        const {data}=await supabase.from("task_validation_codes")
-          .select("*, profiles!student_id(name,avatar_key)")
-          .in("student_id", childIds)
-          .eq("status","pending")
-          .gt("expires_at", new Date().toISOString())
-          .order("created_at",{ascending:false});
-        if(data) setPending(data);
-        // Subscribe to new codes
-        const channel = supabase.channel("task-codes-tutor")
-          .on("postgres_changes",
-            {event:"*", schema:"public", table:"task_validation_codes"},
-            async()=>{
-              const {data:fresh}=await supabase.from("task_validation_codes")
-                .select("*, profiles!student_id(name,avatar_key)")
-                .in("student_id", childIds)
-                .eq("status","pending")
-                .gt("expires_at", new Date().toISOString())
-                .order("created_at",{ascending:false});
-              setPending(fresh||[]);
-            })
-          .subscribe();
-        return ()=>channel.unsubscribe();
-      } catch(e){ console.warn("Codes load:", e.message); }
-    });
-  },[userId, linkedStudents?.length]);
-
-  const approveCode = async(record) => {
-    setLoading(true);
-    try {
-      const {supabase}=await import("./supabase.js");
-      const {error}=await supabase.from("task_validation_codes")
-        .update({status:"approved", approved_by:userId, resolved_at:new Date().toISOString()})
-        .eq("id", record.id);
-      if(error) return notify("Error: "+error.message,"⚠️");
-      // Award student
-      const {data:childProf}=await supabase.from("profiles").select("xp,coins,total_tasks_done,rubies").eq("id",record.student_id).single();
-      if(childProf){
-        await supabase.from("profiles").update({
-          xp: (childProf.xp||0)+(record.xp||0),
-          coins: (childProf.coins||0)+(record.coins||0),
-          total_tasks_done: (childProf.total_tasks_done||0)+1
-        }).eq("id",record.student_id);
-      }
-      // Reward parent with rubies
-      if(setUser){
-        setUser(p=>{
-          const newR = (p.rubies||0)+1;
-          supabase.from("profiles").update({rubies:newR}).eq("id",userId);
-          return {...p, rubies:newR};
-        });
-      }
-      setPending(p=>p.filter(r=>r.id!==record.id));
-      notify(`✅ Tarea aprobada · +1 🔴 rubí`,"🎉");
-    } catch(e){ notify("Error: "+e.message,"⚠️"); }
-    setLoading(false);
-  };
-
-  const rejectCode = async(record) => {
-    if(!confirm(`¿Rechazar tarea "${record.task_title}"?`)) return;
-    setLoading(true);
-    try {
-      const {supabase}=await import("./supabase.js");
-      await supabase.from("task_validation_codes")
-        .update({status:"rejected", approved_by:userId, resolved_at:new Date().toISOString()})
-        .eq("id", record.id);
-      setPending(p=>p.filter(r=>r.id!==record.id));
-      notify("Tarea rechazada","⚠️");
-    } catch(e){}
-    setLoading(false);
-  };
-
-  const submitCode = async() => {
-    if(code.length!==6) return notify("El código debe tener 6 dígitos","⚠️");
-    setLoading(true);
-    try {
-      const {supabase}=await import("./supabase.js");
-      const {data}=await supabase.from("task_validation_codes")
-        .select("*, profiles!student_id(name)")
-        .eq("code", code)
-        .eq("status","pending")
-        .gt("expires_at", new Date().toISOString())
-        .maybeSingle();
-      if(!data){
-        notify("Código inválido o expirado","⚠️");
-        setLoading(false);
-        return;
-      }
-      await approveCode(data);
-      setCode("");
-    } catch(e){ notify("Error: "+e.message,"⚠️"); }
-    setLoading(false);
-  };
-
-  if(!linkedStudents?.length) return null;
-
-  return (
-    <div style={{background:C.card,borderRadius:16,padding:14,marginBottom:12,boxShadow:C.shadow,border:`1.5px solid ${C.gold}30`}}>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
-        <span style={{fontSize:20}}>🔑</span>
-        <div style={{fontWeight:800,fontSize:14,color:C.text}}>Validar con código</div>
-      </div>
-
-      {/* Pending codes from kids */}
-      {pending.length>0&&(
-        <div style={{marginBottom:12}}>
-          {pending.map(rec=>(
-            <div key={rec.id} style={{background:C.goldLt,borderRadius:12,padding:"10px 12px",marginBottom:8,border:`1.5px solid ${C.gold}40`}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:11,color:C.goldDk,fontWeight:700,marginBottom:2}}>
-                    {rec.profiles?.name||"Estudiante"} pide aprobación
-                  </div>
-                  <div style={{fontWeight:700,fontSize:13,color:C.text}}>{rec.task_title}</div>
-                  <div style={{fontSize:11,color:C.textMed,marginTop:2}}>+{rec.xp} XP · +{rec.coins} 💰</div>
-                  <div style={{fontWeight:900,fontSize:18,color:C.goldDk,fontFamily:"monospace",letterSpacing:3,marginTop:4}}>{rec.code}</div>
-                </div>
-                <div style={{display:"flex",flexDirection:"column",gap:4}}>
-                  <button disabled={loading} onClick={()=>approveCode(rec)} style={{padding:"6px 12px",borderRadius:10,border:"none",background:C.mint,color:"white",fontSize:11,fontWeight:700,cursor:"pointer"}}>✅ Aprobar</button>
-                  <button disabled={loading} onClick={()=>rejectCode(rec)} style={{padding:"6px 12px",borderRadius:10,border:`1.5px solid ${C.coral}`,background:"transparent",color:C.coral,fontSize:11,fontWeight:700,cursor:"pointer"}}>✕ Rechazar</button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Manual code entry */}
-      <div style={{fontSize:11,color:C.textMed,marginBottom:6}}>O ingresa el código que te dio tu hijo:</div>
-      <div style={{display:"flex",gap:8}}>
-        <input value={code} onChange={e=>setCode(e.target.value.replace(/[^0-9]/g,"").slice(0,6))}
-          placeholder="000000" maxLength={6}
-          style={{flex:1,padding:"11px 14px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:18,fontWeight:900,color:C.text,background:C.card,outline:"none",letterSpacing:6,fontFamily:"monospace",textAlign:"center"}}/>
-        <button disabled={loading||code.length!==6} onClick={submitCode}
-          style={{padding:"11px 18px",borderRadius:12,border:"none",background:code.length===6?`linear-gradient(135deg,${C.gold},${C.goldDk})`:C.border,color:"white",fontSize:13,fontWeight:700,cursor:code.length===6?"pointer":"not-allowed",opacity:code.length===6?1:0.5}}>
-          ✓ Validar
-        </button>
-      </div>
-    </div>
-  );
-}
-
 function TutorRequestsPanel({userId, C, notify, onApprove}) {
   const [requests, setRequests] = useState([]);
   const [loading,  setLoading]  = useState(false);
