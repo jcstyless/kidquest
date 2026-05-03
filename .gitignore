@@ -36,3 +36,7 @@ client_secret_*.json
 *.pem
 *.key
 *.p12
+
+client_secret_*.json
+*.env
+.env.local
