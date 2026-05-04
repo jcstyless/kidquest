@@ -1015,10 +1015,7 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
   // tutor linking
   const [showLinkTutor,  setShowLinkTutor]  = useState(false);
   const [linkStep,       setLinkStep]       = useState("scan"); // scan|confirm|done
-  const [linkedTutors,   setLinkedTutors]   = useState([]);
-  const [tutorCode,      setTutorCode]      = useState("");
-  const [chatProfileUserId, setChatProfileUserId] = useState(null); // user clicked in chat
-  const [chatProfileData,   setChatProfileData]   = useState(null);
+  const [linkedTutors,   setLinkedTutors]   = useState(["Mamá Laura"]);
   const [linkedStudents, setLinkedStudents] = useState(DEMO_LINKED);
   const [pendingStudent, setPendingStudent] = useState(null);
 
@@ -1624,7 +1621,7 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
         .order("created_at",{ascending:true})
         .limit(50);
       if(clanMsgs?.length) setKMsgs(clanMsgs.map(m=>({
-        id:m.id, author:m.author_name, username:m.author_username, authorId:m.author_id, avatar:m.avatar_key||"a_cub",
+        id:m.id, author:m.author_name, avatar:m.avatar_key||"a_cub",
         role:m.author_role, text:m.text, time:new Date(m.created_at).toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"}),
         system:m.is_system,
       })));
@@ -1640,7 +1637,7 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
               .select("*").eq("room",`class_${cm.class_id}`)
               .order("created_at",{ascending:true}).limit(50);
             if(cMsgs?.length) setClassMsgs(cMsgs.map(m=>({
-              id:m.id, author:m.author_name, username:m.author_username, authorId:m.author_id, avatar:m.avatar_key||"a_cub",
+              id:m.id, author:m.author_name, avatar:m.avatar_key||"a_cub",
               role:m.author_role, text:m.text,
               time:new Date(m.created_at).toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"}),
               system:m.is_system
@@ -1655,7 +1652,7 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
         .order("created_at",{ascending:true})
         .limit(50);
       if(adultMsgs?.length) setAMsgs(adultMsgs.map(m=>({
-        id:m.id, author:m.author_name, username:m.author_username, authorId:m.author_id, avatar:m.avatar_key||"a_buddy",
+        id:m.id, author:m.author_name, avatar:m.avatar_key||"a_buddy",
         role:m.author_role, text:m.text, time:new Date(m.created_at).toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"}),
         system:m.is_system,
       })));
@@ -1667,7 +1664,7 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
           payload=>{
             const m = payload.new;
             setKMsgs(p=>[...p,{
-              id:m.id, author:m.author_name, username:m.author_username, authorId:m.author_id, avatar:m.avatar_key||"a_cub",
+              id:m.id, author:m.author_name, avatar:m.avatar_key||"a_cub",
               role:m.author_role, text:m.text,
               time:new Date(m.created_at).toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"}),
               system:m.is_system,
@@ -1682,7 +1679,7 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
           payload=>{
             const m = payload.new;
             setAMsgs(p=>[...p,{
-              id:m.id, author:m.author_name, username:m.author_username, authorId:m.author_id, avatar:m.avatar_key||"a_buddy",
+              id:m.id, author:m.author_name, avatar:m.avatar_key||"a_buddy",
               role:m.author_role, text:m.text,
               time:new Date(m.created_at).toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"}),
               system:m.is_system,
@@ -1707,19 +1704,6 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
     return "clan"; // students use general clan chat
   };
 
-  const onChatProfileClick = async(authorId) => {
-    if(!authorId) return;
-    setChatProfileUserId(authorId);
-    setChatProfileData(null); // loading
-    try {
-      const {supabase}=await import("./supabase.js");
-      const {data}=await supabase.from("profiles")
-        .select("id, name, username, avatar_key, frame, avatar_emoji, role, level")
-        .eq("id", authorId).single();
-      if(data) setChatProfileData(data);
-    } catch(e){}
-  };
-
   const sendChatMsg = async(text, room="clan") => {
     if(!text.trim()||!userId) return;
     const actualRoom = getChatRoom(room);
@@ -1729,7 +1713,6 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
         room: actualRoom,
         author_id: userId,
         author_name: user.name,
-        author_username: user.username||null,
         author_role: role,
         avatar_key: user.avatar,
         text: text.trim(),
@@ -2465,113 +2448,84 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
               <button onClick={()=>{setShowLinkTutor(false);setLinkStep("scan");}} style={{background:C.border,border:"none",borderRadius:10,padding:"4px 8px",color:C.textMed,cursor:"pointer",fontSize:15}}>✕</button>
             </div>
 
-            {/* STUDENT FLOW — usar código real del tutor */}
+            {/* STUDENT FLOW */}
             {role===ROLES.STUDENT&&(
               <>
                 {linkStep==="scan"&&(
-                  <div>
-                    <div style={{textAlign:"center",marginBottom:16}}>
-                      <div style={{fontSize:48,marginBottom:8}}>🔗</div>
-                      <div style={{fontWeight:800,fontSize:16,color:C.text,marginBottom:8}}>Vincula a tu tutor</div>
-                      <div style={{fontSize:13,color:C.textMed,lineHeight:1.5}}>
-                        Pídele a tu papá, mamá o tutor que abra FinPlay y vaya a la pestaña <b>Mi QR</b> para generar un código de invitación.
+                  <div style={{textAlign:"center"}}>
+                    <div style={{fontSize:48,marginBottom:8}}>📱</div>
+                    <div style={{fontWeight:800,fontSize:16,color:C.text,marginBottom:8}}>Muestra este código a tu tutor</div>
+                    <div style={{fontSize:13,color:C.textMed,marginBottom:20,lineHeight:1.5}}>
+                      Tu papá, mamá o tutor debe abrir FinPlay, ir a <b>Vincular Estudiante</b> y escanear este código.
+                    </div>
+                    {/* Big QR code */}
+                    <div style={{background:"white",borderRadius:20,padding:20,width:170,margin:"0 auto 16px",boxShadow:C.shadowMd,border:`2px solid ${C.mint}40`}}>
+                      <svg width="130" height="130" viewBox="0 0 130 130">
+                        {/* Simulated QR pattern */}
+                        {[...Array(7)].map((_,r)=>[...Array(7)].map((_,c)=>{
+                          const corner=(r<3&&c<3)||(r<3&&c>3)||(r>3&&c<3);
+                          return corner&&!(r===1&&c===1&&r<3&&c<3)&&!(r===1&&c===5)&&!(r===5&&c===1)
+                            ?<rect key={`${r}${c}`} x={10+c*16} y={10+r*16} width={14} height={14} rx={2} fill="#1a2e28"/>:null;
+                        }))}
+                        {/* center pattern */}
+                        {[...Array(4)].map((_,r)=>[...Array(4)].map((_,c)=>(
+                          Math.random()>0.5&&<rect key={`c${r}${c}`} x={36+c*14} y={36+r*14} width={12} height={12} rx={1} fill="#1a2e28"/>
+                        )))}
+                        <rect x="10" y="10" width="48" height="48" rx="4" fill="none" stroke="#1a2e28" strokeWidth="4"/>
+                        <rect x="72" y="10" width="48" height="48" rx="4" fill="none" stroke="#1a2e28" strokeWidth="4"/>
+                        <rect x="10" y="72" width="48" height="48" rx="4" fill="none" stroke="#1a2e28" strokeWidth="4"/>
+                        <rect x="22" y="22" width="24" height="24" rx="2" fill="#1a2e28"/>
+                        <rect x="84" y="22" width="24" height="24" rx="2" fill="#1a2e28"/>
+                        <rect x="22" y="84" width="24" height="24" rx="2" fill="#1a2e28"/>
+                      </svg>
+                      <div style={{fontSize:10,color:C.textMed,fontWeight:700,marginTop:6}}>MATEO-{Math.random().toString(36).slice(2,6).toUpperCase()}</div>
+                    </div>
+                    <div style={{background:C.goldLt,border:`1.5px solid ${C.gold}60`,borderRadius:14,padding:"8px 16px",marginBottom:16,display:"flex",gap:8,alignItems:"center"}}>
+                      <span style={{fontSize:24}}>💎</span>
+                      <div style={{textAlign:"left"}}>
+                        <div style={{fontWeight:800,fontSize:13,color:C.goldDk}}>¡Gana {BOND_REWARD_GEMS} cristales!</div>
+                        <div style={{fontSize:11,color:C.textMed}}>Cuando tu tutor acepte la vinculación</div>
                       </div>
                     </div>
-
-                    {/* Bond reward info — only show if not yet claimed */}
-                    {!initialProfile?.bond_reward_claimed&&(
-                      <div style={{background:C.goldLt,border:`1.5px solid ${C.gold}60`,borderRadius:14,padding:"10px 16px",marginBottom:16,display:"flex",gap:8,alignItems:"center"}}>
-                        <span style={{fontSize:24}}>💎</span>
-                        <div style={{textAlign:"left",flex:1}}>
-                          <div style={{fontWeight:800,fontSize:13,color:C.goldDk}}>Recompensa única: +{BOND_REWARD_GEMS} cristales</div>
-                          <div style={{fontSize:11,color:C.textMed}}>Solo al vincular tu primer tutor</div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Tutores ya vinculados */}
                     {linkedTutors.length>0&&(
-                      <div style={{background:C.mintLt,borderRadius:14,padding:"10px 16px",marginBottom:12}}>
-                        <div style={{fontSize:12,fontWeight:700,color:C.mintDk,marginBottom:6}}>✅ Tus tutores ({linkedTutors.length})</div>
+                      <div style={{background:C.mintLt,borderRadius:14,padding:"8px 16px",marginBottom:12}}>
+                        <div style={{fontSize:12,fontWeight:700,color:C.mintDk,marginBottom:8}}>✅ Tutores vinculados ({linkedTutors.length})</div>
                         {linkedTutors.map((t,i)=>(
-                          <div key={i} style={{fontSize:13,color:C.textMed,padding:"4px 0"}}>👤 {t}</div>
+                          <div key={i} style={{fontSize:12,color:C.textMed}}>👩 {t}</div>
                         ))}
                       </div>
                     )}
-
-                    {/* Code input */}
-                    <div style={{fontSize:12,fontWeight:700,color:C.text,marginBottom:6}}>Ingresa el código que te dio tu tutor:</div>
-                    <input
-                      value={tutorCode||""}
-                      onChange={e=>setTutorCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,12))}
-                      placeholder="ABC123DEF456"
-                      style={{width:"100%",padding:"14px 16px",borderRadius:12,border:`2px solid ${C.border}`,
-                        fontSize:18,fontWeight:800,color:C.text,background:C.card,outline:"none",
-                        letterSpacing:3,fontFamily:"monospace",textAlign:"center",
-                        boxSizing:"border-box",marginBottom:14}}
-                    />
-                    <BtnMain onClick={async()=>{
-                      if(!tutorCode||tutorCode.length<8) return notify("Código inválido","⚠️");
-                      if(!userId) return;
-                      try {
-                        const {supabase}=await import("./supabase.js");
-                        // 1. Find token
-                        const {data:tok}=await supabase.from("invite_tokens")
-                          .select("*").eq("token",tutorCode).is("used_at",null)
-                          .gt("expires_at",new Date().toISOString()).maybeSingle();
-                        if(!tok){
-                          notify("Código inválido o expirado","⚠️");
-                          return;
-                        }
-                        if(tok.created_by===userId){
-                          notify("No puedes vincularte a ti mismo","⚠️");
-                          return;
-                        }
-                        // 2. Create tutor request (the parent will see and approve)
-                        const {data:{user:authUser}}=await supabase.auth.getUser();
-                        const {data:tutorProfile}=await supabase.from("profiles").select("name,role").eq("id",tok.created_by).single();
-                        const {error:reqErr}=await supabase.from("tutor_requests").insert({
-                          child_id: userId,
-                          child_name: user.name,
-                          child_email: authUser?.email,
-                          tutor_email: null, // direct link
-                          tutor_id: tok.created_by,
-                          tutor_role: tutorProfile?.role||"parent",
-                          status: "pending",
-                          token: tutorCode,
-                        });
-                        if(reqErr){
-                          if(reqErr.code==="23505") return notify("Ya enviaste solicitud a este tutor","ℹ️");
-                          return notify("Error: "+reqErr.message,"⚠️");
-                        }
-                        // 3. Mark token as used
-                        await supabase.from("invite_tokens").update({used_at:new Date().toISOString(),used_by:userId}).eq("id",tok.id);
-                        notify(`✅ Solicitud enviada a ${tutorProfile?.name||"tu tutor"}`,"📨");
-                        setLinkedTutors(p=>[...p,tutorProfile?.name||"Tutor"]);
-                        setTutorCode("");
-                        // Don't claim gems yet — only when tutor approves
-                        // (handled by tutor_requests trigger)
-                        setShowLinkTutor(false);
-                      } catch(e){ notify("Error: "+e.message,"⚠️"); }
-                    }} bg={`linear-gradient(135deg,${C.mint},${C.mintDk})`} style={{width:"100%"}} disabled={!tutorCode||tutorCode.length<8}>
-                      🔗 Enviar solicitud al tutor
+                    {/* Simulate scan accepted */}
+                    <BtnMain onClick={()=>setLinkStep("confirm")} bg={`linear-gradient(135deg,${C.mint},${C.mintDk})`} style={{width:"100%"}}>
+                      ✓ Simular: tutor escaneó el código
                     </BtnMain>
-
-                    <div style={{fontSize:10,color:C.textLt,textAlign:"center",marginTop:10,lineHeight:1.5}}>
-                      Tu tutor verá la solicitud y la aprobará desde su app.<br/>
-                      Recibirás los cristales cuando acepte.
-                    </div>
                   </div>
                 )}
                 {linkStep==="confirm"&&(
                   <div style={{textAlign:"center"}}>
-                    <div style={{fontSize:56,marginBottom:8}}>📨</div>
-                    <div style={{fontWeight:900,fontSize:18,color:C.text,marginBottom:8}}>Solicitud enviada</div>
-                    <div style={{fontSize:13,color:C.textMed,marginBottom:16,lineHeight:1.5}}>
-                      Tu tutor recibirá la notificación. Cuando la apruebe, ¡quedarán vinculados!
+                    <div style={{fontSize:56,marginBottom:8}} className="float">🎉</div>
+                    <div style={{fontWeight:900,fontSize:20,color:C.text,marginBottom:8}}>¡Vinculación exitosa!</div>
+                    <div style={{fontSize:13,color:C.textMed,marginBottom:16}}>Mamá Laura ahora es tu tutora en FinPlay</div>
+                    <div style={{background:`linear-gradient(135deg,${C.gold},${C.goldDk})`,borderRadius:16,padding:"16px",marginBottom:16,color:"white"}}>
+                      <div style={{fontWeight:900,fontSize:28}}>+{BOND_REWARD_GEMS} 💎</div>
+                      <div style={{fontSize:13,opacity:0.9}}>¡Cristales añadidos a tu cuenta!</div>
                     </div>
-                    <BtnMain onClick={()=>{setLinkStep("scan");setShowLinkTutor(false);}} bg={`linear-gradient(135deg,${C.mint},${C.mintDk})`} style={{width:"100%"}}>
-                      Entendido
+                    <BtnMain onClick={async()=>{
+                      const newGems = (user.gems||0)+BOND_REWARD_GEMS;
+                      setUser(p=>({...p,gems:newGems}));
+                      boom();
+                      setLinkStep("scan");
+                      setShowLinkTutor(false);
+                      notify(`+${BOND_REWARD_GEMS} 💎 ¡Tutor vinculado!`,"🔗");
+                      // Save — bond reward only once ever
+                      if(userId){
+                        const {supabase}=await import("./supabase.js");
+                        await supabase.from("profiles").update({
+                          gems:newGems, bond_reward_claimed:true
+                        }).eq("id",userId);
+                      }
+                    }} bg={`linear-gradient(135deg,${C.gold},${C.goldDk})`} style={{width:"100%"}}>
+                      🎁 Reclamar {BOND_REWARD_GEMS} cristales
                     </BtnMain>
                   </div>
                 )}
@@ -3982,61 +3936,6 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
         </div>
       )}
 
-      {/* ════ CHAT PROFILE MODAL — perfil público al click en chat ════ */}
-      {chatProfileUserId&&(
-        <div className="overlay" style={{zIndex:9994}} onClick={()=>setChatProfileUserId(null)}>
-          <div className="modal pop-in" style={{maxWidth:320}} onClick={e=>e.stopPropagation()}>
-            <div style={{display:"flex",justifyContent:"flex-end",marginBottom:8}}>
-              <button onClick={()=>setChatProfileUserId(null)} style={{background:C.border,border:"none",borderRadius:9,padding:"4px 8px",cursor:"pointer",color:C.textMed}}>✕</button>
-            </div>
-            {!chatProfileData?(
-              <div style={{textAlign:"center",padding:"30px 0",color:C.textMed,fontSize:13}}>Cargando perfil…</div>
-            ):(
-              <div style={{textAlign:"center"}}>
-                {/* Avatar with frame */}
-                <div style={{display:"inline-block",position:"relative",marginBottom:12}}>
-                  <div style={{width:96,height:96,borderRadius:"50%",background:`linear-gradient(135deg,${C.mintLt},${C.mint}30)`,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",border:`3px solid ${chatProfileData.frame&&chatProfileData.frame!=="none"?C.gold:C.border}`}}>
-                    <KQIcon id={chatProfileData.avatar_key||"a_cub"} size={80}/>
-                  </div>
-                  {chatProfileData.frame&&chatProfileData.frame!=="none"&&(
-                    <div style={{position:"absolute",bottom:-4,right:-4,background:C.gold,color:"white",borderRadius:"50%",width:24,height:24,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,boxShadow:C.shadow,border:"2px solid white"}}>
-                      ⭐
-                    </div>
-                  )}
-                </div>
-                
-                {/* Name & username */}
-                <div style={{fontWeight:900,fontSize:18,color:C.text}}>
-                  {chatProfileData.name}
-                </div>
-                {chatProfileData.username&&(
-                  <div style={{fontSize:13,color:C.textMed,fontWeight:600,marginTop:2}}>
-                    @{chatProfileData.username}
-                  </div>
-                )}
-                
-                {/* Premium emoji if has one */}
-                {chatProfileData.avatar_emoji&&chatProfileData.avatar_emoji!=="🦁"&&(
-                  <div style={{marginTop:8,fontSize:32}}>
-                    {chatProfileData.avatar_emoji}
-                  </div>
-                )}
-                
-                {/* Role badge */}
-                <div style={{marginTop:14,display:"inline-flex",alignItems:"center",gap:6,padding:"6px 14px",borderRadius:999,background:chatProfileData.role==="student"?C.mintLt:chatProfileData.role==="parent"?C.goldLt:C.skyLt,color:chatProfileData.role==="student"?C.mintDk:chatProfileData.role==="parent"?C.goldDk:C.sky,fontSize:11,fontWeight:700}}>
-                  {chatProfileData.role==="student"?"🎮 Estudiante":chatProfileData.role==="parent"?"👨‍👩‍👦 Tutor":"🏫 Profesor"}
-                  {chatProfileData.level&&<span>· Nv.{chatProfileData.level}</span>}
-                </div>
-                
-                <div style={{marginTop:20,fontSize:11,color:C.textLt,lineHeight:1.5}}>
-                  Por privacidad solo se muestra información pública.
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* ════ HEADER ════ */}
       <div style={{background:C.card,borderBottom:`2px solid ${C.border}`,padding:"12px 16px 10px",position:"sticky",top:0,zIndex:100,boxShadow:C.shadow}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -4660,13 +4559,13 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
               </button>
             </div>
             {chatRoom==="general"?(
-              <ChatView msgs={kMsgs} setMsgs={setKMsgs} isMe={m=>m.author===user.name} myAuthor={user.name} myAvatar={user.avatar} myRole="student" onSend={t=>sendChatMsg(t,"clan")} onProfileClick={onChatProfileClick}
+              <ChatView msgs={kMsgs} setMsgs={setKMsgs} isMe={m=>m.author===user.name} myAuthor={user.name} myAvatar={user.avatar} myRole="student" onSend={t=>sendChatMsg(t,"clan")}
                 input={chatInput} setInput={setChatInput} chatEndRef={chatEndRef} C={C}
                 header={{title:"Chat general 🌍",sub:"Todos los estudiantes · Moderado",gradient:`linear-gradient(135deg,${C.mint},${C.mintDk})`}}
                 quickReplies={["🔥 ¡Vamos!","✅ ¡Lo hice!","💪 ¡A por ello!","😎 ¡Fácil!"]}
                 locked={!canClan} lockMsg={`Necesitas Nivel ${MIN_CLAN}`}/>
             ):(
-              <ChatView msgs={classMsgs} setMsgs={setClassMsgs} isMe={m=>m.author===user.name} myAuthor={user.name} myAvatar={user.avatar} myRole="student" onSend={t=>sendChatMsg(t,studentClass?`class_${studentClass.id}`:"clan")} onProfileClick={onChatProfileClick}
+              <ChatView msgs={classMsgs} setMsgs={setClassMsgs} isMe={m=>m.author===user.name} myAuthor={user.name} myAvatar={user.avatar} myRole="student" onSend={t=>sendChatMsg(t,studentClass?`class_${studentClass.id}`:"clan")}
                 input={chatInput} setInput={setChatInput} chatEndRef={chatEndRef} C={C}
                 header={{title:`🏫 ${studentClass?.grade||"Mi clase"}`,sub:`Solo tus compañeros · ${studentClass?.school_name||""}`,gradient:`linear-gradient(135deg,${C.sky},#1565C0)`}}
                 quickReplies={["📚 Tarea","❓ Pregunta","✅ ¡Listo!","👋 Hola"]}/>
@@ -5179,7 +5078,7 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
 
         {/* ── PARENT: CLAN CHAT ── */}
         {role===ROLES.PARENT&&tab==="clanchat"&&(
-          <ChatView msgs={aMsgs} setMsgs={setAMsgs} isMe={m=>m.author===user.name} myAuthor={user.name} myAvatar={user.avatar} myRole="parent" onSend={t=>sendChatMsg(t,"adult")} onProfileClick={onChatProfileClick}
+          <ChatView msgs={aMsgs} setMsgs={setAMsgs} isMe={m=>m.author===user.name} myAuthor={user.name} myAvatar={user.avatar} myRole="parent" onSend={t=>sendChatMsg(t,"adult")}
             input={chatInput} setInput={setChatInput} chatEndRef={chatEndRef} C={C}
             header={{title:"Chat adultos — Dragones del Norte",sub:"Solo padres y profesores",gradient:`linear-gradient(135deg,${C.gold},${C.goldDk})`}}
             locked={false}/>
@@ -5421,7 +5320,7 @@ export default function FinPlay({ userId=null, userEmail=null, initialProfile=nu
 
         {/* ── TEACHER: CHAT ── */}
         {role===ROLES.TEACHER&&tab==="tchat"&&(
-          <ChatView msgs={aMsgs} setMsgs={setAMsgs} isMe={m=>m.author===user.name} myAuthor={user.name} myAvatar={user.avatar} myRole="teacher" onSend={t=>sendChatMsg(t,"adult")} onProfileClick={onChatProfileClick}
+          <ChatView msgs={aMsgs} setMsgs={setAMsgs} isMe={m=>m.author===user.name} myAuthor={user.name} myAvatar={user.avatar} myRole="teacher" onSend={t=>sendChatMsg(t,"adult")}
             input={chatInput} setInput={setChatInput} chatEndRef={chatEndRef} C={C}
             header={{title:"Chat adultos del clan",sub:"Padres y profesores · 5to B",gradient:`linear-gradient(135deg,${C.sky},#2d8fd4)`}}
             quickReplies={["📢 Recordatorio","✅ ¡Bien hecho!","📊 Reporte","🎯 Nueva misión"]}
@@ -6619,15 +6518,6 @@ function TutorRequestsPanel({userId, C, notify, onApprove}) {
         await supabase.from("profiles").update({account_status:"active"}).eq("id",req.child_id);
         // Mark request as approved
         await supabase.from("tutor_requests").update({status:"approved",tutor_id:userId,resolved_at:new Date().toISOString()}).eq("id",req.id);
-        // ── Award bond reward to child IF not already claimed ──
-        const {data:childProfile}=await supabase.from("profiles")
-          .select("gems,bond_reward_claimed").eq("id",req.child_id).single();
-        if(childProfile && !childProfile.bond_reward_claimed){
-          await supabase.from("profiles").update({
-            gems: (childProfile.gems||0)+15,
-            bond_reward_claimed: true
-          }).eq("id",req.child_id);
-        }
         setRequests(p=>p.filter(r=>r.id!==req.id));
         onApprove(req.child_id, req.child_name);
         notify(`✅ Vinculado con ${req.child_name}`,"🔗");
@@ -6726,7 +6616,7 @@ function TCard({task,full,onVerify,C}){
   );
 }
 
-function ChatView({msgs,setMsgs,isMe,myAuthor,myAvatar,myRole,input,setInput,chatEndRef,C,header,quickReplies=[],onQuick,locked,lockMsg,onSend,onProfileClick}){
+function ChatView({msgs,setMsgs,isMe,myAuthor,myAvatar,myRole,input,setInput,chatEndRef,C,header,quickReplies=[],onQuick,locked,lockMsg,onSend}){
   const send=()=>{ if(!input.trim()) return; if(onSend){ onSend(input.trim()); } else { setMsgs(p=>[...p,{id:Date.now(),author:myAuthor,avatar:myAvatar,role:myRole,text:input.trim(),time:now_t(),system:false}]); } setInput(""); };
   if(locked) return (
     <div style={{padding:28,textAlign:"center"}}>
@@ -6757,7 +6647,7 @@ function ChatView({msgs,setMsgs,isMe,myAuthor,myAvatar,myRole,input,setInput,cha
         )}
       </div>
       <div style={{flex:1,overflowY:"auto",padding:"0 14px 8px"}}>
-        {msgs.map(m=><Bubble key={m.id} msg={m} isMe={isMe(m)} C={C} onProfileClick={onProfileClick}/>)}
+        {msgs.map(m=><Bubble key={m.id} msg={m} isMe={isMe(m)} C={C}/>)}
         <div ref={chatEndRef}/>
       </div>
       <div style={{padding:"7px 14px 14px",display:"flex",gap:8,flexShrink:0}}>
@@ -6770,7 +6660,7 @@ function ChatView({msgs,setMsgs,isMe,myAuthor,myAvatar,myRole,input,setInput,cha
   );
 }
 
-function Bubble({msg,isMe,C,onProfileClick}){
+function Bubble({msg,isMe,C}){
   if(msg.system) return (
     <div style={{textAlign:"center",margin:"8px 0"}}>
       <div style={{display:"inline-block",background:C.mintLt,border:`1px solid ${C.mint}30`,borderRadius:20,padding:"4px 12px",fontSize:11,color:C.mintDk,fontWeight:700}}>{msg.text}</div>
@@ -6778,23 +6668,11 @@ function Bubble({msg,isMe,C,onProfileClick}){
   );
   const rc={student:C.mint,parent:C.goldDk,teacher:C.sky}[msg.role]||C.textLt;
   const rl={student:"Miembro",parent:"Tutor",teacher:"Profe"}[msg.role]||"";
-  const handleProfileClick = () => {
-    if(!isMe && msg.authorId && onProfileClick) onProfileClick(msg.authorId);
-  };
   return (
     <div style={{display:"flex",flexDirection:isMe?"row-reverse":"row",gap:8,marginBottom:8,alignItems:"flex-end"}}>
-      <div onClick={handleProfileClick}
-        style={{width:30,height:30,borderRadius:"50%",background:`${rc}18`,border:`2px solid ${rc}50`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0,cursor:!isMe&&msg.authorId?"pointer":"default",overflow:"hidden"}}>
-        <KQIcon id={msg.avatar||"a_cub"} size={26}/>
-      </div>
+      <div style={{width:30,height:30,borderRadius:"50%",background:`${rc}18`,border:`2px solid ${rc}50`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>{msg.avatar}</div>
       <div style={{maxWidth:"72%",display:"flex",flexDirection:"column",alignItems:isMe?"flex-end":"flex-start",gap:2}}>
-        {!isMe&&(
-          <div style={{display:"flex",gap:6,alignItems:"center",cursor:msg.authorId?"pointer":"default"}} onClick={handleProfileClick}>
-            <span style={{fontSize:11,fontWeight:800,color:rc}}>{msg.author}</span>
-            {msg.username&&<span style={{fontSize:10,color:C.textLt,fontWeight:600}}>@{msg.username}</span>}
-            <Chip label={rl} bg={`${rc}15`} color={rc}/>
-          </div>
-        )}
+        {!isMe&&<div style={{display:"flex",gap:8,alignItems:"center"}}><span style={{fontSize:11,fontWeight:800,color:rc}}>{msg.author}</span><Chip label={rl} bg={`${rc}15`} color={rc}/></div>}
         <div style={{background:isMe?`linear-gradient(135deg,${C.mint},${C.gold})`:C.card,borderRadius:isMe?"17px 17px 4px 17px":"17px 17px 17px 4px",padding:"8px 12px",fontSize:13,lineHeight:1.4,color:isMe?"white":C.text,border:isMe?"none":`1px solid ${C.border}`,boxShadow:isMe?"none":C.shadow}}>
           {msg.text}
         </div>
